@@ -1,0 +1,39 @@
+input, textarea {
+    outline: none;
+    border: $border-base;
+    font-size: map_get($font-size, default);
+    &::-webkit-input-placeholder { /* WebKit browsers */
+        color: $text-gray;
+    }
+}
+.el-select {
+    height: 40px;
+    input {
+        line-height: 40px !important;
+        height: 40px !important;
+    }
+}
+// table样式
+
+.el-table__header {
+    thead {
+        tr {
+            background: #ebeef5;
+            th {
+                background: #ebeef5;
+            }
+        }
+    }
+}
+
+// 分页
+.el-pagination {
+    .el-select {
+        .el-input {
+            input {
+                line-height: 28px !important;
+            }
+        }
+    }
+}
+

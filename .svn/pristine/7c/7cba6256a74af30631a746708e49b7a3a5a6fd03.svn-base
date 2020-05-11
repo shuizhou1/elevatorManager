@@ -1,0 +1,388 @@
+<template>
+    <div>
+        <div class="user-table">
+            <div class="table-item">
+                <div class="title noborderTop noborderLeft">用户名</div><div class="user-info noborderTop">{{userInfo.nickname}}</div>
+            </div><div class="table-item">
+                <div class="title noborderTop">手机号码</div><div class="user-info noborderTop">
+                    <div class="user-info noborderTop noborderLeft">{{userInfo.mobile}}</div>
+                </div>
+            </div><div class="table-item">
+                <div class="title noborderLeft">性别</div><div class="user-info">{{sex[userInfo.sex]}}</div>
+            </div><div class="table-item">
+                <div class="title">所属单位</div><div class="user-info">{{userInfo.unitName}}</div>
+            </div><div class="table-item">
+                <div class="title noborderLeft">邮箱</div><div class="user-info">{{userInfo.email}}</div>
+            </div><div class="table-item">
+                <!-- <div class="title">密码</div><div class="user-info"></div> -->
+                 <div class="title ">密码</div><div class="user-info ">
+                    <div class="user-info noborderTop noborderLeft">******</div><el-button type="primary" @click="modifiePassword()">修改</el-button>
+                </div>
+            </div>
+            
+        </div> 
+        <!--  <div>
+            <el-row>
+                <el-col>
+                    <div class="userinfo_item"></div>
+                </el-col>
+                <el-col>
+                    <div class="userinfo_item"></div>
+                </el-col>
+            </el-row>
+            <el-row>
+                 <el-col></el-col>
+                 <el-col></el-col>
+            </el-row>
+            <el-row></el-row>
+        </div> -->
+        <el-dialog
+                title="修改密码"
+                :visible.sync="dialogVisible"
+                 :lock-scroll="true"
+                 :show-close="false"
+                :modal="false"
+                width="40%">
+            <el-form :rules="rules" :model="formData" label-width="100px" ref="form">
+                <el-row :gutter="40">
+                    <el-col :span="24">
+                        <el-form-item prop="oldPwd" label="旧密码" label-width="">
+                            <el-input placeholder="请输入旧密码" clearable v-model="formData.oldPwd" type="password" :show-password="true" ></el-input>
+                        </el-form-item>
+                    </el-col>
+                     <el-col :span="24">
+                        <el-form-item prop="newPwd" label="新密码">
+                            <el-input placeholder="请输入新密码" clearable v-model="formData.newPwd" type="password" show-password></el-input>
+                        </el-form-item>
+                    </el-col>
+                    <el-col :span="24">
+                        <el-form-item prop="confirmNewPwd" label="确认新密码">
+                            <el-input placeholder="请输入新密码" clearable v-model="formData.confirmNewPwd" type="password" show-password></el-input>
+                        </el-form-item>
+                    </el-col>
+                </el-row>
+           </el-form>
+            <div  class="button_wraper">
+                <el-button type="primary" @click="sumbit()">确 定</el-button>
+                <el-button @click="dialogVisible = false">取 消</el-button>
+          </div>
+        </el-dialog>
+    </div>
+</template>
+
+<script>
+    import { isMobile } from '@/utils/validate'
+    import { getUUID } from '@/utils/index'
+    const { md5 } = require("@/utils/md5.js");
+
+    export default {
+        created () {
+            // this.getUserInfo()
+        },
+        data () {
+            const  passwordLength = (rule,value,callback)=>{
+                if(!/[\d|a-z|]{8,}/g.test(value)){
+                    callback(new Error('密码长度为大于等于8的字母或数字'));
+                }else {
+                    callback();
+                };
+            };
+            return {
+                dialogVisible: false,
+                countdowmTime: null,
+                messageDisable: false,
+                countdowm: '获取验证码',
+                num: 60,
+                code: '',
+                codeOld: '',
+                smsUuid: '',
+                smsUuidOld: '',
+                phone: '',
+                sex: {
+                    0: '女',
+                    1: '男'
+                },
+                formData:{
+                    oldPwd:'',
+                    newPwd:'',
+                    confirmNewPwd:''
+                },
+                rules:{
+                    oldPwd: [
+                        {
+                            required: true,
+                            message:'旧密码不能为空'
+                        },
+                        { validator: passwordLength,trigger:'blur'}
+                    ],
+                    newPwd: [
+                        {
+                            required: true,
+                            message:'新密码不能为空'
+                        },
+                        { validator: passwordLength,trigger:'blur'}
+                    ],
+                     confirmNewPwd: [
+                        {
+                            required: true,
+                            message:'请确认新密码'
+                        },
+                        { validator: passwordLength,trigger:'blur'}
+                    ],
+                }
+            }
+        },
+        computed:{
+             userInfo:{
+                get(){
+                    return this.$store.state.user.userInfo
+                },
+                set(val){
+                    this.$store.commit('user/updateUserInfo',val)
+                }
+            }
+        },
+        methods: {
+            sumbit () {
+                this.$refs['form'].validate(valid=>{
+                    if(valid){
+                        if(this.formData.confirmNewPwd.trim()!==this.formData.newPwd.trim()){
+                            this.$message({
+                                type:'warning',
+                                message:'两次密码不一致',
+                                duration:1500
+                            })
+                            return false;
+                        }
+                        this.$confirm('确认修改密码？', '提示', {
+                            confirmButtonText: '确定',
+                            cancelButtonText: '取消',
+                            type: 'warning'
+                        }).then(() => {
+                            this.$http({
+                                url: this.$http.adornUrl(`/sys/user/updatePwd`),
+                                method: 'post',
+                                params: this.$http.adornParams({
+                                    'oldPwd': md5(this.formData.oldPwd),
+                                    'newPwd': md5(this.formData.newPwd),
+                                })
+                            }).then(({data}) => {
+                                if (data && data.code === 0) {
+                                    this.$message({
+                                        message: '修改成功,请重新登录',
+                                        type: 'success',
+                                        duration: 1500,
+                                        onClose:()=>{
+                                            this.logoutHandle()
+                                        }
+                                    })
+                                    this.dialogVisible = false;
+                                } else {
+                                    this.$message.error(data.msg)
+                                }
+                            })
+                        })
+                    }
+                })
+            },
+              logoutHandle() {
+                //   this.$message({
+                //       type:'warning',
+                //       message:'请重新登陆',
+                //       duration:1500,
+                //       onClose:()=>{
+                           this.$http({
+                                url: this.$http.adornUrl('/sys/logout'),
+                                method: 'post',
+                                data: this.$http.adornData()
+                            }).then(({ data }) => {
+                                if (data && data.code === 0) {
+                                    this.$cookie.delete('token')
+                                    this.$router.options.isAddDynamicMenuRoutes = false
+                                    this.$store.state.common.mainTabs = [];//清空tabs
+                                    this.$router.push({ name: 'login'})
+                                }
+                            })
+                    //   }
+                //   })
+                   
+                // })
+            },
+            // 获取短信验证码
+            getMessage () {
+                if (isMobile(this.phone)) {
+                    this.code = ''
+                } else {
+                    this.$message.error('请输入正确手机号')
+                    return;
+                }
+                this.smsUuid = getUUID()
+                this.$http({
+                    url: this.$http.adornUrl('/sys/user/updateMobileCaptcha'),
+                    method: 'get',
+                    params: this.$http.adornParams({
+                        'uuid': this.smsUuid,
+                        'phone': this.phone
+                    })
+                }).then(({data}) => {
+                    if (data && data.code === 0) {
+                        this.messageDisable = true
+                        this.countdowmTime = setInterval(() => {
+                            this.num--
+                            this.countdowm = `获取验证码 (${this.num})`
+                            if (this.num <= 0) {
+                                this.countdowm = `获取验证码`
+                                this.num = 60
+                                clearInterval(this.countdowmTime)
+                                this.messageDisable = false
+                            }
+                        }, 1000)
+                        // this.code = data.msg
+                        this.$alert(data.msg, '获取验证码', {
+                            confirmButtonText: '确定',
+                            callback: action => {
+                            }
+                        })
+                    } else {
+                        this.$message.error(data.msg)
+                    }
+                })
+                // } else {
+                //     this.$message.error('请输入手机号码')
+                // }
+            },
+            getMessageOld () {
+                this.smsUuidOld = getUUID()
+                this.$http({
+                    url: this.$http.adornUrl('/sys/user/updateMobileCaptcha'),
+                    method: 'get',
+                    params: this.$http.adornParams({
+                        'uuid': this.smsUuidOld,
+                        'phone': ''
+                    })
+                }).then(({data}) => {
+                    if (data && data.code === 0) {
+                        this.messageDisable = true
+                        this.countdowmTime = setInterval(() => {
+                            this.num--
+                            this.countdowm = `获取验证码 (${this.num})`
+                            if (this.num <= 0) {
+                                this.countdowm = `获取验证码`
+                                this.num = 60
+                                clearInterval(this.countdowmTime)
+                                this.messageDisable = false
+                            }
+                        }, 1000)
+                        // this.code = data.msg
+                        this.$alert(data.msg, '获取验证码', {
+                            confirmButtonText: '确定',
+                            callback: action => {
+                            }
+                        })
+                    } else {
+                        this.$message.error(data.msg)
+                    }
+                })
+            },
+            modifiePassword () {
+                // this.code = '';
+                // this.smsUuid = '';
+                // this.smsUuidOld = '';
+                // this.codeOld = '';
+                // this.phone = '';
+
+                this.dialogVisible = true
+                this.$nextTick(()=>{
+                    this.$refs['form'].resetFields();
+                })
+              /*  if (this.phone === this.userInfo.user.mobile) {
+                } else {
+                    if (isMobile(this.phone)) {
+                        this.code = '';
+
+                    } else {
+                        this.$message.error('请输入正确手机号')
+                        return;
+                    }
+                }*/
+            },
+           
+            proving1 () {
+                this.phone = this.phone.replace(/[^\d]/g, '');
+                this.code = this.code.replace(/[^\d]/g, '');
+                this.codeOld = this.codeOld.replace(/[^\d]/g, '');
+            },
+            // 获取当前管理员信息
+            getUserInfo () {
+                this.$http({
+                    url: this.$http.adornUrl('/sys/user/info'),
+                    method: 'get',
+                    params: this.$http.adornParams()
+                }).then(({ data }) => {
+                    if (data && data.code === 0) {
+                        console.log(data)
+                        
+                        // this.phone = this.userInfo.user.mobile
+                        console.log(this.userInfo)
+                    }
+                })
+            }
+        }
+    }
+</script>
+
+<style scoped lang="scss">
+    .user-table {
+        border: 1px solid #cacaca;
+        .table-item {
+            height: 80px;
+            line-height: 80px;
+            text-align: center;
+            display: inline-block;
+            width: 50%;
+            &.block {
+                display: table;
+                width: 100%;
+                .title {
+                    width: 20%;
+                }
+                .user-info {
+                    width: 80%;
+                }
+            }
+            .title {
+                background: #ebeef5;
+                width: 40%;
+            }
+            .user-info {
+                width: 60%;
+            }
+            .user-info, .title {
+                height: 80px;
+                line-height: 80px;
+                display: inline-block;
+                vertical-align: middle;
+                border: 1px solid #cacaca;
+                border-right: none;
+                border-bottom: none;
+                &.noborderTop {
+                    border-top: none;
+                }
+                &.noborderLeft {
+                    border-left: none;
+                }
+            }
+        }
+    }
+</style>
+<style lang="scss">
+    .phone-input {
+        input {
+            height: 44px;
+        }
+    }
+
+    .el-row {
+        padding: 5px;
+    }
+</style>

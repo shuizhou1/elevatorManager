@@ -1,0 +1,598 @@
+<!--  -->
+<template>
+  <div class="mod-home" v-loading="loading">
+    <el-form class="el_dialog_form" style="margin-left:10px" @keyup.enter.native="getchartData()">
+      <el-row :gutter="40">
+        <el-col :span="7" v-if="currentIndex!=0">
+          <el-form-item label="投产时间" prop="commissioningTime">
+            <el-select v-model.trim="formData.commissioningTime" clearable placeholder="请选择">
+              <el-option
+                v-for="item in commissioningTimeOption"
+                :key="item.value"
+                :label="item.label"
+                :value="item.value"
+              ></el-option>
+            </el-select>
+          </el-form-item>
+        </el-col>
+        <el-col :span="7" v-if="currentIndex!=1">
+          <el-form-item label="品牌">
+            <el-select @change="handleBrandChange" v-model.trim="brandIndex" placeholder="请选择" clearable>
+              <el-option
+                v-for="item in brandOption"
+                :key="item.value"
+                :label="item.label"
+                :value="item.value"
+              ></el-option>
+            </el-select>
+            <!-- <el-input v-model.trim="formData.elevatorBrand" clearable></el-input> -->
+          </el-form-item>
+        </el-col>
+        <el-col :span="7" v-if="currentIndex!=2">
+          <el-form-item label="使用频率" prop="operationNum">
+            <el-select v-model.trim="formData.operationNum" clearable placeholder="请选择">
+              <el-option
+                v-for="item in operationNumOption"
+                :key="item.value"
+                :label="item.label"
+                :value="item.value"
+              ></el-option>
+            </el-select>
+          </el-form-item>
+        </el-col>
+        <el-col :span="6" v-if="currentIndex!=3">
+          <el-form-item label="场所" prop="place">
+            <el-select v-model.trim="formData.place" clearable placeholder="请选择">
+              <el-option
+                v-for="item in placeOption"
+                :key="item.value"
+                :label="item.label"
+                :value="item.value"
+              ></el-option>
+            </el-select>
+          </el-form-item>
+        </el-col>
+        <el-col :span="2">
+          <el-button type="query" @click="getchartData()">查询</el-button>
+        </el-col>
+      </el-row>
+    </el-form>
+    <el-tabs type="card" :value="currentKey" @tab-click="handleChange">
+      <el-tab-pane v-for="(item,index) in items" :key="index" :label="item.name" :name="item.key">
+        <div class="table_box" :style="{'height':height}">
+          <div v-if="item.hasData">
+            <div
+              :id="'chartBox'+index"
+              v-show="currentIndex==index"
+              :style="{'height':chartHeight,'min-height':'250px','width':'100%'}"
+            ></div>
+            <div style="text-align:center;padding-bottom:10px">{{explain}}</div>
+          </div>
+          <div v-else class="echart_none_data">暂无数据</div>
+        </div>
+      </el-tab-pane>
+    </el-tabs>
+  </div>
+</template>
+
+<script>
+import { gzlfxData } from "@/utils/homeData";
+import echart from "echarts";
+export default {
+  activated(){
+      if(this.chart){
+        this.chart.resize()
+      }
+  },
+  data() {
+    return {
+      width: "",
+      height: "",
+      chartHeight: "",
+      items: [
+        {
+          name: "不同投产时间故障率分析",
+          key: "commissioningTime",
+          hasData: true
+        },
+        {
+          name: "不同品牌故障率分析",
+          key: "elevatorBrand",
+          hasData: true
+        },
+        {
+          name: "不同使用频率故障率分析",
+          key: "operationNum",
+          hasData: true
+        },
+        {
+          name: "不同场所故障率分析",
+          key: "place",
+          hasData: true
+        }
+      ],
+      commissioningTimeOption: [
+        {
+          label: "小于5年",
+          value: "1"
+        },
+        {
+          label: "5到10年",
+          value: "2"
+        },
+        {
+          label: "10年到15年",
+          value: "3"
+        },
+        {
+          label: "15年以上",
+          value: "4"
+        }
+      ],
+      operationNumOption: [
+        {
+          label: "小于2000次/天",
+          value: "1"
+        },
+        {
+          label: "3000-5000次/天",
+          value: "2"
+        },
+        {
+          label: "大于5000次/天",
+          value: "3"
+        }
+      ],
+      brandOption: [],
+      placeOption: [
+        {
+          label: "办公室",
+          value: "1"
+        },
+        {
+          label: "工地",
+          value: "2"
+        }
+      ],
+      commissioningTime: "",
+      brandIndex: "",
+      brand: "三菱",
+      operationNum: "",
+      place: "",
+      formData: {
+        elevatorBrand: "",
+        // 品牌
+        commissioningTime: "",
+        // 投产时间(1. 5年以内 2. 5到10年 3. 10年以上)
+        operationNum: "",
+        place: "",
+        regCode: "",
+        years: "",
+        months: "",
+        province: "",
+        city: "",
+        district: ""
+      },
+      areaData: [],
+      area: [],
+      loading: false,
+      currentKey: "commissioningTime",
+      currentIndex: 0,
+      height: "",
+      width: "",
+      chart: null,
+      chart0Option: {
+        // title:{
+        //   text:'不同投产时间故障率分析',
+        //   x:'center'
+        // },
+        tooltip: {
+          formatter: "投产时间: {b} <br/>数量: {c}  ({d})%"
+        },
+        grid: {
+          left: "5%",
+          right: "4%",
+          bottom: "8%",
+          top: "0%",
+          containLabel: true
+        },
+        legend: {
+          // y: "bottom"
+          x: "60",
+          top: "50",
+          orient: "vertical",
+          itemGrap: 200
+          // selected:{
+          //   '1-5年':false
+          // }
+          // padding:''
+        },
+        series: [
+          {
+            name: "投产时间",
+            type: "pie",
+            radius: "70%",
+            center: ["50%", "50%"],
+            data: []
+          }
+        ]
+      },
+      chart1Option: {
+        // title:{
+        //   text:'不同品牌故障率分析',
+        //   x:'center'
+        // },
+        tooltip: {
+          formatter: "品牌: {b} <br/>数量: {c}  ({d})%"
+        },
+        grid: {
+          left: "5%",
+          right: "4%",
+          bottom: "3%",
+          top: "0%",
+          containLabel: true
+        },
+        legend: {
+          // y: "bottom"
+          x: "60",
+          top: "50",
+          orient: "vertical",
+          itemGrap: 200
+          // selected:{
+          //   '1-5年':false
+          // }
+          // padding:''
+        },
+        series: [
+          {
+            name: "投产时间",
+            type: "pie",
+            radius: "70%",
+            center: ["50%", "50%"],
+            data: []
+          }
+        ]
+      },
+      chart2Option: {
+        // title:{
+        //   text:'不同品牌故障率分析',
+        //   x:'center'
+        // },
+        tooltip: {
+          formatter: "使用频率: {b} <br/>数量: {c}  ({d})%"
+        },
+        grid: {
+          left: "5%",
+          right: "4%",
+          bottom: "3%",
+          top: "0%",
+          containLabel: true
+        },
+        legend: {
+          // y: "bottom"
+          x: "60",
+          top: "50",
+          orient: "vertical",
+          itemGrap: 100
+          // selected:{
+          //   '1-5年':false
+          // }
+          // padding:''
+        },
+        series: [
+          {
+            name: "使用频率",
+            type: "pie",
+            radius: "70%",
+            center: ["50%", "50%"],
+            data: []
+          }
+        ]
+      },
+      chart3Option: {
+        // title:{
+        //   text:'不同品牌故障率分析',
+        //   x:'center'
+        // },
+        tooltip: {
+          formatter: "场所: {b} <br/>数量: {c}  ({d})%"
+        },
+        grid: {
+          left: "5%",
+          right: "4%",
+          bottom: "3%",
+          top: "0%",
+          containLabel: true
+        },
+        legend: {
+          // y: "bottom"
+          x: "60",
+          top: "50",
+          orient: "vertical",
+          itemGrap: 100
+          // selected:{
+          //   '1-5年':false
+          // }
+          // padding:''
+        },
+        series: [
+          {
+            name: "场所",
+            type: "pie",
+            radius: "70%",
+            center: ["50%", "50%"],
+            data: []
+          }
+        ]
+      }
+    };
+  },
+  computed: {
+    explain() {
+      let time = this.commissioningTime;
+      let brand = this.brand;
+      let operationNum = this.operationNum;
+      let place = this.place;
+      if (this.currentIndex == 0) {
+        return `说明：品牌为${brand}，使用频率${operationNum}，场所为${place}区域的电梯`;
+      } else if (this.currentIndex == 1) {
+        return `说明：投产时间${time},使用频率${operationNum}，场所为${place}区域的电梯`;
+      } else if (this.currentIndex == 2) {
+        return `说明：投产时间${time},品牌为${brand}，场所为${place}区域的电梯`;
+      } else {
+        return `说明：投产时间${time},品牌为${brand}，使用频率${operationNum}`;
+      }
+    }
+  },
+  created() {
+    this.getBrandData();
+      this.getchartData();
+
+  },
+  mounted() {
+    this.commissioningTime = this.commissioningTimeOption[0].label;
+    this.operationNum = this.operationNumOption[0].label;
+    this.place = this.placeOption[0].label;
+    this.width = document.documentElement.clientWidth - 250 + "px";
+    this.height = document.documentElement.clientHeight - 300 + "px";
+    this.chartHeight = document.documentElement.clientHeight - 330 + "px";
+    console.log("documentheight", document.documentElement.clientHeight);
+   window.addEventListener('resize',()=>{
+    this.width = document.documentElement.clientWidth - 250 + "px";
+    this.height = document.documentElement.clientHeight - 300 + "px";
+    this.chartHeight = document.documentElement.clientHeight - 330 + "px";
+   })
+  },
+  methods: {
+    getBrandData() {
+      this.$http({
+        url: this.$http.adornUrl(
+          "/elevatorinformation/elevatorinformation/elevatorBrand"
+        ),
+        method: "get",
+        params: this.$http.adornParams(this.formData)
+      })
+        .then(({ data }) => {
+          console.log("品牌数据", data);
+          let arr = [];
+          data.list.map((item, index) => {
+            arr.push({
+              value: index,
+              label: item
+            });
+          });
+          this.brandOption = arr;
+          console.log(arr);
+        })
+        .catch(e => {
+          console.log(e);
+        });
+    },
+    commissioningTimeChange(index) {
+      console.log("commissioningTimeChange", index);
+      if (index === "") {
+        this.commissioningTime = this.commissioningTimeOption[0].label;
+      } else {
+        this.commissioningTimeOption.forEach(item => {
+          if (item.value == index) {
+            this.commissioningTime = item.label;
+          }
+        });
+      }
+    },
+    handleBrandChange(index) {
+      console.log("index", index);
+      if (index === "") {
+        this.formData.elevatorBrand = "三菱";
+      } else {
+        this.brandOption.forEach(item => {
+          if (item.value == index) {
+            this.formData.elevatorBrand = item.label;
+          }
+        });
+      }
+    },
+    brandChange(e) {
+      console.log("brandchange", e);
+      if (e === "") {
+        this.brand = "三菱";
+      } else {
+        this.brand = e;
+      }
+    },
+    operationNumChange(index) {
+      console.log("operationNumChange", index);
+      if (index === "") {
+        this.operationNum = this.operationNumOption[0].label;
+      } else {
+        //  this.operationNum = this.operationNumOption[index].label;
+        this.operationNumOption.forEach(item => {
+          if (item.value == index) {
+            this.operationNum = item.label;
+          }
+        });
+      }
+    },
+    placeChange(e) {
+      console.log("placechange", e);
+      if (e === "") {
+        this.place = this.placeOption[0].label;
+      } else {
+        this.placeOption.forEach(item => {
+          if (item.value == e) {
+            this.place = item.label;
+          }
+        });
+      }
+    },
+    getchartData() {
+      this.loading = true;
+      // 投产时间
+      this.$http({
+        url: this.$http.adornUrl("/statistics/statistics/failureRateAnalysis"),
+        method: "get",
+        params: this.$http.adornParams(this.formData)
+      })
+        .then(({ data }) => {
+          this.loading = false;
+          if (data && data.code == 0) {
+            console.log(data);
+
+            let list = data.list;
+            this.chart0Option.series[0].data = [];
+            this.chart1Option.series[0].data = [];
+            this.chart2Option.series[0].data = [];
+            this.chart3Option.series[0].data = [];
+            if (list.productionTimeAnalysis.length) {
+              this.items[0].hasData = true;
+              list.productionTimeAnalysis.forEach(item => {
+                // 投产时间
+                this.chart0Option.series[0].data.push({
+                  name: item.commissioningTime,
+                  value: item.counts
+                });
+              });
+            } else {
+              this.items[0].hasData = false;
+            }
+            if (list.brandAnalysis && list.brandAnalysis.length) {
+              this.items[1].hasData = true;
+              list.brandAnalysis.forEach(item => {
+                // 品牌
+                this.chart1Option.series[0].data.push({
+                  name: item.elevatorBrand,
+                  value: item.counts
+                });
+              });
+            } else {
+              this.items[1].hasData = false;
+            }
+
+            if (list.usageFrequency && list.usageFrequency.length) {
+              this.items[2].hasData = true;
+              list.usageFrequency.forEach(item => {
+                // 使用频率
+                this.chart2Option.series[0].data.push({
+                  name: item.operationNum,
+                  value: item.counts
+                });
+              });
+            } else {
+              console.log("511else");
+              this.items[2].hasData = false;
+            }
+            if (list.placeAnalysis && list.placeAnalysis.length) {
+              this.items[3].hasData = true;
+
+              list.placeAnalysis.forEach(item => {
+                // 地域
+                this.chart3Option.series[0].data.push({
+                  name: item.place,
+                  value: item.counts
+                });
+              });
+            } else {
+              this.items[3].hasData = false;
+            }
+            let currentOption = this[`chart${this.currentIndex}Option`];
+            if (currentOption.series[0].data.length) {
+              this.$nextTick(() => {
+                this.chart = echart.init(
+                  document.getElementById(`chartBox${this.currentIndex}`)
+                  // "light"
+                );
+                this.chart.setOption(currentOption);
+              });
+            }
+            this.commissioningTimeChange(this.formData.commissioningTime);
+            this.brandChange(this.formData.elevatorBrand);
+            this.operationNumChange(this.formData.operationNum);
+            this.placeChange(this.formData.place);
+              window.addEventListener('resize',()=>{
+                this.chart.resize();
+              })
+          }
+        })
+        .catch(e => {
+          this.loading = false;
+          console.log(e);
+        });
+    },
+    handleChange(e) {
+      // 切换
+      console.log("handlechange", e);
+      let key = e.name;
+      this.currentKey = key;
+      this.currentIndex = e.index;
+      if (e.index == 1) {
+        this.brandIndex = "";
+      }
+      this.formData[key] = "";
+      this.getchartData();
+    },
+    handleareaChange(e) {
+      console.log(e);
+    }
+  }
+};
+</script>
+<style scoped>
+.border {
+  border: 1px solid #ebeef5;
+}
+.table_box {
+  min-height: 300px;
+  width: 100%;
+  border: 1px solid #eee;
+}
+.table_left {
+  width: 200px;
+  display: flex;
+  flex: 0 0 200px;
+  flex-direction: column;
+}
+.table_item {
+  justify-content: center;
+  border-right: 1px solid #eee;
+  display: flex;
+  align-items: center;
+  font-size: 14px;
+  flex: 1;
+}
+.table_item.active {
+  color: blue;
+}
+.table_item_top {
+  height: 250px;
+}
+.table_item_bottom {
+  height: 249px;
+  border-top: 1px solid #eee;
+}
+.border_top {
+  border-top: 1px solid #eee;
+}
+.table_right {
+  /* display: flex; */
+}
+</style>

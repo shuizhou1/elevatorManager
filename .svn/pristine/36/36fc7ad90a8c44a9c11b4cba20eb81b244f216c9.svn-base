@@ -1,0 +1,229 @@
+<template>
+    <el-dialog
+            :close-on-click-modal="false" :fullscreen="true" :modal="false"
+            :visible.sync="visible">
+        <span slot="footer" class="dialog-footer">
+      <el-button @click="visible = false">取消</el-button>
+      <el-button type="primary" @click="dataFormSubmit()">确定</el-button>
+    </span>
+    </el-dialog>
+</template>
+
+<script>
+    import { isEmail, isMobile, isPhone, isIDCard } from '@/utils/validate'
+
+    export default {
+        data() {
+            var validatePassword = (rule, value, callback) => {
+                if (!this.dataForm.id && !/\S/.test(value)) {
+                    callback(new Error('密码不能为空'))
+                } else {
+                    callback()
+                }
+            }
+            var validateComfirmPassword = (rule, value, callback) => {
+                if (!this.dataForm.id && !/\S/.test(value)) {
+                    callback(new Error('确认密码不能为空'))
+                } else if (this.dataForm.password !== value) {
+                    callback(new Error('确认密码与密码输入不一致'))
+                } else {
+                    callback()
+                }
+            }
+            var validateEmail = (rule, value, callback) => {
+                if (!isEmail(value)) {
+                    callback(new Error('邮箱格式错误'))
+                } else {
+                    callback()
+                }
+            }
+            var validateMobile = (rule, value, callback) => {
+                if (!isMobile(value)) {
+                    callback(new Error('手机号格式错误'))
+                } else {
+                    callback()
+                }
+            }
+            var validatePhone = (rule, value, callback) => {
+                if (!isPhone(value)) {
+                    callback(new Error('固话格式错误'))
+                } else {
+                    callback()
+                }
+            }
+            var validateIDCard = (rule, value, callback) => {
+                if (!isIDCard(value)) {
+                    callback(new Error('身份证格式错误'))
+                } else {
+                    callback()
+                }
+            }
+            return {
+                visible: false,
+                dataForm: {
+                    id: '',
+                    authId: '',
+                    createTime: '',
+                    updateTime: '',
+                    affairTime: '',
+                    affairStatus: '',
+                    affairCode: '',
+                    affairType: '',
+                    regCode: '',
+                    district: '',
+                    street: '',
+                    community: '',
+                    location: '',
+                    complainantName: '',
+                    complainantPhone: '',
+                    affairInfo: '',
+                    createUserId: '',
+                    transferTime: '',
+                    transferUser: '',
+                    transferInfo: '',
+                    processUser: '',
+                    transferSignTime: '',
+                    updatePerson: '',
+                    comeFrom: '',
+                    version: '',
+                    orgId: '',
+                    remarks: '',
+                    isdel: ''
+                },
+                dataRule: {
+                    authId: [],
+                    createTime: [],
+                    updateTime: [],
+                    affairTime: [],
+                    affairStatus: [],
+                    affairCode: [],
+                    affairType: [],
+                    regCode: [],
+                    district: [],
+                    street: [],
+                    community: [],
+                    location: [],
+                    complainantName: [],
+                    complainantPhone: [],
+                    affairInfo: [],
+                    createUserId: [],
+                    transferTime: [],
+                    transferUser: [],
+                    transferInfo: [],
+                    processUser: [],
+                    transferSignTime: [],
+                    updatePerson: [],
+                    comeFrom: [],
+                    version: [],
+                    orgId: [],
+                    remarks: [],
+                    isdel: []
+                }
+            }
+        },
+        methods: {
+            init(id) {
+                this.dataForm.id = id
+                this.visible = true
+                this.$nextTick(() => {
+                    this.$refs['dataForm'].resetFields()
+                    if (this.dataForm.id) {
+                        this.$http({
+                            url: this.$http.adornUrl(`/affairInfo/affairinfo/info/${this.dataForm.id}`),
+                            method: 'get',
+                            params: this.$http.adornParams()
+                        }).then(({ data }) => {
+                            if (data && data.code === 0) {
+                                this.dataForm.id = data.affairInfo.id
+                                this.dataForm.authId = data.affairInfo.authId
+                                this.dataForm.createTime = data.affairInfo.createTime
+                                this.dataForm.updateTime = data.affairInfo.updateTime
+                                this.dataForm.affairTime = data.affairInfo.affairTime
+                                this.dataForm.affairStatus = data.affairInfo.affairStatus
+                                this.dataForm.affairCode = data.affairInfo.affairCode
+                                this.dataForm.affairType = data.affairInfo.affairType
+                                this.dataForm.regCode = data.affairInfo.regCode
+                                this.dataForm.district = data.affairInfo.district
+                                this.dataForm.street = data.affairInfo.street
+                                this.dataForm.community = data.affairInfo.community
+                                this.dataForm.location = data.affairInfo.location
+                                this.dataForm.complainantName = data.affairInfo.complainantName
+                                this.dataForm.complainantPhone = data.affairInfo.complainantPhone
+                                this.dataForm.affairInfo = data.affairInfo.affairInfo
+                                this.dataForm.createUserId = data.affairInfo.createUserId
+                                this.dataForm.transferTime = data.affairInfo.transferTime
+                                this.dataForm.transferUser = data.affairInfo.transferUser
+                                this.dataForm.transferInfo = data.affairInfo.transferInfo
+                                this.dataForm.processUser = data.affairInfo.processUser
+                                this.dataForm.transferSignTime = data.affairInfo.transferSignTime
+                                this.dataForm.updatePerson = data.affairInfo.updatePerson
+                                this.dataForm.comeFrom = data.affairInfo.comeFrom
+                                this.dataForm.version = data.affairInfo.version
+                                this.dataForm.orgId = data.affairInfo.orgId
+                                this.dataForm.remarks = data.affairInfo.remarks
+                                this.dataForm.isdel = data.affairInfo.isdel
+                            }
+                        })
+                    }
+                })
+            },
+
+            // 表单提交
+            dataFormSubmit() {
+                this.$refs['dataForm'].validate((valid) => {
+                    if (valid) {
+                        this.$http({
+                            url: this.$http.adornUrl(`/affairInfo/affairinfo/${!this.dataForm.id ? 'save' : 'update'}`),
+                            method: 'post',
+                            data: this.$http.adornData({
+                                'id': this.dataForm.id,
+                                'id': this.dataForm.id || undefined,
+                                'authId': this.dataForm.authId,
+                                'createTime': this.dataForm.createTime,
+                                'updateTime': this.dataForm.updateTime,
+                                'affairTime': this.dataForm.affairTime,
+                                'affairStatus': this.dataForm.affairStatus,
+                                'affairCode': this.dataForm.affairCode,
+                                'affairType': this.dataForm.affairType,
+                                'regCode': this.dataForm.regCode,
+                                'district': this.dataForm.district,
+                                'street': this.dataForm.street,
+                                'community': this.dataForm.community,
+                                'location': this.dataForm.location,
+                                'complainantName': this.dataForm.complainantName,
+                                'complainantPhone': this.dataForm.complainantPhone,
+                                'affairInfo': this.dataForm.affairInfo,
+                                'createUserId': this.dataForm.createUserId,
+                                'transferTime': this.dataForm.transferTime,
+                                'transferUser': this.dataForm.transferUser,
+                                'transferInfo': this.dataForm.transferInfo,
+                                'processUser': this.dataForm.processUser,
+                                'transferSignTime': this.dataForm.transferSignTime,
+                                'updatePerson': this.dataForm.updatePerson,
+                                'comeFrom': this.dataForm.comeFrom,
+                                'version': this.dataForm.version,
+                                'orgId': this.dataForm.orgId,
+                                'remarks': this.dataForm.remarks,
+                                'isdel': this.dataForm.isdel
+                            })
+                        }).then(({ data }) => {
+                            if (data && data.code === 0) {
+                                this.$message({
+                                    message: '操作成功',
+                                    type: 'success',
+                                    duration: 1500,
+                                    onClose: () => {
+                                        this.visible = false
+                                        this.$emit('refreshDataList')
+                                    }
+                                })
+                            } else {
+                                this.$message.error(data.msg)
+                            }
+                        })
+                    }
+                })
+            }
+        },
+    }
+</script>

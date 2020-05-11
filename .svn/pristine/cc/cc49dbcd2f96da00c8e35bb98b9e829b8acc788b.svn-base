@@ -1,0 +1,189 @@
+<!--  -->
+<template>
+  <el-dialog
+    :close-on-click-modal="false"
+    :show-close="false"
+    :fullscreen="true"
+    :modal="false"
+    :visible.sync="visible"
+    :v-loading="loading">
+    <div slot="title" class="dialog_headslot">选择维保单位
+        <el-button @click="visible=false">返回</el-button>
+    </div>
+    <el-form
+      ref="form"
+      class="dialog_head_form"
+      :model="formData"
+      label-width="auto"
+      @keyup.enter.native="getDataList('init')"
+    >
+      <el-row :gutter="20">
+        <el-col :span="8">
+          <el-form-item label="维保单位名称" >
+            <el-input v-model="formData.unitName" clearable></el-input>
+          </el-form-item>
+        </el-col>
+        <el-col :span="8">
+          <el-form-item label="维保联系人">
+            <el-input v-model="formData.contactName" clearable></el-input>
+          </el-form-item>
+        </el-col>
+        <el-col :span="6" :offset="1">
+          <el-button @click="getDataList('init')" type="query">查询</el-button>
+        </el-col>
+      </el-row>
+    </el-form>
+    <!-- <div class="header">维保单位列表</div> -->
+    <el-table
+      ref="singleTable"
+      v-loading="loading"
+      border
+      :data="tableData"
+      tooltip-effect="dark"
+       highlight-current-row
+      style="width: 100%"
+      @current-change="handleSelectionChange"
+    >
+       <el-table-column    width="35" align="center">
+         <template slot-scope="scope">
+            <!-- <el-checkbox v-model="scope.row.checked"></el-checkbox> -->
+              <el-radio :label="scope.row.id" v-model="radioValue"
+                     >&nbsp;
+              </el-radio>
+        </template>
+      </el-table-column>
+      <el-table-column prop="unitName" show-overflow-tooltip label="维保单位" align="center" ></el-table-column>
+      <el-table-column prop="contactName" show-overflow-tooltip label="维保联系人" align="center"></el-table-column>
+      <el-table-column prop="contactPhone" label="联系人电话" align="center"></el-table-column>
+      <el-table-column prop="createTime" :formatter="formatDate" width="200" label="添加日期" align="center"></el-table-column>
+    </el-table>
+    <div class="pagination_wraper">
+      <el-pagination
+        layout="total, sizes, prev, pager, next, jumper"
+        :total="totalCount"
+        @size-change="sizeChangeHandle"
+        @current-change="currentChangeHandle"
+        :page-sizes="[5,10,20,50]"
+        :page-size="pageSize"
+      ></el-pagination>
+    </div>
+     <div class="footer">
+        <el-button type="primary" @click="selectConfirm" style="margin-right:20px">确认</el-button>
+    </div>
+  </el-dialog>
+</template>
+
+<script>
+export default {
+  data() {
+    return {
+      radioValue:'',//单选值
+      visible:false,
+      formData: {
+        contactName:'',//联系人
+        unitName:'',//维保单位
+        address:''//维保单位地址
+      },
+      tableData: [
+      ],
+      selectResult:'',//选择结果
+      loading:false,
+      pageSize: 10,
+      pageIndex: 1,
+      totalCount:0,
+      oldId:''
+    };
+  },
+  methods: {
+    init(id){
+      this.visible = true;
+      this.getDataList();
+       this.radioValue = '';
+    },
+    getDataList(type) {
+      console.log("获取数据");
+      this.loading = true;
+      if(type=='init'){
+        this.pageIndex=1;
+      }
+      this.$http({
+        url: this.$http.adornUrl("/maintenanceunit/maintenanceunit/list"),
+        method: "get",
+        params:this.$http.adornParams({
+          limit: this.pageSize,
+          page: this.pageIndex,
+          contactName:this.formData.contactName,
+          unitName:this.formData.unitName,
+          address:this.formData.address
+        })
+      })
+        .then(({data}) => {
+          if(data&&data.code==0){
+            this.loading = false;
+            this.totalCount = data.page.totalCount;
+            this.tableData = data.page.list;
+            // data.page.list.forEach(item=>{
+            //   if(this.oldId==item.id){
+            //     console.log('1');
+            //     this.$refs.singleTable.setCurrentRow(item);
+            //   }
+            // })
+          }
+        })
+    },
+    handleSelectionChange(val) {
+      console.log("选项改变", val);
+      this.selectResult= val;
+    },
+    formatDate(row, column, cellValue) {
+      if (cellValue && cellValue.length) return cellValue.substr(0, 10);
+    },
+    
+    //每页数改变
+    sizeChangeHandle(e){
+      this.pageSize = e;
+      this.pageIndex = 1;
+      this.getDataList()
+    },
+    // 当前页
+    currentChangeHandle(e) {
+      this.page = e;
+      this.getDataList()
+    },
+    selectConfirm(){
+      if(this.radioValue){
+        console.log(this.selectResult);
+        this.$emit('confirm',this.selectResult);
+        this.visible = false;
+      }else {
+        this.$message({
+          type:'warning',
+          message:'你的选择为空！',
+          duration:800
+        })
+      }
+    }
+  }
+};
+</script>
+<style lang='scss' scoped>
+.title {
+  font-size: 22px;
+  padding-bottom: 10px;
+  // border-bottom: 1px solid #dedede;
+}
+.subTitle {
+  font-size: 18px;
+  padding: 10px 10px;
+  border-bottom: 1px solid #dedede;
+}
+.pagination_wraper {
+  margin: 20px 0;
+  text-align: center;
+}
+.footer{
+  text-align: center !important;
+  margin-top: 20px; 
+  padding-bottom: 10px;
+}
+</style>

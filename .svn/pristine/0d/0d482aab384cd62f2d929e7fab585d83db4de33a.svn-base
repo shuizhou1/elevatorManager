@@ -1,0 +1,207 @@
+<!--  -->
+<template>
+  <div>
+     <el-dialog title="选择专家"
+            :visible.sync="visible"
+            width="90%"
+            top='0'
+            >
+        <el-form :inline="true" ref="form" :model="dataForm" @keyup.enter.native="getDataList()">       
+        <el-form-item label="姓名" prop="name">
+          <el-input v-model="dataForm.name" placeholder="姓名"></el-input>
+          
+        </el-form-item>
+         <el-form-item label="电话" prop="phone">
+          <el-input v-model="dataForm.phone" placeholder="电话"></el-input>
+          
+        </el-form-item>
+         <el-form-item label="单位地址" prop="unitName">
+          <el-input v-model="dataForm.unitName" placeholder="单位地址"></el-input>
+          
+        </el-form-item>
+
+      <el-form-item>
+        <el-button @click="getDataList()" style="height:40px" >查询</el-button>
+      </el-form-item>
+    </el-form>
+    <el-table 
+      :data="dataList"
+       ref="multipleTable"
+      border
+      v-loading="dataListLoading"
+      @selection-change="selectionChangeHandle"
+      style="width: 100%;">
+      <el-table-column
+        type="selection"
+        header-align="center"
+        align="center"
+        width="50">
+      </el-table-column>
+      <el-table-column
+        prop="name"
+        header-align="center"
+        align="center"
+        label="姓名">
+      </el-table-column>
+      <el-table-column
+        prop="phone"
+        header-align="center"
+        align="center"
+        label="联系电话">
+      </el-table-column>
+      <el-table-column
+        prop="unitName"
+        header-align="center"
+        align="center"
+        label="单位名称">
+      </el-table-column>
+       <el-table-column
+        prop="unitLocal"
+        header-align="center"
+        align="center"
+        label="单位地址">
+      </el-table-column>
+    </el-table>
+        <el-pagination
+                @size-change="sizeChangeHandle"
+                @current-change="currentChangeHandle"
+                :current-page="pageIndex"
+                :page-sizes="[10, 20, 50, 100]"
+                :page-size="pageSize"
+                :total="totalCount"
+                layout="total, sizes, prev, pager, next, jumper">
+        </el-pagination>
+        <span slot="footer" class="dialog-footer">
+            <el-button @click="expertSelectCancel">返回</el-button>
+            <el-button type="primary" @click="expertSelectConfirm()">确 定</el-button>
+        </span>
+        </el-dialog>
+  </div>
+</template>
+
+<script>
+export default {
+  data() {
+    return {
+      visible: false,
+      dataListLoading:false,
+      totalCount:0,//总数
+      pageIndex:1,
+      pageSize:10,
+      dataList:[],
+      dataForm:{
+        name:'',
+        phone:'',
+        unitName:''
+      },
+      result:[],//选择结果
+      experts:[]
+
+    };
+  },
+  components: {},
+  created() {},
+  methods: {
+    init(experts){
+      this.visible = true;
+      console.log('experts',experts);
+      if(experts){
+        if(experts.indexOf(',')>-1){
+          this.experts = experts.split(',');
+        }else{
+          let arr = [];
+          this.experts.push(experts);
+        }
+        console.log('109',experts);
+      }
+      this.getDataList();
+    },
+    scrollbackSelect(arr){
+      // 回显选择
+      console.log('回显选择',this.experts)
+      // let temp = [];
+      // this.experts.forEach(id=>{
+        // console.log('id',id)
+        arr.forEach(item=>{
+          // tepm.push(item.id==id);
+          console.log('127item',item.id);
+          if(this.experts.indexOf(item.id)>-1){
+            console.log('128');
+           this.$refs.multipleTable.toggleRowSelection(item,true);
+
+          }
+          // if(item.id==id){
+            
+          // }
+        })
+      // })
+      // console.log('yemp',temp)
+
+
+    },
+    getDataList() {
+      this.dataListLoading = true;
+      this.$http({
+        url: this.$http.adornUrl("/expertcontact/expertcontact/list"),
+        method: "get",
+        params: this.$http.adornParams({
+          'name':this.dataForm.name,
+          'phone':this.dataForm.phone,
+          'unitName':this.dataForm.unitName
+        })
+      }).then(({ data }) => {
+        if (data && data.code === 0) {
+          console.log("专家列表", data);
+          this.dataList = data.page.list
+          this.totalCount = data.page.totalCount
+          this.$nextTick(function(){
+          if(this.experts){
+              this.scrollbackSelect(data.page.list)
+          }
+          })
+         
+        } else {
+          this.$message.error(data.msg);
+          this.dataList = []
+          this.totalPage = 0
+        }
+        this.dataListLoading = false
+      });
+    },
+    // 每页数
+    sizeChangeHandle (val) {
+        this.pageSize = val
+        this.pageIndex = 1
+        this.getDataList()
+    },
+    // 当前页
+    currentChangeHandle (val) {
+        this.pageIndex = val
+        this.getDataList()
+    },
+    selectionChangeHandle(e){
+      console.log('选择改变',e);
+    let name=[],id=[];
+     e.forEach(item=>{
+      name.push(item.name);
+      id.push(item.id);
+     })
+     console.log(name);
+      this.result = {
+        name:name.join(','),
+        id:id.join(',')
+      }
+    },
+    expertSelectCancel(){
+      this.visible = false;
+    },
+    expertSelectConfirm(){
+      console.log()
+      this.$emit('confirm',this.result);
+      this.visible = false;
+    }
+  }
+};
+</script>
+<style  scoped>
+</style>

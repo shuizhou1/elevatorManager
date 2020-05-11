@@ -1,0 +1,183 @@
+<!--  -->
+<template>
+  <div>
+    <div class="header">维修事项</div>
+     <el-table :data="dataList" highlight-current-row @row-click="handleRowClick">
+      <el-table-column prop="urgent" :formatter="formatType" label="维修类型" width="120"></el-table-column>
+      <el-table-column prop="regcode"  label="注册代码" width="200"></el-table-column>
+      <el-table-column prop="unitname" width="250" label="维保单位"></el-table-column>
+      <el-table-column prop="remarks" label="故障原因" width="180"></el-table-column>
+      <el-table-column prop="repairstutas" :formatter="formatStatus" label="状态" ></el-table-column></el-table-column>
+      <el-table-column prop="applicantphone" width="150" label="联系电话"></el-table-column>
+      <el-table-column prop="component"   label="损坏情况"></el-table-column>
+      <!-- <el-table-column prop="propertyCheckTime"   label="操作"></el-table-column> -->
+    </el-table>
+    <div class="header">
+      维保申请表
+    </div>
+    <div class="form-view-wraper">
+      <el-row>
+        <el-col :span='8'>
+          <div class="form-view-item">
+            申请人：<span>{{formData.applicant}}</span>
+          </div>
+        </el-col>
+        <el-col :span='8'>
+          <div class="form-view-item">
+            申请时间：<span>{{formData.createTime}}</span>
+          </div>
+        </el-col>
+        <el-col :span='8'>
+          <div class="form-view-item">
+            电梯地址：<span>{{formData.local}}</span>
+          </div>
+        </el-col>
+      </el-row>
+       <el-row>
+        <el-col :span='8'>
+          <div class="form-view-item">
+            故障原因：<span>{{formData.remarks}}</span>
+          </div>
+        </el-col>
+        <el-col :span='16'>
+          <div class="form-view-item">
+            备注：<span>{{formData.auditReason}}</span>
+          </div>
+        </el-col>
+      </el-row>
+      <el-row>
+        <el-col :span='8'>
+          <div class="form-view-item">
+            物业单位：<span>{{formData.propertyName}}</span>
+          </div>
+        </el-col>
+        <el-col :span='8'>
+          <div class="form-view-item">
+            物业单位确认时间：<span>{{formData.propertyCheckTime}}</span>
+          </div>
+        </el-col>
+      </el-row>
+       <el-row>
+        <el-col :span='8'>
+          <div class="form-view-item">
+            仓库单位：<span>{{formData.depotName}}</span>
+          </div>
+        </el-col>
+        <el-col :span='8'>
+          <div class="form-view-item">
+            仓库单位确认时间：<span>{{formData.depotCheckTime}}</span>
+          </div>
+        </el-col>
+      </el-row>
+       <el-row>
+        <el-col :span='8'>
+          <div class="form-view-item">
+            业主单位：<span>{{formData.ownerName}}</span>
+          </div>
+        </el-col>
+        <el-col :span='8'>
+          <div class="form-view-item">
+            业主单位确认时间：<span>{{formData.ownerCheckTime}}</span>
+          </div>
+        </el-col>
+      </el-row>
+    </div>
+  </div>
+</template>
+
+<script>
+export default {
+  data () {
+    return {
+      id:'',
+      dataList:[],
+      formData:{}
+    };
+  },
+  components: {},
+  activated(){
+    this.dataInit();
+  },
+  methods: {
+    dataInit(){
+      this.getDataList().then(({data})=>{
+        console.log(102,data.code);
+        if(data&&data.code==0){
+          console.log('if')
+          this.dataList = data.page;
+          if(data.page&&data.page.length){
+            if(data.page.length>1){
+              this.id = data.page[1].repairid;
+              this.getCurrentForm()
+            }else {
+              this.id = data.page[0].repairid
+              this.getCurrentForm()
+            }
+          }
+        }
+      })
+    },
+    handleRowClick(row){
+      console.log(row);
+      this.loading = true;
+      this.id = row.repairid;
+      this.getCurrentForm()
+    },
+    getDataList(){
+     return this.$http({
+        url: this.$http.adornUrl("/repairplan/repairplan/threelist1")
+      })
+    },
+    // 获取当前维修申请
+    getCurrentForm(){
+      if(!this.id){
+        return false;
+      }
+      this.$http({
+        url: this.$http.adornUrl("/repairplan/repairplan/info/"+this.id)
+      }).then(({data})=>{
+        if(data&&data.code==0){
+          console.log('当前表单',data)
+          this.formData = data.repairPlan;
+        }
+      })
+    },
+    formatType(row,col,val){
+      if(val==2){
+        return '普通维修'
+      }else {
+        return '应急维修'
+      }
+    },
+    formatStatus(row,col,val){
+      console.log(row);
+      let str;
+      switch(val){
+        case '0':
+          str = '待确认';
+          break;
+        case '1':
+          str = '不通过';
+          break;
+        case '2':
+          str = '待维修';
+          break;
+        case '3':
+          str = '待审核';
+          break;
+        case '4':
+          str = '完成';
+          break;
+        case '5':
+          str = '不通过';
+          break;
+      }
+      return str;
+    }
+    
+  }
+}
+
+</script>
+<style lang='scss' scoped>
+</style>

@@ -1,0 +1,191 @@
+<!--  -->
+<template>
+  <div class="login">
+    <div class="image_banner">
+      <div class="login_title">用户登录</div>
+      <el-form
+        ref="form"
+        :model="formData"
+        class="form"
+        style="margin-left:10px"
+        label-width="auto"
+        :rules="rules"
+        @keyup.enter="handleLogin"
+      >
+        <el-row :gutter="0">
+          <el-col :span="24">
+            <el-form-item prop="username">
+              <span slot="label" class="login_babel">用户名</span>
+              <el-input v-model="formData.username"></el-input>
+            </el-form-item>
+          </el-col>
+        </el-row>
+        <el-row :gutter="20">
+          <el-col :span="24">
+            <el-form-item label="密码" prop="password">
+              <el-input v-model="formData.password"></el-input>
+            </el-form-item>
+          </el-col>
+        </el-row>
+        <el-row :gutter="20">
+          <el-col :span="18">
+            <el-form-item label="验证码" prop="captcha">
+              <el-input v-model="formData.captcha"></el-input>
+            </el-form-item>
+          </el-col>
+          <el-col :span="6">
+            <img style="width: 100px; height: 40px" :src="checkcodeSrc" @click="getCode"/>
+          </el-col>
+        </el-row>
+        <div class="login_btnwraper">
+          <el-button @click="handleLogin" type="primary" style="margin-right:40px;font-size:18px">登录</el-button>
+          <el-button type="info" @click="handleReset" style="font-size:18px">重置</el-button>
+        </div>
+      </el-form>
+    </div>
+  </div>
+</template>
+
+<script>
+const { uuid } = require("../utils/utils.js");
+const { md5 } = require("../utils/md5.js");
+export default {
+  data() {
+    const  passwordLength = (rule,value,callback)=>{
+     if(!/\d{6,}/.test(value)){
+       callback(new Error('密码长度为大于等于6'));
+     }else {
+       callback();
+     };
+    };
+     const  captchaLength = (rule,value,callback)=>{
+       console.log(value)
+     if(!/[0-9a-z]{5}/.test(value)){
+       callback(new Error('验证码长度为5的字母或数字'));
+     }else {
+       callback();
+     };
+    };
+
+    return {
+      formData: {
+        captcha: "", //验证码
+        password: "",
+        username: "",
+        uuid: ""
+      },
+      checkcodeSrc: "", //验证码路径
+      uuid:'',//uuid
+      rules: {
+        username: [
+          {
+            required: true,
+            message:'用户名不能为空'
+          }
+        ],
+        password: [
+          {
+            required: true,
+            message:'密码不能为空'
+          },
+          { validator: passwordLength,trigger:'blur'}
+        ],
+        captcha: [
+          {
+            required: true,
+            message: "验证码不能为空"
+          },
+          { validator: captchaLength,trigger:'blur'}
+        ]
+      }
+    };
+  },
+  components: {},
+  created() {
+   this.getCode();
+  },
+  mounted(){
+     
+  },
+  methods: {
+    getCode() {
+      this.uuid = uuid();
+      this.checkcodeSrc = this.$ajax.formaturl(`captcha.jpg?uuid=${this.uuid}`)
+    },
+    handleLogin() {
+      console.log('handlelogin');
+      this.$refs["form"].validate(valid => {
+        console.log("登录", this.formData);
+        if (valid) {
+          this.formSubmit();
+        } else {
+          console.log("校验失败");
+        }
+      });
+    },
+    handleReset() {
+      this.$refs["form"].resetFields();
+    },
+    formSubmit() {
+      console.log("提交表单", this.formData);
+      this.$ajax({
+        url: this.$ajax.formaturl("sys/login"),
+        method: "post",
+        headers:{
+          'Content-Type': 'application/json'
+        },
+        data: {
+          captcha: this.formData.captcha,
+          username: this.formData.username,
+          password: md5(this.formData.password),
+          uuid: this.uuid
+        }
+      })
+        .then(res => {
+          this.getCode();
+          console.log('formsubmitssucsss',res);
+          if (res.data.code == 0) {
+            this.$router.replace({
+              name:'home'
+            })
+          } 
+        })
+        .catch(e => {
+          this.getCode();
+          console.log(e);
+        });
+    }
+  }
+};
+</script>
+<style lang='less' scoped>
+.login {
+  background: #267fff;
+  position: fixed;
+  left: 0;
+  right: 0;
+  top: 0;
+  bottom: 0;
+}
+.image_banner {
+  text-align: center;
+  font-size: 20px;
+  color: #ddd;
+  width: 670px;
+  height: 453px;
+  box-sizing: border-box;
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  background-image: url("../assets/image/u128.png");
+  padding: 30px 80px;
+}
+.login_title {
+  margin-top: 30px;
+}
+.login_label {
+  font-size: 16px;
+  color: #ddd !important;
+}
+</style>

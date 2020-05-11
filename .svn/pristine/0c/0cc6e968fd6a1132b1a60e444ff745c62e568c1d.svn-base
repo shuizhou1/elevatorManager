@@ -1,0 +1,249 @@
+<template>
+  <div class="mod-config">
+     <el-form  class="dialog_head_form"
+      label-width="auto" :model="dataForm" @keyup.enter.native="getDataList()">
+      <el-row :gutter="30">
+        <el-col :span="8">
+           <el-form-item label="手机号码" prop="phone">
+        <el-input v-model.trim="dataForm.phone" ></el-input>
+        </el-form-item>
+        </el-col>
+        <el-col :span="8">
+           <el-form-item class="none_margin_bottom">
+        <el-button @click="getDataList('init')" type="primary">查询</el-button>
+        <!--<el-button v-if="isAuth('smsVerificationLog:smsverificationlog:save')" type="primary" @click="addOrUpdateHandle()">新增</el-button>-->
+        <!--<el-button v-if="isAuth('smsVerificationLog:smsverificationlog:delete')" type="danger" @click="deleteHandle()" :disabled="dataListSelections.length <= 0">批量删除</el-button>-->
+      </el-form-item>
+        </el-col>
+      </el-row>
+    </el-form>
+    <el-table @row-dblclick="dbclickRow"
+      :data="dataList"
+      border
+              @header-dragend="handleDragend"
+      v-loading="dataListLoading"
+      @selection-change="selectionChangeHandle"
+      style="width: 100%;">
+      <el-table-column
+        type="selection"
+        header-align="center"
+        align="center"
+        width="50">
+      </el-table-column>
+      <el-table-column
+        prop="createTime"
+        header-align="center"
+        align="center"
+        label="创建时间">
+      </el-table-column>
+      <!--<el-table-column-->
+        <!--prop="updateTime"-->
+        <!--header-align="center"-->
+        <!--align="center"-->
+        <!--label="修改时间">-->
+      <!--</el-table-column>-->
+      <!--<el-table-column-->
+        <!--prop="createUserId"-->
+        <!--header-align="center"-->
+        <!--align="center"-->
+        <!--label="创建者ID">-->
+      <!--</el-table-column>-->
+      <el-table-column
+        prop="phone"
+        header-align="center"
+        align="center"
+        label="电话号码">
+      </el-table-column>
+      <el-table-column
+        prop="smsCode"
+        header-align="center"
+        align="center"
+        label="验证码">
+      </el-table-column>
+			<el-table-column
+			  prop="loginjude"
+				:formatter="changeValue"
+			  header-align="center"
+			  align="center"
+			  label="状态">
+			</el-table-column>
+      <!--<el-table-column-->
+        <!--prop="updatePerson"-->
+        <!--header-align="center"-->
+        <!--align="center"-->
+        <!--label="修改人">-->
+      <!--</el-table-column>-->
+      <!--<el-table-column-->
+        <!--prop="comeFrom"-->
+        <!--header-align="center"-->
+        <!--align="center"-->
+        <!--label="数据来源(1PC、2微信、3安卓、4iOS、5平板、6外部某系统)">-->
+      <!--</el-table-column>-->
+      <!--<el-table-column-->
+        <!--prop="version"-->
+        <!--header-align="center"-->
+        <!--align="center"-->
+        <!--label="版本">-->
+      <!--</el-table-column>-->
+      <!--<el-table-column-->
+        <!--prop="orgId"-->
+        <!--header-align="center"-->
+        <!--align="center"-->
+        <!--label="所属机构">-->
+      <!--</el-table-column>-->
+      <!--<el-table-column-->
+        <!--prop="remarks"-->
+        <!--header-align="center"-->
+        <!--align="center"-->
+        <!--label="备注">-->
+      <!--</el-table-column>-->
+      <!--<el-table-column-->
+        <!--fixed="right"-->
+        <!--header-align="center"-->
+        <!--align="center"-->
+        <!--width="150"-->
+        <!--label="操作">-->
+        <!--<template slot-scope="scope">-->
+          <!--<el-button type="text" size="small" @click="addOrUpdateHandle(scope.row.id)">修改</el-button>-->
+          <!--<el-button type="text" size="small" @click="deleteHandle(scope.row.id)">删除</el-button>-->
+        <!--</template>-->
+      <!--</el-table-column>-->
+    </el-table>
+    <el-pagination
+      @size-change="sizeChangeHandle"
+      @current-change="currentChangeHandle"
+      :current-page="pageIndex"
+      :page-sizes="[10, 20, 50, 100]"
+      :page-size="pageSize"
+      :total="totalPage"
+      layout="total, sizes, prev, pager, next, jumper">
+    </el-pagination>
+    <!-- 弹窗, 新增 / 修改 -->
+    <add-or-update v-if="addOrUpdateVisible" ref="addOrUpdate" @refreshDataList="getDataList"></add-or-update>
+  </div>
+</template>
+
+<script>
+  import AddOrUpdate from './smsverificationlog-add-or-update'
+  import config from '@/utils/config.js'
+  export default {
+    data () {
+      return {
+        dataForm: {
+                phone: ''        },
+        dataList: [],
+        pageIndex: 1,
+        pageSize: 10,
+        totalPage: 0,
+        dataListLoading: false,
+        dataListSelections: [],
+        addOrUpdateVisible: false,
+				loginjude: '',
+      }
+    },
+    components: {
+      AddOrUpdate
+    },
+    activated () {
+      this.getDataList()
+    },
+    methods: {
+        handleDragend (n, o, a, b) {
+            config.tableDragendHandle(n, o, a)
+        },
+      // 获取数据列表
+        getDataList (type) {
+            if (type === 'init') {
+                this.pageIndex = 1
+            }
+        this.dataListLoading = true
+        this.$http({
+          url: this.$http.adornUrl('/smsVerificationLog/smsverificationlog/list'),
+          method: 'get',
+          params: this.$http.adornParams({
+            'page': this.pageIndex,
+            'limit': this.pageSize
+			  	,'phone' : this.dataForm.phone
+          })
+        }).then(({data}) => {
+          if (data && data.code === 0) {
+						/* if(data.loginjude===0){
+							this.loginjude='成功';
+						}else if(loginjude===1){
+							this.loginjude='失败';
+						} */
+            this.dataList = data.page.list
+            this.totalPage = data.page.totalCount
+          } else {
+            this.dataList = []
+            this.totalPage = 0
+          }
+          this.dataListLoading = false
+        })
+      },
+      dbclickRow(row,index){
+         // alert("双击具体业务你自己实现,我把 row交给你了");
+      },
+      // 每页数
+      sizeChangeHandle (val) {
+        this.pageSize = val
+        this.pageIndex = 1
+        this.getDataList()
+      },
+      // 当前页
+      currentChangeHandle (val) {
+        this.pageIndex = val
+        this.getDataList()
+      },
+      // 多选
+      selectionChangeHandle (val) {
+        this.dataListSelections = val
+      },
+      // 新增 / 修改
+      addOrUpdateHandle (id) {
+        this.addOrUpdateVisible = true
+        this.$nextTick(() => {
+          this.$refs.addOrUpdate.init(id)
+        })
+      },
+			changeValue(row,cluom){
+				let loginjs= row[cluom.property]
+				if(loginjs===0){
+					return '成功'
+				}else if(loginjs===1){
+					return '失败'
+				}
+			},
+      // 删除
+      deleteHandle (id) {
+        var ids = id ? [id] : this.dataListSelections.map(item => {
+          return item.id
+        })
+        this.$confirm(`确定对[id=${ids.join(',')}]进行[${id ? '删除' : '批量删除'}]操作?`, '提示', {
+          confirmButtonText: '确定',
+          cancelButtonText: '取消',
+          type: 'warning'
+        }).then(() => {
+          this.$http({
+            url: this.$http.adornUrl('/smsVerificationLog/smsverificationlog/delete'),
+            method: 'post',
+            data: this.$http.adornData(ids, false)
+          }).then(({data}) => {
+            if (data && data.code === 0) {
+              this.$message({
+                message: '操作成功',
+                type: 'success',
+                duration: 1500,
+                onClose: () => {
+                  this.getDataList()
+                }
+              })
+            } else {
+              this.$message.error(data.msg)
+            }
+          })
+        })
+      }
+    }
+  }
+</script>

@@ -1,0 +1,68 @@
+// 颜色变量
+// -----------------------------
+$white:                         #fff;
+$block:                         #000;
+$blue:                          #6785f7;
+$success:                       #43b236;
+$warning:                       #f6ba6b;
+$vitality:                      #f88962;
+$danger:                        #f8585c;
+// eg: .class {
+//     color: map_get($light-colors, blue);
+// }
+$semantic-colors: (
+    blue:                        $blue,
+    success:                     $success,
+    warning:                     $warning,
+    vitality:                    $vitality,
+    danger:                      $danger,
+);
+// 高亮
+$light-colors: (
+    blue:                      #7893f9,
+    success:                   #43b236,
+    warning:                   #f7c88a,
+    vitality:                  #f9a487,
+    danger:                    #f9696c
+);
+// 暗色
+$dark-colors: (
+    blue:                      #5878f3,
+    success:                   #43b236,
+    warning:                   #f1b05a,
+    vitality:                  #fe7c4e,
+    danger:                    #f8484c
+);
+
+// 主色调
+$primary:                       #4080ff;
+
+// 常规文字颜色 - 基本通用，不做修改，有需要直接添加，语义化命名。
+$text-colors: (
+    dark:                       #333,
+    light:                      #666,
+    gray:                       #999,
+    white:                      $white,
+    blue:                       $blue,
+    success:                    $success,
+    warning:                    $warning,
+    vitality:                   $vitality,
+    danger:                     $danger
+);
+
+// 项目中常用的背景色
+// -----------------------------
+$bg-colors: (
+    base:                       #f1f1f4, // base content bg
+    gray:                       #f7f7f8, // header footer toolbar bg
+    scroll:                     #ececf1, // scroll bar
+);
+
+// 描边颜色
+// -----------------------------
+$border-colors: (
+    base:                       #e1e1e8, // 基础的描边色
+    gray:                       #d1d1d8,
+    white:                      $white,
+    primary:                    $primary
+);

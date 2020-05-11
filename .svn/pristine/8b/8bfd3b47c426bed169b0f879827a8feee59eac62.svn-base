@@ -1,0 +1,50 @@
+const barData= [{
+	  statusName:'警报',
+	  count:18
+  }, 
+  {
+      statusName: '故障',
+      count: 2
+  }, 
+  {
+      statusName: '困人',
+      count: 0
+  }]
+
+const lineData = {
+  months: ['2019-10-07', '2019-10-10','2019-10-16', '2019-10-20', '2019-10-21'
+  ],
+  series: [{
+      data: [5, 4, 4, 4,5],
+      name: '正常',
+      type: 'line'
+  }, {
+      data: [2, 3, 3, 3,2],
+      name: '故障',
+      type: 'line'
+  }]
+}
+const pieData = [
+  {
+      unitName: '日立电梯（中国）有限公司广州分公司',
+      count: 5
+  }, {
+      unitName: '广州市大力士电梯有限公司',
+      count: 4
+  }, {
+      unitName: '广州市永恒电梯有限公司',
+      count: 3
+  }
+]
+const radData = [{
+    statusName: '未开始',
+    count: 14
+}, {
+    statusName: '待处理',
+    count: 4
+}, {
+    statusName: '已完成',
+    count: 1
+}]
+
+export {pieData,lineData,barData,radData}

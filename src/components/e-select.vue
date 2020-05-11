@@ -1,0 +1,83 @@
+
+<template>
+  <div>
+    <el-select v-model.trim="svalue" :placeholder="stitle" filterable>
+      <el-option
+        v-for="item in options"
+        :key="item.value"
+        :label="item.label"
+        :value="item.value">
+      </el-option>
+    </el-select>    
+  </div>
+</template>
+ 
+<script>
+  export default {
+    name: 'selectentry',
+    data() {
+      return {
+        options:[],
+        svalue: '',
+        stitle:''
+      }
+    },
+    methods: {     
+      //转换下拉框下的字段
+      _dataTransform(data){
+        let _data = [];
+        for (let i = 0; i < data.length; i++) {
+          _data[i] = {};
+          _data[i].label = data[i][this.fileType.label];
+          _data[i].value = data[i][this.fileType.value];
+        }
+        return _data;
+      }
+    },
+    watch:{
+      //判断下拉框的值是否有改变
+      svalue(val, oldVal) {
+        if(val!=oldVal){
+          this.$emit('input', this.svalue);
+        }
+      },
+    },
+    props: {
+      url:{
+        type:String
+      },
+      dtName:{
+        type:String
+      },//条件参数
+      initvalue: {
+        type: String
+      },//接受外部v-model传入的值
+      fileType:{
+        type:Object
+      }//定义请求回来的json数据格式
+      ,
+      title:{
+        type:String
+      }//定义请求回来的json数据格式
+    },
+    mounted(){
+      //初始话下拉框的值
+      this.svalue=this.initvalue;      
+      let parames = {
+          url: this.$http.adornUrl('/dictionary/dicttype/getTypeByCode'),
+          method: 'post',
+          params: this.$http.adornParams({
+            'entrycode': this.dtName
+          })
+      };
+      this.$http(parames)
+        .then((res)=>{
+          this.options=this._dataTransform(res.data.entryData);
+          this.stitle = this.title
+        }).catch(error => {
+        console.log(error);
+      })
+ 
+    }
+  }
+</script>

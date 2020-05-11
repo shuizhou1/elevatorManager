@@ -1,0 +1,315 @@
+<template>
+  <div>
+    <div class="form_wraper">
+      <el-form
+        :model="dataForm"
+        @keyup.enter.native="getChartBar"
+        class="form"
+        style="margin-left:10px"
+      >
+        <el-row :gutter="40">
+          <el-col :span="8">
+            <el-form-item label="注册代码" prop="local">
+              <el-input v-model.trim="dataForm.local" clearable></el-input>
+            </el-form-item>
+          </el-col>
+          <el-col :span="9">
+            <el-form-item label prop="setime">
+              <el-date-picker
+                clearable
+                v-model.trim="dataForm.setime"
+                type="datetimerange"
+                @change="pickStimeEtime"
+                range-separator="至"
+                start-placeholder="开始日期"
+                end-placeholder="结束日期"
+                value-format="yyyy-MM-dd HH:mm:ss"
+              ></el-date-picker>
+            </el-form-item>
+          </el-col>
+           <el-col :span="4">
+            <el-button @click="getChartBar" type="query">查询</el-button>
+          </el-col>
+        </el-row>
+      </el-form>
+    </div>
+    <div class="mod-home">
+      <div class="chartContainer" :style="{'height': height, 'width': '100%'}">
+        <div id="J_chartBarBox" :style="{'height': height}"></div>
+      </div>
+    </div>
+  </div>
+</template>
+
+<script>
+import echarts from "echarts";
+import config from "@/utils/config";
+import { randomColor } from "@/utils/index";
+// import { sysBarData } from "@/utils/homeData";
+// const {BarData} = require('@utils/home')
+export default {
+  activated() {
+    console.log("actie");
+    // 由于给echart添加了resize事件, 在组件激活时需要重新resize绘画一次, 否则出现空白bug
+
+    if (this.chartBar) {
+      this.chartBar.resize();
+    }
+  },
+  data() {
+    return {
+      dataForm: {
+        stime: "",
+        etime: "",
+        setime: [],
+        regCode: ""
+      },
+      mainClientHeight: null,
+      clientWidth: this.$store.state.common.mainClientWidth,
+      charWidth: this.$store.state.common.mainClientWidth + "px",
+      chartBar: null,
+      ceshiHeight: this.documentClientHeight - 50 - 30 - 2 - 20,
+      height: "500px",
+      barValue: [],
+      barName: [],
+      barColor: [],
+      barDataName: [],
+      barData: [],
+      chartBarOption: {
+        title: {
+          text: "M2M报警事件统计",
+          /* text: 'ABL:  ()  CDO:  (警报)  EBF:  (电梯状态预警)  EBL:  ()  LBH:  (LMD电池电压高)  LBL:  (LMD电池电压低)  LDO:  (门异常打开)  LIOF:  (通讯中断)\n'+
+						        		'LM:  (检修)  LOB:  ()  LRF:  (电梯主回路供电中断)  MOF:  (控制器（柜）供电中断)  MRI:  (人员进入机房)  PSF:  ()  PTRAP:  (困人)  RESTR:  (LMD冷重启)  TOI:  (运行1000次)\n'+
+						        		'LF1:  (采集板供电异常)  LF4:  (电梯供电故障)  LF5:  (安全回路断开)  LF6：   (辅助板故障)  LF8：  (外部按钮响应异常)  LF11：  (开门故障)'+
+						        		'\nLF12:  (关门故障)  LF15:  (内部按钮响应异常)  LF16:  (电梯长时间无运行)  LF19:  (门锁短接)  LF21:  (光幕报警触发)',*/
+          left: "center",
+          textStyle: {
+            fontWeight: "normal" //标题颜色
+            // color: "#FFC125"
+          }
+        },
+        tooltip: {
+          trigger: "axis",
+          axisPointer: {
+            // 坐标轴指示器，坐标轴触发有效
+            type: "shadow" // 默认为直线，可选为：'line' | 'shadow'
+          },
+          formatter: function(params, ticket, callback) {
+            var tar = params[0];
+            var key = tar.name;
+            var value = "";
+            if (key === "LOB") {
+              value = "LMD由电池供电";
+            } else if (key === "LRF") {
+              value = "电梯主回路供电中断";
+            } else if (key === "MOF") {
+              value = "控制器（柜）供电中断";
+            } else if (key === "PTRAP") {
+              value = "困人";
+            } else if (key === "MRI") {
+              value = "人员进入机房";
+            } else if (key === "LDO") {
+              value = "门异常打开";
+            } else if (key === "CDO") {
+              value = "警报";
+            } else if (key === "LM") {
+              value = "检修";
+            } else if (key === "LBH") {
+              value = "LMD电池电压高";
+            } else if (key === "LBL") {
+              value = "LMD电池电压低";
+            } else if (key === "SPA14") {
+              value = "485通信故障";
+            } else if (key === "RESTR") {
+              value = "LMD冷重启";
+            } else if (key === "TOI") {
+              value = "运行1000次";
+            } else if (key === "LIOF") {
+              value = "通讯中断";
+            } else if (key === "EBF") {
+              value = "电梯状态预警";
+            } else if (key === "LF1") {
+              value = "采集板供电异常";
+            } else if (key === "LF4") {
+              value = "电梯供电故障";
+            } else if (key === "LF5") {
+              value = "安全回路断开";
+            } else if (key === "LF6") {
+              value = "辅助板故障";
+            } else if (key === "LF8") {
+              value = "外部按钮响应异常";
+            } else if (key === "LF11") {
+              value = "开门故障";
+            } else if (key === "LF12") {
+              value = "关门故障";
+            } else if (key === "LF15") {
+              value = "内部按钮响应异常";
+            } else if (key === "LF16") {
+              value = "电梯长时间无运行";
+            } else if (key === "LF18") {
+              value = "消防开关接通";
+            } else if (key === "LF19") {
+              value = "门锁短接";
+            } else if (key === "LF21") {
+              value = "光幕报警触发";
+            } else {
+              value = "";
+            }
+            if (value != "") {
+              value += "<br/>";
+            }
+            return tar.name + "<br/>" + value + tar.value;
+          }
+        },
+        grid: {
+          left: "3%",
+          right: "4%",
+          bottom: "3%",
+          containLabel: true
+        },
+        xAxis: {
+          type: "category",
+          splitLine: { show: false },
+          data: [],
+          axisLine: {
+            lineStyle: {
+              type: "solid",
+              color: "eee", //坐标线的颜色
+              width: "2" //坐标线的宽度
+            }
+          },
+          axisLabel: {
+            textStyle: {
+              // color: "#1aC125" //坐标值得具体的颜色
+            }
+          }
+        },
+        yAxis: {
+          type: "value",
+          axisLine: {
+            lineStyle: {
+              type: "solid",
+              color: "eee", //左边线的颜色
+              width: "2" //坐标线的宽度
+            }
+          },
+          axisLabel: {
+            textStyle: {}
+          }
+        },
+        series: [
+          {
+            name: "总数",
+            type: "bar",
+            stack: "总量",
+            label: {
+              normal: {
+                show: true,
+                position: "inside"
+              }
+            },
+            data: []
+          }
+        ]
+      }
+    };
+  },
+  methods: {
+    open(type) {
+      if (type === 2) {
+        this.leftBottom = true;
+        this.chartBar = echarts.init(document.getElementById("J_chartBarBox"));
+        this.chartBar.setOption(this.chartBarOption);
+      }
+    },
+    close(type) {
+      if (type === 2) {
+        this.leftBottom = false;
+      }
+    },
+    getChartBar() {
+      this.$http({
+        url: this.$http.adornUrl(
+          "/elevatorwarning/elevatorwarning/countWithCode"
+        ),
+        method: "post",
+        params: this.$http.adornParams(this.dataForm)
+      }).then(({ data }) => {
+        if (data.code === 0 && data.data) {
+          console.log("图数据", data.data);
+          this.barDataName = [];
+          this.barValue = [];
+          this.barData = [];
+          let arrColor = [];
+          // for(var i = 0;i<res.length;i++){
+          //      	    	if(res[i].colAlarmCode!=undefined){
+          //      	    		data1.push(res[i].alarmCount);
+          //      	    		data2.push(res[i].colAlarmCode);
+          //      	    	}else if(res[i].colFaultCode!=undefined){
+          //      	    		data1.push(res[i].faultCount);
+          //      	    		data2.push(res[i].colFaultCode);
+          //      	    	}
+          //      	  }
+          data.data.forEach(item => {
+            if (item.code != undefined) {
+              this.barData.push(item.count);
+              this.barDataName.push(item.code);
+            }
+          });
+          console.log("data", this.barData);
+          console.log("xaxis", this.barDataName);
+          this.chartBarOption.series[0].data = this.barData;
+          this.chartBarOption.xAxis.data = this.barDataName;
+          // this.chartBarOption.series[0].data = this.sysBarData;
+          this.chartBar = echarts.init(
+            document.getElementById("J_chartBarBox"),
+            "light"
+          );
+          this.chartBar.setOption(this.chartBarOption);
+          console.log(this.chartBarOption);
+          window.addEventListener("resize", () => {
+            this.chartBar.resize();
+          });
+        }
+      });
+    },
+    pickStimeEtime(t) {
+      console.log('282',t)
+      if(t){
+         this.dataForm.stime=t[0]
+        this.dataForm.etime=t[1]
+      }else {
+         this.dataForm.stime=''
+        this.dataForm.etime=''
+      }
+    }
+  },
+  created() {},
+  computed: {},
+  mounted() {
+    console.log("mounted");
+    this.$nextTick(() => {
+      this.getChartBar();
+    });
+
+    this.mainClientHeight = document.documentElement.clientHeight - 80;
+    this.mainClientWidth = document.documentElement.clientWidth - 210;
+    // this.height = this.mainClientHeight + "px";
+    this.charWidth = this.mainClientWidth * 0.33 + "px";
+    window.onresize = () => {
+      this.mainClientWidth = document.documentElement.clientWidth - 210;
+      console.log(this.mainClientWidth);
+      this.charWidth = this.mainClientWidth * 0.33 + "px";
+      this.mainClientHeight = document.documentElement.clientHeight - 80;
+      this.height = this.mainClientHeight + "px";
+      if (this.chartBar) {
+        this.chartBar.resize();
+      }
+    };
+  }
+};
+</script>
+
+<style scoped lang="scss">
+</style>
+

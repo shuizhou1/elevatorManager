@@ -1,0 +1,224 @@
+<template>
+  <el-dialog
+    :title="!this.dataForm.id ? '新增' : '修改'"
+    :close-on-click-modal="false" :fullscreen="true" :modal="false"
+    :visible.sync="visible">
+    <el-form :model="dataForm" :rules="dataRule" ref="dataForm" @keyup.enter.native="dataFormSubmit()" label-width="95px">
+    <el-form-item label="权限验证" prop="authId">
+      <el-input v-model="dataForm.authId" placeholder="权限验证" ></el-input>
+    </el-form-item>
+    <el-form-item label="创建时间" prop="createTime">
+      <el-input v-model="dataForm.createTime" placeholder="创建时间" ></el-input>
+    </el-form-item>
+    <el-form-item label="更新时间" prop="updateTime">
+      <el-input v-model="dataForm.updateTime" placeholder="更新时间" ></el-input>
+    </el-form-item>
+    <el-form-item label="工单id" prop="affairId">
+      <el-input v-model="dataForm.affairId" placeholder="工单id" ></el-input>
+    </el-form-item>
+    <el-form-item label="工单编号" prop="affairCode">
+      <el-input v-model="dataForm.affairCode" placeholder="工单编号" ></el-input>
+    </el-form-item>
+    <el-form-item label="协调会时间" prop="coordinationTime">
+      <el-input v-model="dataForm.coordinationTime" placeholder="协调会时间" ></el-input>
+    </el-form-item>
+    <el-form-item label="预约备注" prop="coordinationInfo">
+      <el-input v-model="dataForm.coordinationInfo" placeholder="预约备注" ></el-input>
+    </el-form-item>
+    <el-form-item label="记录时间" prop="summaryTime">
+      <el-input v-model="dataForm.summaryTime" placeholder="记录时间" ></el-input>
+    </el-form-item>
+    <el-form-item label="过程记录" prop="summaryInfo">
+      <el-input v-model="dataForm.summaryInfo" placeholder="过程记录" ></el-input>
+    </el-form-item>
+    <el-form-item label="创建者ID" prop="createUserId">
+      <el-input v-model="dataForm.createUserId" placeholder="创建者ID" ></el-input>
+    </el-form-item>
+    <el-form-item label="协商结果 1成功 2失败" prop="coordinationStatus">
+      <el-input v-model="dataForm.coordinationStatus" placeholder="协商结果 1成功 2失败" ></el-input>
+    </el-form-item>
+    <el-form-item label="修改人" prop="updatePerson">
+      <el-input v-model="dataForm.updatePerson" placeholder="修改人" ></el-input>
+    </el-form-item>
+    <el-form-item label="数据来源(1PC、2微信、3安卓、4iOS、5平板、6外部某系统)" prop="comeFrom">
+      <el-input v-model="dataForm.comeFrom" placeholder="数据来源(1PC、2微信、3安卓、4iOS、5平板、6外部某系统)" ></el-input>
+    </el-form-item>
+    <el-form-item label="版本" prop="version">
+      <el-input v-model="dataForm.version" placeholder="版本" ></el-input>
+    </el-form-item>
+    <el-form-item label="所属机构" prop="orgId">
+      <el-input v-model="dataForm.orgId" placeholder="所属机构" ></el-input>
+    </el-form-item>
+    <el-form-item label="备注" prop="remarks">
+      <el-input v-model="dataForm.remarks" placeholder="备注" ></el-input>
+    </el-form-item>
+    <el-form-item label="是否删除" prop="isdel">
+      <el-input v-model="dataForm.isdel" placeholder="是否删除" ></el-input>
+    </el-form-item>
+    </el-form>
+    <span slot="footer" class="dialog-footer">
+      <el-button @click="visible = false">取消</el-button>
+      <el-button type="primary" @click="dataFormSubmit()">确定</el-button>
+    </span>
+  </el-dialog>
+</template>
+
+<script>
+  import {isEmail,isMobile,isPhone,isIDCard } from '@/utils/validate'
+  export default {
+    data () {
+      var validatePassword = (rule, value, callback) => {
+        if (!this.dataForm.id && !/\S/.test(value)) {
+          callback(new Error('密码不能为空'))
+        } else {
+          callback()
+        }
+      }
+      var validateComfirmPassword = (rule, value, callback) => {
+        if (!this.dataForm.id && !/\S/.test(value)) {
+          callback(new Error('确认密码不能为空'))
+        } else if (this.dataForm.password !== value) {
+          callback(new Error('确认密码与密码输入不一致'))
+        } else {
+          callback()
+        }
+      }
+      var validateEmail = (rule, value, callback) => {
+        if (!isEmail(value)) {
+          callback(new Error('邮箱格式错误'))
+        } else {
+          callback()
+        }
+      }
+      var validateMobile = (rule, value, callback) => {
+        if (!isMobile(value)) {
+          callback(new Error('手机号格式错误'))
+        } else {
+          callback()
+        }
+      }
+      var validatePhone = (rule, value, callback) => {
+        if (!isPhone(value)) {
+          callback(new Error('固话格式错误'))
+        } else {
+          callback()
+        }
+      }  
+      var validateIDCard = (rule, value, callback) => {
+        if (!isIDCard(value)) {
+          callback(new Error('身份证格式错误'))
+        } else {
+          callback()
+        }
+      }
+      return {
+        visible: false,
+        dataForm: {
+          id: '',          authId: '',          createTime: '',          updateTime: '',          affairId: '',          affairCode: '',          coordinationTime: '',          coordinationInfo: '',          summaryTime: '',          summaryInfo: '',          createUserId: '',          coordinationStatus: '',          updatePerson: '',          comeFrom: '',          version: '',          orgId: '',          remarks: '',          isdel: ''        },
+        dataRule: {
+          authId: [
+          ],          createTime: [
+          ],          updateTime: [
+          ],          affairId: [
+          ],          affairCode: [
+          ],          coordinationTime: [
+          ],          coordinationInfo: [
+          ],          summaryTime: [
+          ],          summaryInfo: [
+          ],          createUserId: [
+          ],          coordinationStatus: [
+          ],          updatePerson: [
+          ],          comeFrom: [
+          ],          version: [
+          ],          orgId: [
+          ],          remarks: [
+          ],          isdel: [
+          ]        }
+      }
+    },
+    methods: {
+      init (id) {
+        this.dataForm.id = id 
+        this.visible = true
+        this.$nextTick(() => {
+          this.$refs['dataForm'].resetFields()
+          if (this.dataForm.id) {
+            this.$http({
+              url: this.$http.adornUrl(`/affairCoordination/affaircoordination/info/${this.dataForm.id}`),
+              method: 'get',
+              params: this.$http.adornParams()
+            }).then(({data}) => {
+              if (data && data.code === 0) {
+                this.dataForm.id = data.affairCoordination.id
+                this.dataForm.authId = data.affairCoordination.authId
+                this.dataForm.createTime = data.affairCoordination.createTime
+                this.dataForm.updateTime = data.affairCoordination.updateTime
+                this.dataForm.affairId = data.affairCoordination.affairId
+                this.dataForm.affairCode = data.affairCoordination.affairCode
+                this.dataForm.coordinationTime = data.affairCoordination.coordinationTime
+                this.dataForm.coordinationInfo = data.affairCoordination.coordinationInfo
+                this.dataForm.summaryTime = data.affairCoordination.summaryTime
+                this.dataForm.summaryInfo = data.affairCoordination.summaryInfo
+                this.dataForm.createUserId = data.affairCoordination.createUserId
+                this.dataForm.coordinationStatus = data.affairCoordination.coordinationStatus
+                this.dataForm.updatePerson = data.affairCoordination.updatePerson
+                this.dataForm.comeFrom = data.affairCoordination.comeFrom
+                this.dataForm.version = data.affairCoordination.version
+                this.dataForm.orgId = data.affairCoordination.orgId
+                this.dataForm.remarks = data.affairCoordination.remarks
+                this.dataForm.isdel = data.affairCoordination.isdel
+              }
+            })
+          }
+        })
+      },
+      
+      // 表单提交
+      dataFormSubmit () {
+        this.$refs['dataForm'].validate((valid) => {
+          if (valid) {
+            this.$http({
+              url: this.$http.adornUrl(`/affairCoordination/affaircoordination/${!this.dataForm.id ? 'save' : 'update'}`),
+              method: 'post',
+              data: this.$http.adornData({
+              'id': this.dataForm.id, 
+                'id': this.dataForm.id || undefined,
+                'authId': this.dataForm.authId,
+                'createTime': this.dataForm.createTime,
+                'updateTime': this.dataForm.updateTime,
+                'affairId': this.dataForm.affairId,
+                'affairCode': this.dataForm.affairCode,
+                'coordinationTime': this.dataForm.coordinationTime,
+                'coordinationInfo': this.dataForm.coordinationInfo,
+                'summaryTime': this.dataForm.summaryTime,
+                'summaryInfo': this.dataForm.summaryInfo,
+                'createUserId': this.dataForm.createUserId,
+                'coordinationStatus': this.dataForm.coordinationStatus,
+                'updatePerson': this.dataForm.updatePerson,
+                'comeFrom': this.dataForm.comeFrom,
+                'version': this.dataForm.version,
+                'orgId': this.dataForm.orgId,
+                'remarks': this.dataForm.remarks,
+                'isdel': this.dataForm.isdel
+              })
+            }).then(({data}) => {
+              if (data && data.code === 0) {
+                this.$message({
+                  message: '操作成功',
+                  type: 'success',
+                  duration: 1500,
+                  onClose: () => {
+                    this.visible = false
+                    this.$emit('refreshDataList')
+                  }
+                })
+              } else {
+                this.$message.error(data.msg)
+              }
+            })
+          }
+        })
+      }
+    },
+  }
+</script>

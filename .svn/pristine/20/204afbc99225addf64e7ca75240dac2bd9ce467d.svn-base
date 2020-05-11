@@ -1,0 +1,167 @@
+<template>
+    <nav class="site-navbar" :class="'site-navbar--' + navbarLayoutBodyStyle">
+        <div class="site-navbar__header content-center" :class="'site-navbar--' + navbarLayoutHeaderStyle">
+            <h1 class="site-navbar__brand" @click="$router.push({ name: 'home' })">
+                易宝智慧电梯物联网管理平台
+            </h1>
+        </div>
+        <div class="site-navbar__body ">
+            <el-menu
+                    class="site-navbar__menu"
+                    mode="horizontal">
+                <!--<el-menu-item class="site-navbar__switch" index="0" @click="sidebarFold = !sidebarFold">-->
+                    <!--<icon-svg name="zhedie"></icon-svg>-->
+                <!--</el-menu-item>-->
+            </el-menu>
+            <el-menu
+                    class="site-navbar__menu site-navbar__menu--right"
+                    mode="horizontal">
+          <!--      <el-menu-item index="1" @click="$router.push({ name: 'theme' })">
+                <template slot="title">
+                <el-badge value="设置">
+                <icon-svg name="shezhi" class="el-icon-setting"></icon-svg>
+                </el-badge>
+                </template>
+                </el-menu-item>-->
+
+                <el-menu-item class="site-navbar__avatar" index="3">
+                    <el-dropdown :show-timeout="0" placement="bottom">
+            <span class="el-dropdown-link">
+                <div class="nav-item">
+                    <img src="~@/assets/img/home-icon-avator.png"><span>{{ nickName }}</span>
+                </div>
+            </span>
+                        <el-dropdown-menu slot="dropdown">
+                            <el-dropdown-item @click.native="goDetail()">个人信息</el-dropdown-item>
+                            <el-dropdown-item @click.native="logoutHandle()">退出</el-dropdown-item>
+                        </el-dropdown-menu>
+                    </el-dropdown>
+                </el-menu-item>
+            </el-menu>
+        </div>
+    </nav>
+</template>
+
+<script>
+
+    export default {
+        data() {
+            return {
+                updatePassowrdVisible: false
+            }
+        },
+        components: {
+
+        },
+        computed: {
+            navbarLayoutHeaderStyle: {
+                get() {
+                    var localNavbarLayoutHeaderStyle = window.localStorage.getItem('VUE_NABAR_LAYOUT_HEADER_STYLE')
+                    if (localNavbarLayoutHeaderStyle !== null && localNavbarLayoutHeaderStyle !== this.$store.state.theme.navbarLayoutHeaderStyle) {
+                        this.$store.commit('theme/updateNavbarLayoutHeaderStyle', localNavbarLayoutHeaderStyle)
+                    }
+                    return this.$store.state.theme.navbarLayoutHeaderStyle
+                }
+            },
+            navbarLayoutBodyStyle: {
+                get() {
+                    var localNavbarLayoutBodyStyle = window.localStorage.getItem('VUE_NABAR_LAYOUT_BODY_STYLE')
+                    if (localNavbarLayoutBodyStyle !== null && localNavbarLayoutBodyStyle !== this.$store.state.theme.navbarLayoutBodyStyle) {
+                        this.$store.commit('theme/updateNavbarLayoutBodyStyle', localNavbarLayoutBodyStyle)
+                    }
+                    return this.$store.state.theme.navbarLayoutBodyStyle
+                }
+            },
+            sidebarFold: {
+                get() {
+                    return this.$store.state.common.sidebarFold
+                },
+                set(val) {
+                    this.$store.commit('common/updateSidebarFold', val)
+                }
+            },
+            mainTabs: {
+                get() {
+                    return this.$store.state.common.mainTabs
+                },
+                set(val) {
+                    this.$store.commit('common/updateMainTabs', val)
+                }
+            },
+            userName: {
+                get() {
+                    return this.$store.state.user.name
+                }
+            },
+            nickName: {
+                get() {
+                    return this.$store.state.user.nickName
+                }
+            }
+        },
+        methods: {
+            goDetail () {
+                this.$router.push({name: 'userInfo'})
+            },
+            // 修改密码
+            updatePasswordHandle() {
+                this.updatePassowrdVisible = true
+                this.$nextTick(() => {
+                    this.$refs.updatePassowrd.init()
+                })
+            },
+            // 退出
+            logoutHandle() {
+                this.$confirm(`确定进行[退出]操作?`, '提示', {
+                    confirmButtonText: '确定',
+                    cancelButtonText: '取消',
+                    type: 'warning'
+                }).then(() => {
+                    this.$http({
+                        url: this.$http.adornUrl('/sys/logout'),
+                        method: 'post',
+                        data: this.$http.adornData()
+                    }).then(({ data }) => {
+                        if (data && data.code === 0) {
+                            this.$cookie.delete('token')
+                            this.$router.options.isAddDynamicMenuRoutes = false
+                            this.mainTabs = [];//清空tabs
+                            this.$router.push({ name: 'login'})
+                        }
+                    })
+                }).catch(() => {
+                })
+            }
+        }
+    }
+</script>
+<style lang="scss">
+    .content-center {
+        position: absolute;
+        left: 50%;
+        margin-left: -155px;
+    }
+    .site-navbar {
+        height: 50px;
+        padding-left: 40px;
+        img {
+            display: table;
+        }
+    }
+    .nav-item {
+        display: inline-block;
+        padding: 0 20px;
+        vertical-align: middle;
+        &:focus {
+            border: none !important;
+        }
+        img {
+            display: inline-block;
+            margin-right: 4px;
+        }
+        span {
+            vertical-align: middle;
+            color: white;
+        }
+    }
+</style>

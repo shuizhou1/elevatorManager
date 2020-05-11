@@ -1,0 +1,348 @@
+<!--  -->
+<template>
+  <div>
+    <!-- <div class="header">维修完工列表</div> -->
+    <el-form
+      ref="form"
+      class="form"
+      :model="formData"
+      label-width="auto"
+      @keyup.enter.native="getDataList('init')"
+    >
+      <el-row :gutter="40">
+        <el-col :span="8">
+          <el-form-item class="none_margin_bottom" label="电梯地址" prop="local">
+            <el-input v-model="formData.local" clearable></el-input>
+          </el-form-item>
+        </el-col>
+        <el-col :span="8">
+          <el-form-item class="none_margin_bottom" label="维保单位" prop="unitName">
+						 <el-input v-model="formData.unitName" clearable></el-input>
+           <!-- <el-select v-model="formData.unitName" placeholder="请选择" clearable>
+              <el-option
+                v-for="item in options"
+                :key="item.value"
+                :label="item.label"
+                :value="item.value"
+              ></el-option>
+            </el-select> -->
+          </el-form-item>
+        </el-col>
+        <el-col :span="7" :offset="1">
+          <el-button type="query" @click="getDataList('init')">查询</el-button>
+        </el-col>
+        
+      </el-row>
+    </el-form>
+    <el-table
+          :data="dataList"
+          max-height="400"
+          border
+          :show-close="false"
+          v-loading="dataListLoading"
+          @selection-change="selectChange"
+          style="width: 100%;margin-bottom:30px"
+        >
+          <!-- <el-table-column header-align="center" align="center" type="selection" width="50"></el-table-column> -->
+            <el-table-column
+            prop="regcode"
+            header-align="center"
+            align="center"
+            width="200"
+            label="注册代码"
+          ></el-table-column>
+          <el-table-column prop="unitname" show-overflow-tooltip header-align="center" align="center" label="维保单位"></el-table-column>
+          <el-table-column prop="local" show-overflow-tooltip header-align="center" align="center" label="电梯地址"></el-table-column>
+         <!-- <el-table-column
+            prop="elevatorstatus"
+            :formatter="formatElevatorstatus"
+            header-align="center"
+            align="center"
+            width="80"
+            label="电梯类型"
+          ></el-table-column>
+          <el-table-column prop="remarks" header-align="center" align="center" label="故障原因"></el-table-column> -->
+          <el-table-column
+            prop="createtime" :formatter="formatDate" header-align="center" align="center" width="100" label="申请日期" ></el-table-column>
+          <el-table-column
+            prop="repairstutas"
+            :formatter="formatStatus"
+            header-align="center"
+            align="center"
+            width="80"
+            label="状态"
+          ></el-table-column>
+          <el-table-column
+            prop="hasAudited"
+            header-align="center"
+            align="center"
+            min-width="80"
+            label="审核情况"
+          ></el-table-column>
+          <el-table-column
+            prop="repairReason"
+            show-overflow-tooltip
+            header-align="center"
+            align="center"
+            label="不通过原因"
+          ></el-table-column>
+						 <el-table-column
+					  prop="totalSum"
+					  header-align="center"
+					  align="center"
+					  width="110"
+					  label="总费用（元）"
+					></el-table-column>
+           <el-table-column
+            prop="comeFrom"
+            header-align="center"
+            align="center"
+            :formatter="formatComeForm"
+            width="100"
+            label="来源"
+          ></el-table-column>
+          <el-table-column label="操作" header-align="center" align="center" width="160px">
+            <template slot-scope="scope">
+              <el-button
+                size="mini"
+                style="padding:8px 10px;font-size:12px;height:36px"
+                type="warning"
+                :disabled="scope.row.repairstutas!=5"
+                v-if="isAuth('repairplan:repairplan:cxweixiu')"
+                @click="reAplay(scope.row.repairid)"
+              >重新维修</el-button>
+              <el-button
+                size="mini"
+                style="padding:8px 10px;font-size:12px;height:36px"
+                type="primary"
+                @click="handleAddorUpdate(scope.row.repairid)"
+              >详情</el-button>
+              <!-- <el-button
+          size="mini"
+              @click="handleEdit(scope.$index, scope.row)">编辑</el-button>-->
+            </template>
+          </el-table-column>
+        </el-table>
+        <el-pagination
+          @size-change="sizeChangeHandle"
+          @current-change="currentChangeHandle"
+          :current-page="pageIndex"
+          :page-sizes="[10, 20, 50, 100]"
+          :page-size="pageSize"
+          :total="totalCount"
+          layout="total, sizes, prev, pager, next, jumper"
+        ></el-pagination>
+    <repair-add-or-update
+      v-if="addOrUpdateVisible"
+      ref="addOrUpdate"
+      @refreshDataList="getDataList"
+    ></repair-add-or-update>
+  </div>
+</template>
+
+<script>
+import repairAddOrUpdate from "./repair-add-or-update";
+import { type } from 'os';
+export default {
+  data() {
+    return {
+      options: [
+        {
+          label: "客梯",
+          value: "1"
+        },
+        {
+          label: "货梯",
+          value: "2"
+        }
+      ],
+      formData: {
+        local: "",
+        elevatorStatus: "",
+				unitName: ""
+      },
+
+      dataList: [],
+      pageSize: 10,
+      pageIndex: 1,
+      totalCount: 0,
+      dataListLoading: false,
+      addOrUpdateVisible: false, //新增、修改
+      dataListSelections: []
+    };
+  },
+  components: {
+    repairAddOrUpdate
+  },
+  activated() {
+   
+    // this.$http.adornParams(obj)
+    this.getDataList();
+  },
+  methods: {
+    // 获取数据
+    getDataList(type) {
+      if(type=='init'){
+        this.pageIndex = 1;
+      }
+      this.dataListLoading = true;
+      this.$http({
+        url: this.$http.adornUrl("/repairplan/repairplan/list"),
+        method: "get",
+        params: this.$http.adornParams({
+          page: this.pageIndex,
+          limit: this.pageSize,
+          unitName: this.formData.unitName,
+          local:this.formData.local,
+          elevatorStatus: this.formData.elevatorStatus,
+          judge: 3
+        })
+      }).then(({ data }) => {
+        if (data && data.code === 0) {
+          console.log(data);
+          this.dataList = data.page.records;
+          this.totalCount = data.page.total;
+        } else {
+          this.dataList = [];
+          this.totalCount = 0;
+        }
+        this.dataListLoading = false;
+      });
+    },
+    formatStatus(row, col, val) {
+      console.log(row);
+      let str;
+      switch (val) {
+        case "0":
+          str = "待确认";
+          break;
+        case "1":
+          str = "不通过";
+          break;
+        case "2":
+          str = "待维修";
+          break;
+        case "3":
+          str = "待审核";
+          break;
+        case "4":
+          str = "完成";
+          break;
+        case "5":
+          str = "不通过";
+          break;
+      }
+      return str;
+    },
+    formatElevatorstatus(row, col, val) {
+      // console.log(val)
+      if (val == 1) {
+        return "客梯";
+      } else {
+        return "货梯";
+      }
+    },
+     formatComeForm(row, col, val) {
+      // console.log(val)
+       let str;
+      switch (val) {
+        case "1":
+          str = "物联网管理";
+          break;
+        case "2":
+          str = "维保管理";
+          break;
+        case "3":
+          str = "自主维保";
+          break;
+        case "4":
+          str = "自行申请";
+          break;
+      }
+      return str;
+    },
+    // 每页数
+    sizeChangeHandle(val) {
+      this.pageSize = val;
+      this.pageIndex = 1;
+      this.getDataList();
+    },
+    // 当前页
+    currentChangeHandle(val) {
+      this.pageIndex = val;
+      this.getDataList();
+    },
+    handleAddorUpdate(id) {
+      
+      this.addOrUpdateVisible = true;
+      this.$nextTick(() => {
+        this.$refs.addOrUpdate.init(id);
+      });
+    },
+    // 打印
+    printForm() {},
+    // 删除
+    handleDelete() {
+      var ids =  this.dataListSelections.map(item => {
+            return item.repairid;
+          });
+      this.$confirm(`确定删除?`, "提示", {
+        confirmButtonText: "确定",
+        cancelButtonText: "取消",
+        type: "warning"
+      }).then(() => {
+        this.$http({
+          url: this.$http.adornUrl("/repairplan/repairplan/delete"),
+          method: "post",
+          data: this.$http.adornData(ids, false)
+        }).then(({ data }) => {
+          if (data && data.code == 0) {
+          } else {
+          }
+        });
+      });
+    },
+		// 格式化时间
+		formatDate(row, col, value) {
+		  if (value && value.length) return value.substr(0, 10);
+		},
+    selectChange(e) {
+      console.log("选择改变", e);
+      this.dataListSelections = e;
+    },
+     reAplay(repairid) {
+      console.log('重新维修',repairid);
+      
+      this.updateStatus(repairid,'2');
+    },
+    updateStatus(repairid,status){
+      console.log()
+      this.$http({
+            url: this.$http.adornUrl(
+              `/repairplan/repairplan/update`
+            ),
+            method: "post",
+            data: this.$http.adornData({
+              id:repairid,
+              repairStutas:status,
+              repairReason:''
+            })
+          }).then(({ data }) => {
+            if (data && data.code === 0) {
+              this.$message({
+                message: "操作成功",
+                type: "success",
+                duration: 1500,
+                onClose: () => {
+                  this.getDataList();
+                }
+              });
+            } 
+          });
+    },
+    goDetail() {}
+  }
+};
+</script>
+<style lang='scss' scoped>
+</style>

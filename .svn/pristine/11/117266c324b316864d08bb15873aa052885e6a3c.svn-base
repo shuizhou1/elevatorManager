@@ -1,0 +1,21 @@
+<template>
+  <div class="home">
+      <button @click="handleTap">点击跳到维保</button>
+  </div>
+</template>
+
+<script>
+// @ is an alias to /src
+
+export default {
+  name: 'home',
+  methods:{
+    handleTap(e){
+      console.log(e);
+      this.$router.push({
+        name:'maintenance'
+      })
+    }
+  }
+}
+</script>

@@ -1,0 +1,183 @@
+<template>
+  <el-dialog
+    :close-on-click-modal="false"
+    :show-close="false"
+    :fullscreen="true"
+    :modal="false"
+    :visible.sync="visible"
+    :v-loading="loading"
+  >
+    <div slot="title" class="dialog_headslot">{{!this.formData.id ? '物业单位' : '物业单位'}}
+        <el-button @click="visible=false" style="margin-left:20px">返回</el-button>
+
+    </div>
+    <el-form
+      :model="formData"
+      :rules="rules"
+      ref="form"
+      @keyup.enter.native="dataFormSubmit()"
+      class="dialog_head_form"
+      label-width="auto"
+    >
+     <el-row :gutter="30">
+          <el-col :span="8">
+            <el-form-item label="单位名称" prop="unitName">
+              <el-input v-model.trim="formData.unitName"></el-input>
+            </el-form-item>
+          </el-col>
+          <el-col :span="8">
+            <el-form-item label="单位地址" prop="address">
+              <el-input v-model.trim="formData.address"></el-input>
+            </el-form-item>
+          </el-col>
+        </el-row>
+        <el-row :gutter="30">
+          <el-col :span="8">
+            <el-form-item label="联 系 人" prop="contactName">
+              <el-input v-model.trim="formData.contactName"></el-input>
+            </el-form-item>
+          </el-col>
+          <el-col :span="8">
+            <el-form-item label="联系电话" prop="contactPhone">
+              <el-input v-model.trim="formData.contactPhone"></el-input>
+            </el-form-item>
+          </el-col>
+        </el-row>
+    </el-form>
+    <div class="footer">
+        <el-button type="primary" @click="dataFormSubmit" style="margin-right:20px">确认</el-button>
+    </div>
+  </el-dialog>
+</template>
+
+<script>
+import { isMobile } from "@/utils/validate";
+export default {
+  data() {
+    var validateMobile = (rule, value, callback) => {
+      if (isMobile(value)) {
+        callback();
+      } else {
+        callback("联系人电话格式有误");
+      }
+    };
+
+    return {
+      loading:false,
+      visible: false,
+      type: "", //电梯类型
+      formData: {
+        contactName:'',//联系人
+        contactPhone:'',//联系人手机
+        unitName:'',//维保单位
+        address:'', //维保单位地址
+        unitType:2,
+      },
+    
+      addRules: {
+        contactName: [
+          {
+            required: true,
+            message: "联系人不能为空"
+          }
+        ],
+        contactPhone: [
+          {
+            required: true,
+            message: "联系人手机不能为空",
+          },{
+            validator:validateMobile,
+            trigger:'blur'
+          }
+        ],
+         unitName: [
+          {
+            required: true,
+            message: "单位名称不能为空"
+          }
+        ],
+        address: [
+          {
+            required: true,
+            message: "单位地址不能为空"
+          }
+        ]
+      }
+    };
+  },
+  computed:{
+    rules(){
+      if(this.formData.id){
+        let obj = {};
+        return obj;
+      }else{
+        return this.addRules;
+      }
+    }
+  },
+  methods: {
+    init(id) {
+      console.log("id", id);
+      this.formData.id = id;
+      this.visible = true;
+      this.$nextTick(() => {
+        // console.log(this.$refs["formData"])
+         this.$refs['form'].resetFields();
+       
+        if (this.formData.id) {
+          this.loading = true;
+          this.$http({
+            url: this.$http.adornUrl(
+              `/otherunit/otherunit/info/${this.formData.id}`
+            ),
+            method: "get",
+            params: this.$http.adornParams()
+          }).then(({ data }) => {
+            console.log(data);
+            if (data && data.code == 0) {
+              this.loading = false;
+              console.log(data);
+             this.formData=data.otherUnit
+            }
+          });
+        } 
+      });
+    },
+    // 表单提交
+    dataFormSubmit() {
+      this.$refs["form"].validate(valid => {
+        if (valid) {
+          this.$http({
+            url: this.$http.adornUrl(
+              `/otherunit/otherunit/${!this.formData.id ? "save" : "update"}`
+            ),
+            method: "post",
+            data: this.$http.adornData(this.formData)
+          }).then(({ data }) => {
+            if (data && data.code === 0) {
+              this.$message({
+                message: "保存成功",
+                type: "success",
+                duration: 1500,
+                onClose: () => {
+                  this.visible = false;
+                  this.$emit("refreshDataList");
+                }
+              });
+            } else {
+              this.$message.error(data.error);
+            }
+          });
+        }
+      });
+    }
+  }
+};
+</script>
+<style scoped>
+.footer{
+  text-align: center !important;
+  margin-top: 20px; 
+  padding-bottom: 10px;
+}
+</style>

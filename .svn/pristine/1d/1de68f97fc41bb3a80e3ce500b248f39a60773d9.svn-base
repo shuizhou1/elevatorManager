@@ -1,0 +1,685 @@
+<!--  -->
+<template>
+  <div v-loading="loading">
+    <!-- <div  :style="{'height': height, 'width': '100%'}">
+      <div id="chartBox" :style="{'width':width,'height':height}"></div>
+    </div>-->
+    <!-- <div class="chart_title">报警类型统计</div> -->
+    <el-form class="dialog_head_form" @keyup.enter.native="handleQuery">
+      <el-row :gutter="30">
+        <el-col :span="8">
+          <el-form-item label="注册代码" prop="regCode">
+            <el-input v-model.trim="formData.regCode" clearable>
+              <template slot="append">
+                <el-button @click="selectElevator">选择</el-button>
+              </template>
+            </el-input>
+          </el-form-item>
+        </el-col>
+        <el-col :span="6">
+          <!-- <select-month></select-month> -->
+          <el-form-item label="日期">
+             <el-date-picker
+              v-model.trim="dateValue"
+              @change="dateChange"
+               start-placeholder="开始月份"
+              end-placeholder="结束月份"
+              value-format="yyyy-M"
+               unlink-panels
+              :picker-options="pickerOptions"
+              type="monthrange"
+            ></el-date-picker>
+          </el-form-item>
+        </el-col>
+        <el-col :span="6">
+          <el-form-item label="区域">
+           <el-cascader
+              v-model.trim="areaValue"
+              :options="areaData"
+              :props="{ checkStrictly: true }"
+              @change="handleAreaChange"
+              clearable
+            ></el-cascader>
+          </el-form-item>
+        </el-col>
+        <el-col :span="2">
+          <el-button @click="handleQuery" type="query">查询</el-button>
+        </el-col>
+      </el-row>
+    </el-form>
+    <el-tabs type="card" :value="currentValue" @tab-click="handleChange">
+      <el-tab-pane label="图表" name="chart">
+        <div class="chartContainer" :style="{'height':containerHeight-21+'px','min-height':'400px'}">
+          <div class="left"  style="width:65%">
+            <div id="totalChartBox" :style="{'height':'95%'}"></div>
+          </div>
+          <div class="right"  style="width:35%">
+            <div v-if="chartDataList.length">
+              <div
+                class="right_item"
+                :class="{border_bottom:index!=2}"
+                v-for="(item,index) in chartDataList"
+                :key="index"
+              >
+                <div class="chart_subtitle_box">
+                  <span class="chart_circle">{{index+1}}</span>
+                  <span class="chart_subtitle">{{item.local}}</span>
+                  <popover>
+                    <div class="popover_content">
+                      <div>注册代码：{{item.regCode}}</div>
+                      <div>电梯地址：{{item.local}}</div>
+                      <div>维保单位：{{item.maintenanceName}}</div>
+                      <div>投产时间：{{formatDate(item.commissioningTime)}}</div>
+                      <div>电梯品牌：{{item.elevatorBrand}}</div>
+                    </div>
+                    <i class="el-icon-info" slot="reference"></i>
+                  </popover>
+                </div>
+                <div :id="`chartBox${index}`" :style="{'height':'100%'}"></div>
+              </div>
+            </div>
+            <!-- <div class="right_item border_bottom">
+              <div id="secChartBox" :style="{'height':'100%'}"></div>
+            </div>
+            <div class="right_item">
+              <div id="thiChartBox" :style="{'height':'100%'}"></div>
+            </div>-->
+          </div>
+        </div>
+      </el-tab-pane>
+      <el-tab-pane label="列表" name="list">
+        <el-table border :data="dataList" v-loading="loading">
+          <el-table-column label="注册代码" prop="regCode" align="center"></el-table-column>
+          <el-table-column label="电梯地址" show-overflow-tooltip prop="local" align="center"></el-table-column>
+          <el-table-column label="维保单位"  show-overflow-tooltip prop="maintenanceName" align="center"></el-table-column>
+          <el-table-column label="运行次数" width="100" prop="operationNum" align="center"></el-table-column>
+        </el-table>
+        <el-pagination
+          @size-change="sizeChangeHandle"
+          @current-change="currentChangeHandle"
+          :current-page="pageIndex"
+          :page-sizes="[5, 10, 20, 50]"
+          :page-size="pageSize"
+          :total="totalCount"
+          layout="total, sizes, prev, pager, next, jumper"
+        ></el-pagination>
+      </el-tab-pane>
+    </el-tabs>
+
+    <select-elevator
+      v-if="showElevatorselectDialog"
+      ref="elevatorSelector"
+      @confirm="selectElevatorConfirm"
+    ></select-elevator>
+  </div>
+</template>
+
+<script>
+import echart from "echarts";
+// import selectElevator from "@/components/select-single-elevator.vue";
+import statical from "@/utils/mixins/staticalAnalysis";
+import pagination from "@/utils/mixins/pagination";
+export default {
+  mixins: [statical, pagination],
+  activated() {
+    console.log("actie");
+    // 由于给echart添加了resize事件, 在组件激活时需要重新resize绘画一次, 否则出现空白bug
+    this.currentValue = "chart";
+     if (this.totalChart) {
+      this.totalChart.resize();
+    }
+    if (this.chart0) {
+      this.chart0.resize();
+    }
+      if (this.chart1) {
+      this.chart1.resize();
+    }
+      if (this.chart2) {
+      this.chart2.resize();
+    }
+  },
+  data() {
+    return {
+      showElevatorselectDialog: false,
+      loading: false,
+      pageIndex: 1,
+      pageSize: 10,
+      totalCount: 0,
+      dataList: [],
+      chartDataList: [],
+      currentValue: "chart",
+      currentIndex: 0,
+      dateValue:'',
+      formData: {
+        groupingRules:1,
+        regCode: "",
+        years: "",
+        months: "",
+        province: "",
+        city: "",
+        district: "",
+        startTime:null
+      },
+      height: "",
+      containerHeight: "",
+      width: "",
+      totalChart: null,
+      firChart: null,
+      secChart: null,
+      thiChart: null,
+      areaData: [],
+      totalOption: {
+        color:['#2F6A92'],
+        title: {
+          text: "",
+          x: "center",
+          y: "8",
+          textStyle: {
+            fontWeight: "normal", //标题颜色
+            fontSize: 10
+          }
+        },
+        tooltip: {
+          trigger: "item",
+          formatter: "日期：{b}<br/>运行次数：{c} "
+        },
+        grid: {
+          left: "6%",
+          right: "10%",
+          bottom: "3%",
+          top: "15%",
+          containLabel: true
+        },
+        xAxis: {
+          type: "category",
+          name: "日期",
+          data: [],
+          axisLine: {
+            lineStyle: {
+              type: "solid",
+              color: "eee", //左边线的颜色
+              width: "2" //坐标线的宽度
+            }
+          }
+        },
+        yAxis: {
+          type: "value",
+          name: "运行次数 (千次)",
+          nameGap:10,
+          nameTextStyle:{
+            padding:[0,0,15,40]
+          },
+          axisLine: {
+            lineStyle: {
+              type: "solid",
+              color: "eee", //左边线的颜色
+              width: "2" //坐标线的宽度
+            }
+          },
+          axisLabel: {
+            formatter: () => {
+              return "";
+            },
+            textStyle: {}
+          }
+        },
+        series: [
+          {
+            type: "bar",
+            barWidth:'',
+            label: {
+              normal: {
+                show: true,
+                position: "top"
+              }
+            },
+            data: []
+          }
+        ]
+      },
+      option0: {
+         color:['#2F6A92'],
+        title: {
+          text: "",
+          x: "center",
+          y: "10",
+          textStyle: {
+            fontWeight: "normal" //标题颜色
+          }
+        },
+        tooltip: {
+          trigger: "item",
+          formatter: "日期：{b}<br/>运行次数：{c} "
+        },
+        grid: {
+          left: "6%",
+          right: "12%",
+          bottom: "16%",
+          top:'22%',
+          containLabel: true
+        },
+        xAxis: {
+          type: "category",
+          name: "日期",
+          data: [],
+          axisLine: {
+            lineStyle: {
+              type: "solid",
+              color: "eee", //左边线的颜色
+              width: "2" //坐标线的宽度
+            }
+          }
+        },
+        yAxis: {
+          type: "value",
+          name: "运行次数 (千次)",
+          nameGap:0,
+          nameTextStyle:{
+            padding:[0,0,17,40]
+          },
+          axisLine: {
+            lineStyle: {
+              type: "solid",
+              color: "eee", //左边线的颜色
+              width: "2" //坐标线的宽度
+            }
+          },
+          axisLabel: {
+            formatter: () => {
+              return "";
+            },
+            textStyle: {}
+          }
+        },
+        series: [
+          {
+            type: "bar",
+            label: {
+              normal: {
+                show: true,
+                position: "top"
+              }
+            },
+            data: []
+          }
+        ]
+      },
+      option1: {
+         color:['#2F6A92'],
+        title: {
+          text: "",
+          x: "center",
+          y: "8",
+          textStyle: {
+            fontWeight: "normal", //标题颜色
+            fontSize: 10
+          }
+        },
+        tooltip: {
+          trigger: "item",
+          formatter: "日期：{b}<br/>运行次数：{c} "
+        },
+        grid: {
+          left: "6%",
+          right: "12%",
+          bottom: "16%",
+          top:'22%',
+          containLabel: true
+        },
+        xAxis: {
+          type: "category",
+          name: "日期",
+          data: [],
+          axisLine: {
+            lineStyle: {
+              type: "solid",
+              color: "eee", //左边线的颜色
+              width: "2" //坐标线的宽度
+            }
+          }
+        },
+        yAxis: {
+          type: "value",
+          name: "运行次数 (千次)",
+          nameGap:0,
+          nameTextStyle:{
+            padding:[0,0,17,40]
+          },
+          axisLine: {
+            lineStyle: {
+              type: "solid",
+              color: "eee", //左边线的颜色
+              width: "2" //坐标线的宽度
+            }
+          },
+          axisLabel: {
+            formatter: () => {
+              return "";
+            },
+            textStyle: {}
+          }
+        },
+        series: [
+          {
+            type: "bar",
+            label: {
+              normal: {
+                show: true,
+                position: "top"
+              }
+            },
+            data: []
+          }
+        ]
+      },
+      option2: {
+         color:['#2F6A92'],
+        title: {
+          text: "",
+          x: "center",
+          y: "8",
+          textStyle: {
+            fontWeight: "normal", //标题颜色
+            fontSize: 10
+          }
+        },
+        tooltip: {
+          trigger: "item",
+          formatter: "日期：{b}<br/>运行次数：{c} "
+        },
+       grid: {
+          left: "6%",
+          right: "12%",
+          bottom: "16%",
+          top:'22%',
+          containLabel: true
+        },
+        xAxis: {
+          type: "category",
+          name: "日期",
+          data: [],
+          axisLine: {
+            lineStyle: {
+              type: "solid",
+              color: "eee", //左边线的颜色
+              width: "2" //坐标线的宽度
+            }
+          }
+        },
+        yAxis: {
+          type: "value",
+          name: "运行次数 (千次)",
+          nameGap:0,
+          nameTextStyle:{
+            padding:[0,0,17,40]
+          },
+          // nameRotate: 270,
+          // nameLocation: "middle",
+          axisLine: {
+            lineStyle: {
+              type: "solid",
+              color: "eee", //左边线的颜色
+              width: "2" //坐标线的宽度
+            }
+          },
+          axisLabel: {
+            formatter: () => {
+              return "";
+            },
+            textStyle: {}
+          }
+        },
+        series: [
+          {
+            type: "bar",
+            label: {
+              normal: {
+                show: true,
+                position: "top"
+              }
+            },
+            data: []
+          }
+        ]
+      }
+    };
+  },
+ watch:{
+   totalOption:{
+     handler(val){
+       let len = val.series[0].data.length;
+       let percentage;
+       if(1<len<7){
+         percentage = '30%'
+       }else {
+         percentage = 'auto'
+       }
+       this.totalOption.series[0].barWidth = percentage;
+       this.option0.series[0].barWidth = percentage;
+       this.option1.series[0].barWidth = percentage;
+       this.option2.series[0].barWidth = percentage;
+       console.log('totalserieschange----------',val)
+     },
+     deep:true
+   }
+ },
+  created(){
+     this.getchartData();
+    this.getTopthreeData();
+  },
+  mounted() {
+    this.containerHeight = document.documentElement.clientHeight - 276;
+    this.width = document.documentElement.clientWidth - 250 + "px";
+    this.height = document.documentElement.clientHeight - 280 + "px";
+    console.log("documentheight", document.documentElement.clientHeight);
+    window.addEventListener('resize', () => {
+      console.log('476--------')
+    this.containerHeight = document.documentElement.clientHeight - 276;
+      this.width = document.documentElement.clientWidth - 250 + "px";
+      this.height = document.documentElement.clientHeight - 280 + "px";
+    });
+  },
+  methods: {
+    getchartData() {
+      this.loading = true;
+      this.$http({
+        url: this.$http.adornUrl(
+          "/statistics/statistics/analysisOfElevatorOperation"
+        ),
+        method: "get",
+        params: this.$http.adornParams(this.formData)
+      })
+        .then(({ data }) => {
+          this.loading = false;
+          if (data && data.code == 0) {
+            console.log("总图表数据", data.list);
+            let list = data.list.list;
+            // this.firOption.title.text = list[0].local;
+            // this.secOption.title.text = list[1].local;
+            // this.thiOption.title.text = list[2].local;
+            if (list) {
+              let [xData,sData] = [[],[]];
+             list.forEach(item=>{
+               xData.push(item.date)
+               sData.push(item.operationNum)
+             })
+             this.totalOption.xAxis.data = xData;
+             this.totalOption.series[0].data = sData;
+             this.$nextTick(()=>{
+               this.totalChart = echart.init(document.getElementById('totalChartBox'),);
+               this.totalChart.setOption(this.totalOption);
+             })
+             window.addEventListener('resize',()=>{
+               this.totalChart.resize()
+             })
+            } else {
+            }
+          }
+        })
+        .catch(e => {
+          this.loading = false;
+          console.log(e);
+        });
+    },
+    getTopthreeData() {
+      this.loading = true;
+      this.$http({
+        url: this.$http.adornUrl(
+          "/statistics/statistics/analysisOfElevatorOperationThree"
+        ),
+        method: "get",
+        params: this.$http.adornParams( this.formData)
+      })
+        .then(({ data }) => {
+          this.loading = false;
+          if (data && data.code == 0) {
+            console.log("前三数据", data.list);
+            let list = data.list;
+            this.chartDataList = list;
+            // this.firOption.title.text = list[0].local;
+            // this.secOption.title.text = list[1].local;
+            // this.thiOption.title.text = list[2].local;
+            if (list) {
+              list.forEach((item, index) => {
+                let [xData, sData] = [[], []];
+                item.result.forEach(value => {
+                  xData.push(value.date);
+                  sData.push(value.operationNum);
+                });
+                this[`option${index}`].xAxis.data = xData;
+                this[`option${index}`].series[0].data = sData;
+                this.$nextTick(() => {
+                  this[`chart${index}`] = echart.init(
+                    document.getElementById(`chartBox${index}`),
+                    // "light"
+                  );
+                  this[`chart${index}`].setOption(this[`option${index}`]);
+                });
+                 window.addEventListener('resize',()=>{
+                    this.chart0.resize()
+                    this.chart1.resize()
+                    this.chart2.resize()
+                })
+              });
+            } else {
+              this.chartDataList = [];
+            }
+          }
+        })
+        .catch(e => {
+          this.loading = false;
+          console.log(e);
+        });
+    },
+    getDataList() {
+      this.$http({
+        url: this.$http.adornUrl(
+          "/statistics/statistics/analysisOfElevatorOperationAll"
+        ),
+        method: "get",
+        params: this.$http.adornParams({
+          page: this.pageIndex,
+          limit: this.pageSize,
+          years: this.formData.years,
+          months: this.formData.months,
+          regCode: this.formData.regCode,
+          province: this.formData.province,
+          city: this.formData.city,
+          district: this.formData.district,
+          startTime:this.formData.startTime
+        })
+      })
+        .then(({ data }) => {
+          if (data && data.code == 0) {
+            console.log("表格数据", data);
+            this.dataList = data.list.list;
+            this.totalCount = data.list.totalCount;
+          }
+        })
+        .catch(e => {
+          console.log(e);
+        });
+    },
+
+    handleChange(e) {
+      console.log("change", e);
+      console.log(this.formData);
+      this.currentIndex = e.index;
+      if (e.index == 0) {
+        this.getchartData();
+        this.getTopthreeData();
+      } else {
+        this.getDataList();
+      }
+    },
+    handleQuery() {
+      console.log("formData", this.formData);
+      if (this.currentIndex == 0) {
+        this.getTopthreeData();
+        this.getchartData();
+      } else {
+        this.pageIndex = 1;
+        this.getDataList();
+      }
+    },
+    pickStimeEtime(t) {
+      console.log("282", t);
+      if (t) {
+        this.formData.stime = t[0];
+        this.formData.etime = t[1];
+      } else {
+        this.formData.stime = "";
+        this.formData.etime = "";
+      }
+    } // 选择电梯
+    // selectElevator() {
+    //   this.showElevatorselectDialog = true;
+    //   this.$nextTick(() => {
+    //     this.$refs.elevatorSelector.init();
+    //   });
+    // },
+    // selectElevatorConfirm(val) {
+    //   console.log("确认选择", val);
+    //   this.formData.regCode = val.regcode;
+    //   console.log(this.formData);
+    // }
+  }
+};
+</script>
+<style scoped lang="scss">
+@import "../../../assets/css/statistical.scss";
+
+// .chart_title {
+//   font-size: 18px;
+//   height: 60px;
+//   line-height: 60px;
+//   color: #666;
+//   text-align: center;
+//   /* margin-bottom:30px; */
+// }
+// .chartContainer {
+//   // background: rgba(0,0,0,.2);
+//   width: 100%;
+//   display: flex;
+//   border: 1px solid #ddd;
+//   & > .left {
+//     // width:50%;
+//     flex: 0 0 65%;
+//   }
+//   & > .right {
+//     // width: 50%;
+//     flex: 0 0 35%;
+//     border-left: 1px solid #ddd;
+//     box-sizing: border-box;
+//     // display: flex;
+//     // flex-direction: column;
+//     & > .right_item {
+//       // flex: 1;
+//       height: 50%;
+//     }
+//     & > .right_item.border_bottom {
+//       border-bottom: 1px solid #ddd;
+//     }
+//   }
+// }
+</style>

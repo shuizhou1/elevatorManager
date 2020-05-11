@@ -1,0 +1,109 @@
+export default {
+  namespaced: true,
+  state: {
+    themeStyle: '#4080ff', // 主题样式
+    themeKey: 'VUE_THEME_STYLE', // 主题localhostStore存储key值
+    navbarLayoutHeaderStyle: 'header--23262E', //  navbar头部header样式
+    navbarLayoutBodyStyle: 'body--23262E', //  navbar头部body样式
+    sidebarLayoutSkinStyle: 'menu--393D49', // 菜单样式
+    elCardBgcStyle: 'FFFFFF', // 背景颜色
+    skinStyle: 'classicStyle' // 使用皮肤
+  },
+  mutations: {
+    // 修改主题样式
+    updateThemeStyle (state, themeStyle) {
+      state.themeStyle = themeStyle
+    },
+    // 修改navbar头部header样式
+    updateNavbarLayoutHeaderStyle (state, navbarLayoutHeaderStyle) {
+      state.navbarLayoutHeaderStyle = navbarLayoutHeaderStyle
+    },
+    // 修改navbar头部body样式
+    updateNavbarLayoutBodyStyle (state, navbarLayoutBodyStyle) {
+      state.navbarLayoutBodyStyle = navbarLayoutBodyStyle
+    },
+    // 修改菜单样式
+    updateSidebarLayoutSkinStyle (state, sidebarLayoutSkinStyle) {
+      state.sidebarLayoutSkinStyle = sidebarLayoutSkinStyle
+    },
+    // 修改背景颜色
+    updateElCardBgcStyle (state, elCardBgcStyle) {
+      state.elCardBgcStyle = elCardBgcStyle
+    },
+    // 修改使用皮肤
+    updateSkinStyle (state, skinStyle) {
+      state.skinStyle = skinStyle
+    }
+  },
+  actions: {
+    // 修改主题样式
+    updateThemeStyle ({commit}, themeStyle) {
+      commit('updateThemeStyle', {themeStyle})
+    },
+    // 修改navbar头部header样式
+    updateNavbarLayoutHeaderStyle ({commit}, navbarLayoutHeaderStyle) {
+      commit('updateNavbarLayoutHeaderStyle', {navbarLayoutHeaderStyle})
+    },
+    // 修改navbar头部body样式
+    updateNavbarLayoutBodyStyle ({commit}, navbarLayoutBodyStyle) {
+      commit('updateNavbarLayoutBodyStyle', {navbarLayoutBodyStyle})
+    },
+    // 修改菜单样式
+    updateSidebarLayoutSkinStyle ({commit}, sidebarLayoutSkinStyle) {
+      commit('updateSidebarLayoutSkinStyle', {sidebarLayoutSkinStyle})
+    },
+    // 修改背景颜色
+    updateElCardBgcStyle ({commit}, elCardBgcStyle) {
+      commit('updateElCardBgcStyle', {elCardBgcStyle})
+    },
+    // 修改使用皮肤
+    updateSkinStyle ({commit}, skinStyle) {
+      commit('updateSkinStyle', {skinStyle})
+    }
+  },
+  getter: {
+    themeStyle (state) {
+      var themeStyle = window.localStorage.getItem('VUE_THEME_STYLE')
+      if (themeStyle === null || themeStyle === 'undefined') {
+        themeStyle = this.$store.state.theme.navbarLayoutHeaderStyle
+      }
+      return window.localStorage.getItem('VUE_THEME_STYLE') || state.themeStyle
+    },
+    navbarLayoutHeaderStyle (state) {
+      var navbarLayoutHeaderStyle = window.localStorage.getItem('VUE_NABAR_LAYOUT_HEADER_STYLE')
+      if (navbarLayoutHeaderStyle === null || navbarLayoutHeaderStyle === 'undefined') {
+        navbarLayoutHeaderStyle = this.$store.state.theme.navbarLayoutHeaderStyle
+      }
+      return navbarLayoutHeaderStyle
+    },
+    navbarLayoutBodyStyle (state) {
+      var navbarLayoutBodyStyle = window.localStorage.getItem('VUE_NABAR_LAYOUT_BODY_STYLE')
+      if (navbarLayoutBodyStyle === null || navbarLayoutBodyStyle === 'undefined') {
+        navbarLayoutBodyStyle = this.$store.state.theme.navbarLayoutBodyStyle
+      }
+      return navbarLayoutBodyStyle
+    },
+    sidebarLayoutSkinStyle (state) {
+      var sidebarLayoutSkinStyle = window.localStorage.getItem('VUE_SIDE_BAR_LAYOUT_SKIN_STYLE')
+      if (sidebarLayoutSkinStyle === null || sidebarLayoutSkinStyle === 'undefined') {
+        sidebarLayoutSkinStyle = this.$store.state.theme.sidebarLayoutSkinStyle
+      }
+      return sidebarLayoutSkinStyle
+    },
+    elCardBgcStyle (state) {
+      var localElCardBgcStyle = window.localStorage.getItem('VUE_EL_CARD_BGC_STYLE')
+      if (localElCardBgcStyle === null || localElCardBgcStyle === 'undefined') {
+        localElCardBgcStyle = this.$store.state.theme.elCardBgcStyle
+      }
+      return localElCardBgcStyle
+    },
+    skinStyle (state) {
+      var localSkinStyle = window.localStorage.getItem('VUE_SKIN_STYLE') // 获取本地存储的localSkinStyle
+      // 判断本地本地存储的localSkinStyle是否存在，不存在使用默认值
+      if (localSkinStyle === null || localSkinStyle === 'undefined') {
+        localSkinStyle = this.$store.state.theme.skinStyle
+      }
+      return localSkinStyle
+    }
+  }
+}

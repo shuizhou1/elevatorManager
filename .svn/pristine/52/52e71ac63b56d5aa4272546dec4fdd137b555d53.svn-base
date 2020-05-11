@@ -1,0 +1,201 @@
+<!--  -->
+<template>
+  <div>
+    <div class="header">查询条件</div>
+    <el-form
+      ref="form"
+      :model="formData"
+      class="form"
+      style="margin-left:10px"
+      label-width="auto"
+      :rules="rules"
+      @keyup.enter.native="handleQuery"
+    >
+      <el-row :gutter="20">
+        <el-col :span="8">
+          <el-form-item label="维保单位名称" prop="wbdw">
+            <el-input v-model="formData.wbdw"></el-input>
+          </el-form-item>
+        </el-col>
+        <el-col :span="8">
+          <el-form-item label="维保联系人" prop="wblxr">
+            <el-input v-model="formData.dtdz"></el-input>
+          </el-form-item>
+        </el-col>
+        <el-col :span="6" :offset="1">
+          <el-button @click="handleQuery" type="primary">查询</el-button>
+          <el-button @click="dialogVisible = true" type="warning">添加</el-button>
+          <el-button @click="handleRemove" type="danger">移除</el-button>
+        </el-col>
+      </el-row>
+    </el-form>
+    <div class="header">维保单位列表</div>
+    <el-table
+      ref="multipleTable"
+      border
+      :data="tableData"
+      tooltip-effect="dark"
+      style="width: 100%"
+      @selection-change="handleSelectionChange"
+    >
+      <el-table-column type="selection" width="50" align="center"></el-table-column>
+      <el-table-column prop="wbdw" label="维保单位" align="center" show-overflow-tooltip></el-table-column>
+      <el-table-column prop="wblxr" label="维保联系人" align="center"></el-table-column>
+      <el-table-column prop="lxrdh" label="联系人电话" align="center"></el-table-column>
+      <el-table-column prop="tjrq" label="添加日期" align="center"></el-table-column>
+    </el-table>
+    <div class="pagination_wraper">
+      <el-pagination
+        layout="prev, pager, next"
+        :total="totalNum"
+        @current-change="handlePageChange"
+      ></el-pagination>
+    </div>
+    <el-dialog  :visible.sync="dialogVisible" width="50%" :show-close="false">
+      <div slot="title" class="dialog_title">新增</div>
+      <wbdw-Addunit :show.sync="dialogVisible"></wbdw-Addunit>
+    </el-dialog>
+  </div>
+</template>
+
+<script>
+import wbdwAddunit from '@/components/wbdwAddunit.vue';
+export default {
+  components:{
+    wbdwAddunit
+  },
+  props: ["show"],
+  data() {
+    return {
+      formData: {},
+      totalNum: 50,
+      rules: {
+        wbdw: [
+          {
+            required: true,
+            message: "维保单位不能为空"
+          }
+        ],
+        wblxr: [
+          {
+            required: true,
+            message: "维保联系人不能为空"
+          }
+        ]
+      },
+      tableData: [
+        {
+          wbdw: "新岑四路佳都智慧大厦",
+          wblxr: "张兴达",
+          lxrdh: "18827278978",
+          tjrq: "2019-08-01"
+        },
+        {
+          wbdw: "新岑四路佳都智慧大厦",
+          wblxr: "张兴达",
+          lxrdh: "18827278978",
+          tjrq: "2019-08-01"
+        },
+        {
+          wbdw: "新岑四路佳都智慧大厦",
+          wblxr: "张兴达",
+          lxrdh: "18827278978",
+          tjrq: "2019-08-01"
+        },
+        {
+          wbdw: "新岑四路佳都智慧大厦",
+          wblxr: "张兴达",
+          lxrdh: "18827278978",
+          tjrq: "2019-08-01"
+        },
+        {
+          wbdw: "新岑四路佳都智慧大厦",
+          wblxr: "张兴达",
+          lxrdh: "18827278978",
+          tjrq: "2019-08-01"
+        },
+        {
+          wbdw: "新岑四路佳都智慧大厦",
+          wblxr: "张兴达",
+          lxrdh: "18827278978",
+          tjrq: "2019-08-01"
+        }
+      ],
+      dialogVisible: false,
+      limit: 10,
+      page: 1
+    };
+  },
+  created() {},
+  methods: {
+    initData() {
+      console.log("获取数据");
+      this.$http({
+        url: this.$http.adornUrl(""),
+        method: "post",
+        data: {
+          limit: this.limit,
+          page: this.page
+        }
+      })
+        .then(res => {
+          console.log("res", res);
+        })
+        .then(e => {
+          console.log(e);
+        });
+    },
+    handleSelectionChange(val) {
+      console.log("选项改变", val);
+      this.elevators = val;
+    },
+
+    handleQuery() {
+      this.$refs["form"].validate(valid => {
+        if (valid) {
+          // alert("submit!");
+          console.log(this.formData);
+          this.$http
+            .post(this.adornUrl(""), this.formData)
+            .then(res => {
+              console.log("res", res);
+            })
+            .catch(e => {
+              console.log(e);
+            });
+        } else {
+          console.log("error submit!!");
+          return false;
+        }
+      });
+      console.log("查询电梯");
+    },
+    handleAdd() {
+      console.log("添加");
+    },
+    handleRemove() {
+      console.log("删除");
+    },
+    handlePageChange(e) {
+      console.log("页数改变", e);
+      this.page = e;
+    }
+  }
+};
+</script>
+<style lang='scss' scoped>
+.title {
+  font-size: 22px;
+  padding-bottom: 10px;
+  // border-bottom: 1px solid #dedede;
+}
+.subTitle {
+  font-size: 18px;
+  padding: 10px 10px;
+  border-bottom: 1px solid #dedede;
+}
+.pagination_wraper {
+  margin: 20px 0;
+  text-align: center;
+}
+</style>

@@ -1,0 +1,485 @@
+<template>
+  <div class="site-wrapper site-page--login">
+    <div class="site-content__wrapper">
+      <div class="login-main">
+        <div class="addBorder">
+          <div></div>
+          <div class="main-form">
+            <div class="login_title">用户登录</div>
+            <el-form
+              :model="dataForm"
+              :rules="dataRule"
+              ref="dataForm"
+              @keyup.enter.native="dataFormSubmit()"
+              status-icon
+            >
+              <el-form-item prop="username" >
+                <el-input
+                  v-model="dataForm.username"
+                  clearable
+                  class="login_input"
+                  placeholder="用户名"
+                ></el-input>
+              </el-form-item>
+                
+              <el-form-item prop="password">
+                <el-input
+                  v-model="dataForm.password"
+                  clearable
+                  class="login_input"
+                  type="password"
+                  placeholder="密码"
+                ></el-input>
+              </el-form-item>
+              <el-form-item prop="captcha" class="captcha-container">
+                <div style="display:flex;width:100%">
+                    <el-input
+                      class="captcha-input"
+                      style="flex:1"
+                      v-model="dataForm.captcha"
+                      clearable
+                      placeholder="验证码"
+                    ></el-input>
+                    <img :src="captchaPath" @click="getCaptcha()" class="captcha-img" />
+
+                </div>
+              </el-form-item>
+              <el-row>
+                  <el-col :span="11">
+                    <el-button
+                      class="login-btn-submit"
+                      type="primary"
+                      :disable="loginState"
+                      @click="dataFormSubmit()"
+                      :disabled="loginState"
+                    >{{loginMessage}}</el-button>
+                  </el-col>
+                  <el-col :span="11" :offset="2">
+                    <el-button  type="danger" class="login-btn-reset" @click="handleReset">重置</el-button>
+                  </el-col>
+                </el-row>
+            </el-form>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</template>
+
+<script>
+import { getUUID, isPhone } from "@/utils";
+import SockJS from "sockjs-client";
+import Qrcodes from "@/components/QRCodes";
+const { md5 } = require("@/utils/md5.js");
+export default {
+  components: {
+    Qrcodes
+  },
+  data() {
+    const  passwordLength = (rule,value,callback)=>{
+     if(!/\d{6,}/.test(value)){
+       callback(new Error('密码长度为大于等于6'));
+     }else {
+       callback();
+     };
+    };
+     const  captchaLength = (rule,value,callback)=>{
+       console.log(value)
+     if(!/[0-9a-z]{5}/.test(value)){
+       callback(new Error('验证码长度为5的字母或数字'));
+     }else {
+       callback();
+     };
+    };
+    return {
+      messageDisable: false,
+      loginMessage: "登录",
+      loginState: true,
+      countdowm: "获取验证码",
+      countdowmTime: null,
+      num: 60,
+      dataForm: {
+        username: "",
+        password: "",
+        uuid: "",
+        captcha: "",
+      },
+      dataRule: {
+        username: [
+          {
+            required: true,
+            message:'用户名不能为空'
+          }
+        ],
+        password: [
+          {
+            required: true,
+            message:'密码不能为空'
+          },
+          { validator: passwordLength,trigger:'blur'}
+        ],
+        captcha: [
+          {
+            required: true,
+            message: "验证码不能为空"
+          },
+          { validator: captchaLength,trigger:'blur'}
+        ]
+      },
+      captchaPath: "",
+      websocket: null
+    };
+  },
+  created() {
+    this.getCaptcha();
+    // console.log('logincreate',this.$route.query);
+    // if(this.$route.query.loginout){
+
+    // }
+  },
+  destroyed() {
+    clearInterval(this.countdowmTime);
+  },
+  watch: {
+    "dataForm.captcha"(val) {
+      console.log(val);
+      let value = val.replace(/\s+/g, "");
+      if (value.length == 5) {
+        this.checkCaptcha();
+      }
+    }
+  },
+
+  methods: {
+    // 获取短信验证码
+    getMessage() {
+      this.dataForm.smsUuid = getUUID();
+      if (isPhone(this.dataForm.phoneNumber)) {
+        if (this.dataForm.phoneNumber !== "") {
+          this.$http({
+            url: this.$http.adornUrl("/smsCaptcha"),
+            method: "get",
+            params: this.$http.adornParams({
+              uuid: this.dataForm.smsUuid,
+              phone: this.dataForm.phoneNumber
+            })
+          }).then(({ data }) => {
+            if (data && data.code === 0) {
+              this.messageDisable = true;
+              this.countdowmTime = setInterval(() => {
+                this.num--;
+                this.countdowm = `获取验证码 (${this.num})`;
+                if (this.num <= 0) {
+                  this.countdowm = `获取验证码`;
+                  this.num = 60;
+                  clearInterval(this.countdowmTime);
+                  this.messageDisable = false;
+                }
+              }, 1000);
+              // this.dataForm.messagePassword = data.msg
+              this.$alert(data.msg, "获取验证码", {
+                confirmButtonText: "确定",
+                callback: action => {}
+              });
+            } else {
+              this.$message.error(data.msg);
+            }
+          });
+        } else {
+          this.$message.error("请输入手机号码");
+        }
+      } else {
+        this.$alert("请输入正确的手机号码", "获取验证码", {
+          confirmButtonText: "确定",
+          callback: action => {}
+        });
+      }
+    },
+     checkCaptcha() {
+      console.log("handleCaptchaInput");
+      //图形验证码输入
+      this.$http({
+        url: this.$http.adornUrl("/sys/checkCaptcha"),
+        method: "post",
+        data: this.$http.adornData({
+          uuid: this.dataForm.uuid,
+          captcha: this.dataForm.captcha
+        })
+      }).then(({ data }) => {
+        if (data && data.code === 0) {
+            this.loginState = false;
+          console.log(data);
+          // this.updateUUID()
+          this.dataForm.uuid = data.uuid;
+        } else {
+          this.getCaptcha(); //验证失败更新验证码
+        }
+      });
+    },
+    // 提交表单
+    dataFormSubmit() {
+      this.$refs["dataForm"].validate(valid => {
+        if (valid) {
+          this.loginState = true;
+          this.$http({
+            url: this.$http.adornUrl("/sys/login"),
+            method: "post",
+            data: this.$http.adornData({
+              username: this.dataForm.username,
+              password: md5(this.dataForm.password),
+              uuid: this.dataForm.uuid,
+              captcha: this.dataForm.captcha
+            })
+          }).then(({ data }) => {
+            this.loginState = false;
+            this.loginMessage = "登录";
+            if (data && data.code === 0) {
+              clearInterval(this.countdowmTime);
+              //"/",".bigsite.com"
+              //   this.$cookie.set("token", data.token, { secure: true });
+              this.$cookie.set("token", data.token);
+              // console.log('cookie',document.cookie);
+              this.$router.replace({
+                name: "home"
+              });
+              //建立长连接
+              if ("WebSocket" in window) {
+                //192.168.56.1  生产环境需要更换地址和端口
+                this.websocket = new WebSocket(
+                  "ws://192.168.102.43:8080/manage-service/web-socket-server?token=" +
+                    data.token
+                );
+              } else if ("MozWebSocket" in window) {
+                this.websocket = new MozWebSocket(
+                  "ws://192.168.102.43:8080/manage-service/web-socket-server?token=" +
+                    data.token
+                );
+              } else {
+                //兼容低版本浏览器
+                this.websocket = new SockJS(
+                  "ws://192.168.102.43:8080/manage-service/sock-js/web-socket-server?token=" +
+                    data.token
+                );
+              }
+              this.websocket.onmessage = function(event) {
+                alert(event.data);
+                //关闭alert后跳转到登录页
+                location.href = "http://192.168.102.43:8001/#/login";
+              };
+            } else {
+              this.getCaptcha();
+              this.$message.error(data.msg);
+            }
+          }),
+            () => {
+              this.loginState = false;
+              this.loginMessage = "登录";
+            };
+        }
+      });
+    },
+    // 获取验证码
+    getCaptcha() {
+      this.dataForm.uuid = getUUID();
+      this.captchaPath = this.$http.adornUrl(
+        `/captcha.jpg?uuid=${this.dataForm.uuid}`
+      );
+      // this.captchaPath = 'http://192.168.102.50:8081/manage-service'+  `/captcha.jpg?uuid=${this.dataForm.uuid}`
+      // 清空验证码输入框
+      this.dataForm.captcha = "";
+    },
+    handleReset(){
+     this.$refs['dataForm'].resetFields();
+    }
+  }
+};
+</script>
+
+<style lang="scss">
+.login_input {
+  height: 0.5rem;
+  line-height: 0.5rem;
+  input {
+    height: 100%;
+    border: 1px solid #e1e1e1;
+  }
+}
+.captcha-container {
+  height: 0.5rem;
+  line-height: 0.5rem;
+  .captcha-img {
+    
+  }
+  .captcha-input {
+    height: 0.5rem;
+    flex: 1;
+    line-height: 0.5rem;
+    input {
+      height: 100%;
+      border: 1px solid #e1e1e1;
+    }
+  }
+}
+.message-container {
+  height: 0.5rem;
+  position: relative;
+  .getMessage {
+    width: 100%;
+    height: 0.5rem;
+    border: none;
+    color: white;
+    background-color: #54c693;
+    &.is-disabled {
+      background-color: rgba(84, 198, 147, 0.5);
+      color: white;
+    }
+  }
+  .message {
+    height: 0.5rem;
+    line-height: 0.5rem;
+    input {
+      height: 100%;
+      border: 1px solid #e1e1e1;
+    }
+  }
+}
+.message {
+  display: inline-block;
+}
+.main-form {
+  // width: 5.6rem;
+  position: fixed;
+  width: 600px;
+  height: 453px;
+  box-sizing: border-box;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  background-image: url(~@/assets/img/u128.png);
+  padding: 0 0.6rem 0.4rem 0.6rem;
+  .login_title {
+    color: #fff;
+    font-size: 18px;
+    text-align: center;
+    margin-top: 20px;
+    margin-bottom: 30px;
+  }
+}
+.site-wrapper.site-page--login {
+  position: absolute;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  left: 0;
+  overflow: hidden;
+  background: linear-gradient(to right, #366892, #eee, #4080ff);
+
+  &:before {
+    position: fixed;
+    top: 0;
+    left: 0;
+    z-index: -1;
+    width: 100%;
+    height: 100%;
+    content: "";
+    // background-image: url(~@/assets/img/login_bg.png);
+    background-size: cover;
+  }
+
+  .site-content__wrapper {
+    position: absolute;
+    top: 0;
+    right: 0;
+    bottom: 0;
+    left: 0;
+    padding: 0;
+    margin: 0;
+    overflow-x: hidden;
+    overflow-y: auto;
+    background-color: transparent;
+  }
+
+  .site-content {
+    min-height: 100%;
+    padding: 30px 500px 30px 30px;
+  }
+
+  .brand-info {
+    margin: 220px 100px 0 90px;
+    color: #fff;
+  }
+
+  .brand-info__text {
+    margin: 0 0 22px 0;
+    font-size: 48px;
+    font-weight: 400;
+    text-transform: uppercase;
+  }
+
+  .brand-info__intro {
+    margin: 10px 0;
+    font-size: 16px;
+    line-height: 1.58;
+    opacity: 0.6;
+  }
+
+  .login-main {
+    position: absolute;
+    top: 0;
+    right: 0;
+    left: 0;
+    bottom: 0;
+    min-height: 100%;
+  }
+
+  .login-title {
+    margin-top: 105px;
+    margin-bottom: 45px;
+    text-align: center;
+  }
+
+  .login-title-2 {
+    font-size: 20px;
+    text-align: center;
+    color: #ffd700;
+  }
+
+  .login-captcha {
+    overflow: hidden;
+
+    > img {
+      width: 100%;
+      cursor: pointer;
+    }
+  }
+
+  .login-btn-submit {
+    height: 0.5rem;
+    // background-color: #4080ff;
+    color: white;
+    width: 100%;
+    margin-top: 0.2rem;
+  }
+  .login-btn-reset {
+    height: 0.5rem;
+    color: white;
+    width: 100%;
+    margin-top: 0.2rem;
+  }
+
+  .qr_wraper {
+    // text-align: center;
+    display: inline-block;
+    position: relative;
+  }
+  .qrcode {
+    position: absolute;
+    top: -250%;
+    left: 90%;
+    display: none;
+  }
+  .qr_wraper:hover .qrcode {
+    display: block;
+  }
+}
+</style>

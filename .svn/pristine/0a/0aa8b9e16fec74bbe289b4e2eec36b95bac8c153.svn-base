@@ -1,0 +1,528 @@
+<template>
+    <div>
+        <el-dialog
+                :title="!this.dataForm.id ? '新增社区' : '修改'"
+                :append-to-body="true"
+                :close-on-click-modal="false"
+                :fullscreen="false"
+                :modal="true"
+                custom-class="smallDialog"
+                :visible.sync="visible">
+            <el-form :model="dataForm" :rules="dataRule" ref="dataForm" @keyup.enter.native="dataFormSubmit()"
+                     label-width="95px">
+                <el-form-item label="所属区域：" prop="district">
+                    <el-select size="small" class="width100"
+                               filterable
+                               @focus="getDistrictList()"
+                               v-model="dataForm.district"
+                               placeholder="请选择区域"
+                               v-on:change="getStreet($event)">
+                        <el-option
+                                v-for="(item,index) in list"
+                                :label="item.label"
+                                :key="index"
+                                :value="item">
+                        </el-option>
+                    </el-select>
+                </el-form-item>
+                <el-form-item label="所属街道：" prop="street">
+                    <el-select size="small" class="width100"
+                               v-model="dataForm.street"
+                               placeholder="请选择街道"
+                               v-on:change="getCommunityName($event)">
+                        <el-option
+                                v-for="(item,eq) in streetList"
+                                :key="eq"
+                                :label="item.label"
+                                :value="item">
+                        </el-option>
+                    </el-select>
+                </el-form-item>
+                <el-form-item label="所属社区：" prop="communityName">
+                    <el-input type="text" v-model="dataForm.communityName" placeholder="请选择社区"></el-input>
+                </el-form-item>
+            </el-form>
+            <span slot="footer" class="dialog-footer">
+              <el-button type="primary" @click="dataFormSubmit()">保存</el-button>
+            </span>
+        </el-dialog>
+        <el-dialog :modal="false"  :title="!this.dataForm.id ? '新增专员' : '修改'" :close-on-click-modal="false" :visible.sync="menberDialog" custom-class="smallDialog"
+                   :fullscreen="true">
+            <el-form :model="dataForm" :rules="dataRule" ref="dataForm" @keyup.enter.native="dataFormSubmit()"
+                     label-width="95px">
+                <!-- 使用eleUI布局 -->
+                <el-row>
+                    <el-col :span="24">
+                        <div class="button-container">
+                            <div class="input-container">
+                                <div class="item has-input">
+                                    <div class="flex-container">
+                                        <span class="selectTitle">所属区域：</span>
+                                        <span style="color: #999" class="select-item span-content">{{ dataForm.district.label }}</span>
+                                    </div>
+                                </div><div class="item has-input">
+                                <div class="flex-container">
+                                    <span class="selectTitle">所属街道：</span>
+                                    <span style="color: #999" class="select-item span-content">{{ dataForm.street.label }}</span>
+                                </div>
+                            </div><div class="item has-input">
+                                <div class="flex-container">
+                                    <span class="selectTitle">所属社区：</span>
+                                    <span style="color: #999" class="select-item span-content">{{ dataForm.communityName }}</span>
+                                </div>
+                            </div>
+                            </div>
+                        </div>
+
+                    </el-col>
+                </el-row>
+                <el-row>
+                    <el-col :span="12">
+                        <el-form-item label="员工编号">
+                            <span style="color: red;">编号由系统自动生成</span>
+                        </el-form-item>
+                    </el-col>
+                </el-row>
+                <el-row>
+                    <el-col :span="12">
+                        <el-form-item label="昵称" prop="nickName">
+                            <el-input v-model="menberForm.nickName" placeholder="昵称" clearable></el-input>
+                        </el-form-item>
+                    </el-col>
+                    <el-col :span="12">
+                        <el-form-item label="用户名" prop="userName">
+                            <el-input v-model="menberForm.userName" placeholder="登录名" clearable></el-input>
+                        </el-form-item>
+                    </el-col>
+                </el-row>
+                <el-row>
+                    <el-col :span="6">
+                        <el-form-item label="状态" prop="status">
+                            <el-select v-model="menberForm.status" clearable placeholder="请选择">
+                                <el-option v-for="item in optionStatus" :key="item.value" :label="item.label"
+                                           :value="item.value">
+                                </el-option>
+                            </el-select>
+                        </el-form-item>
+                    </el-col>
+                    <el-col :span="6">
+                        <el-form-item label="性别" prop="sex">
+                            <el-select v-model="menberForm.sex" clearable placeholder="请选择">
+                                <el-option v-for="item in optionSex" :key="item.value" :label="item.label"
+                                           :value="item.value">
+                                </el-option>
+                            </el-select>
+                        </el-form-item>
+                    </el-col>
+                </el-row>
+                <el-row>
+                    <el-col :span="12">
+                        <el-form-item label="电子邮件" prop="email">
+                            <el-input v-model="menberForm.email" placeholder="电子邮件"></el-input>
+                        </el-form-item>
+                    </el-col>
+                    <el-col :span="12">
+                        <el-form-item label="手机" prop="mobile">
+                            <el-input v-model="menberForm.mobile" placeholder="手机"></el-input>
+                        </el-form-item>
+                    </el-col>
+                </el-row>
+
+
+            </el-form>
+            <span slot="footer" class="dialog-footer">
+                <e-button ref="eproButton1" v-on:handleClick="handleClick" :parentId="'2'" :busType="'edit'"></e-button>
+            </span>
+
+        </el-dialog>
+    </div>
+</template>
+
+<script>
+    import { isEmail, isMobile, isPhone, isIDCard } from '@/utils/validate'
+    export default {
+        data () {
+            var validatePassword = (rule, value, callback) => {
+                if (!this.dataForm.id && !/\S/.test(value)) {
+                    callback(new Error('密码不能为空'))
+                } else {
+                    callback()
+                }
+            }
+            var validateComfirmPassword = (rule, value, callback) => {
+                if (!this.dataForm.id && !/\S/.test(value)) {
+                    callback(new Error('确认密码不能为空'))
+                } else if (this.dataForm.password !== value) {
+                    callback(new Error('确认密码与密码输入不一致'))
+                } else {
+                    callback()
+                }
+            }
+            var validateEmail = (rule, value, callback) => {
+                if (!isEmail(value)) {
+                    callback(new Error('邮箱格式错误'))
+                } else {
+                    callback()
+                }
+            }
+            var validateMobile = (rule, value, callback) => {
+                if (!isMobile(value)) {
+                    callback(new Error('手机号格式错误'))
+                } else {
+                    callback()
+                }
+            }
+            var validatePhone = (rule, value, callback) => {
+                if (!isPhone(value)) {
+                    callback(new Error('固话格式错误'))
+                } else {
+                    callback()
+                }
+            }
+            var validateIDCard = (rule, value, callback) => {
+                if (!isIDCard(value)) {
+                    callback(new Error('身份证格式错误'))
+                } else {
+                    callback()
+                }
+            }
+            return {
+                optionStatus: [{
+                    value: 1,
+                    label: '有效'
+                }, {
+                    value: 0,
+                    label: '无效'
+                }],
+                optionSex: [{
+                    value: '1',
+                    label: '男'
+                }, {
+                    value: '0',
+                    label: '女'
+                }],
+                menberDialog: false,
+                currentDistrictId: '',
+                communityInfo: '',
+                streetList: [],
+                communityNameList: [],
+                list: [],
+                visible: false,
+                dataForm: {
+                    communityName: '', district: '', street: '', username: '', mobile: '', id: ''
+                },
+                menberForm: {
+                    id: '',
+                    userName: '',
+                    nickName: '',
+                    sex: '',
+                    birth: null,
+                    jobtitle: '',
+                    homeaddr: '',
+                    hometel: '',
+                    bgdh: '',
+                    mobile: '',
+                    // password: '',
+                    // comfirmPassword: '',
+                    email: '',
+                    status: 1,
+                    departmentId: '',
+                    departmentName: '',
+                    jsxxType: '',
+                    idcard: '',
+                    communityId: '',
+                    roleIdList: [],
+                    district: {
+                        value: '',
+                        label: ''
+                    },
+                    street: {
+                        value: '',
+                        label: ''
+                    },
+                    community: {
+                        value: '',
+                        label: ''
+                    }
+                },
+                dataRule: {
+                    district: [], street: []
+                }
+            }
+        },
+        methods: {
+            handleClick (method, param) {
+                if (method === 'cancel') {
+                    this.menberDialog = false
+                } else {
+                    if (!this.menberForm.userName) {
+                        this.$message.error('请输入用户名')
+                        return
+                    }
+                    if (!this.menberForm.nickName) {
+                        this.$message.error('请输入昵称')
+                        return
+                    }
+                    if (!this.menberForm.email) {
+                        this.$message.error('请输入邮箱')
+                        return
+                    } else {
+                        if (!isEmail(this.menberForm.email)) {
+                            this.$message.error('邮箱格式错误')
+                            return
+                        }
+                    }
+                    if (!this.menberForm.mobile) {
+                        this.$message.error('请输入手机')
+                        return
+                    } else {
+                        if (!isMobile(this.menberForm.mobile)) {
+                            this.$message.error('手机格式错误')
+                            return
+                        }
+                    }
+                    var areacode = "4401";
+                    if (this.dataForm.district.value && this.dataForm.district.value !== '00' && this.dataForm.district.value.length === 2) {
+                        areacode +=  this.dataForm.district.value;
+                    }
+                    if (this.dataForm.street.value && this.dataForm.street.value !== '000' && this.dataForm.street.value.length === 3) {
+                        areacode += this.dataForm.street.value;
+                    }
+
+                    this.$http({
+                        url: this.$http.adornUrl(`/community/communityinfo/${!this.dataForm.id ? 'saveUser' : 'updateUser'}`),
+                        method: 'post',
+                        data: this.$http.adornData({
+                            'username': this.menberForm.userName,
+                            'nickname': this.menberForm.nickName,
+                            'userId': this.menberForm.userId,
+                            'email': this.menberForm.email,
+                            'mobile': this.menberForm.mobile,
+                            'status': this.menberForm.status,
+                            'sex': this.menberForm.sex,
+                            'communityId': this.menberForm.community.value,
+                            'areacode': areacode,
+                            'district': this.dataForm.district.value,
+                            'street': this.dataForm.street.value,
+                            'idcard': this.menberForm.idcard
+                        })
+                    }).then(({
+                                 data
+                             }) => {
+                        if (data && data.code === 0) {
+                            this.dataForm.district = {}
+                            this.dataForm.street = {}
+                            this.dataForm.communityName = ''
+                            this.menberForm.userName = ''
+                            this.menberForm.nickName = ''
+                            this.menberForm.email = ''
+                            this.menberForm.mobile = ''
+                            this.menberForm.status = ''
+                            this.menberForm.sex = ''
+                            this.menberForm.community = {}
+                            this.menberForm.idcard = ''
+                            this.$message({
+                                message: '操作成功',
+                                type: 'success',
+                                duration: 1500,
+                                onClose: () => {
+                                    this.visible = false
+                                    this.menberDialog = false
+                                    this.$emit('refreshDataList')
+                                }
+                            })
+                        } else {
+                            this.$message.error(data.msg)
+                        }
+                    })
+                }
+            },
+            // 获取树状数据
+            getList (type, code = null, parentCode = null) {
+                return new Promise(resolve => {
+                    this.$http({
+                        url: this.$http.adornUrl('/community/communityinfo/threeChange'),
+                        method: 'get',
+                        params: this.$http.adornParams({
+                            param: type,
+                            code: code,
+                            parentCode: parentCode
+                        })
+                    }).then(({ data }) => {
+                        if (data && data.code === 0) {
+                            let list = data.page
+                            if (list instanceof Array) {
+                                let arr = []
+                                list.forEach((item, index) => {
+                                    if (index === 0) {
+                                        arr.push({
+                                            label: '请选择',
+                                            value: null,
+                                            children: []
+                                        })
+                                    }
+                                    arr.push({
+                                        label: item.areaname,
+                                        value: item[type],
+                                        children: []
+                                    })
+                                })
+                                resolve(arr)
+                            }
+                        }
+                    })
+                })
+            },
+            getDistrictList () {
+                return new Promise((resolve, reject) => {
+                    this.getList('district').then(res => {
+                        this.list = res
+                        resolve()
+                    })
+                })
+            },
+            // 街道获取
+            getStreet (item, code) {
+                return new Promise((resolve, reject) => {
+                    this.streetList = []
+                    this.communityNameList = []
+                    this.dataForm.street = ''
+                    this.currentDistrictId = item.value
+                    this.getList('street', item.value).then(res => {
+                        this.streetList = res
+                        resolve()
+                    })
+                })
+            },
+            getCommunityName (item) {
+                this.communityNameList = []
+                this.getList('community', item.value, this.currentDistrictId).then(res => {
+                    this.communityNameList = res
+                })
+            },
+            init(id) {
+                this.dataForm.id = id
+                this.visible = true
+                this.$nextTick(() => {
+                    this.$refs['dataForm'].resetFields()
+                    if (this.dataForm.id) {
+                        this.$http({
+                            url: this.$http.adornUrl(`/community/communityinfo/infoUser/${id}`),
+                            method: 'get',
+                            params: this.$http.adornParams()
+                        }).then(({ data }) => {
+                            if (data && data.code === 0) {
+                                console.log(data)
+                                this.communityInfo = data.sysUserEntity
+                                this.dataForm.communityName = data.sysUserEntity.communityName
+                                this.getDistrictList().then(res => {
+                                    this.dataForm.district = {
+                                        label: data.sysUserEntity.districtName,
+                                        value: data.sysUserEntity.district
+                                    }
+                                })
+                                this.getStreet({
+                                    value: this.communityInfo.district
+                                }).then(res => {
+                                    this.dataForm.street = {
+                                        label: data.sysUserEntity.streetName,
+                                        value: data.sysUserEntity.street
+                                    }
+                                })
+                                this.dataForm.username = data.sysUserEntity.username
+                                this.dataForm.mobile = data.sysUserEntity.mobile
+
+
+                                this.menberForm.userName = data.sysUserEntity.username
+                                this.menberForm.nickName = data.sysUserEntity.nickname
+                                this.menberForm.email = data.sysUserEntity.email
+                                this.menberForm.mobile = data.sysUserEntity.mobile
+                                this.menberForm.status = data.sysUserEntity.status
+                                this.menberForm.sex = data.sysUserEntity.sex
+                                this.menberForm.userId = data.sysUserEntity.userId
+                                this.menberForm.community = {
+                                    label: data.sysUserEntity.communityName,
+                                    value: data.sysUserEntity.communityId
+                                }
+                                this.menberForm.idcard = data.sysUserEntity.idcard
+                            }
+                        })
+                    } else {
+                        // 清空输入框
+                        this.dataForm.district = {};
+                        this.dataForm.street = {};
+                        this.dataForm.communityName = '';
+                        this.menberForm.userName = '';
+                        this.menberForm.nickName = '';
+                        this.menberForm.email = '';
+                        this.menberForm.mobile = '';
+                        this.menberForm.status = '';
+                        this.menberForm.sex = '';
+                        this.menberForm.community = {};
+                        this.menberForm.idcard = '';
+                        this.menberForm.community.value = '';
+                        this.communityInfo.communityId = '';
+                    }
+                })
+            },
+
+            // 表单提交
+            dataFormSubmit () {
+                if (!this.dataForm.district.value) {
+                    this.$message.error('请选择区域')
+                    return
+                }
+                if (!this.dataForm.street.value) {
+                    this.$message.error('请选择街道')
+                    return
+                }
+                if (!this.dataForm.communityName) {
+                    this.$message.error('请填写社区名字')
+                    return
+                }
+                this.$refs['dataForm'].validate((valid) => {
+                    if (valid) {
+                        let communityId
+                        this.$http({
+                            url: this.$http.adornUrl(`/community/communityinfo/${!this.dataForm.id ? 'save' : 'update'}`),
+                            method: 'post',
+                            data: this.$http.adornData({
+                                'communityName': this.dataForm.communityName || undefined,
+                                // 'username': this.dataForm.username,
+                                'id': this.communityInfo.communityId,
+                                'district': this.dataForm.district.value || this.communityInfo.district,
+                                'street': this.dataForm.street.value || this.communityInfo.street
+                                // 'mobile': this.dataForm.mobile
+                            })
+                        }).then(({ data }) => {
+                            if (data && data.code === 0) {
+                                this.menberDialog = true
+                                this.menberForm.community.value = data.communityInfo.id
+                                // 先关闭弹窗再显示操作成功避免关闭第二个编辑用弹窗时还能看到第一个
+                                this.visible = false
+                                this.$emit('refreshDataList')
+                                this.menberDialog = true
+                                this.$message({
+                                    message: '操作成功',
+                                    type: 'success',
+                                    duration: 1500,
+                                    onClose: () => {
+
+                                    }
+                                })
+                            } else {
+                                this.$message.error(data.msg)
+                            }
+                        })
+                    }
+                })
+            }
+        }
+    }
+</script>
+
+<style scoped>
+    .width100 {
+        width: 100%;
+    }
+</style>

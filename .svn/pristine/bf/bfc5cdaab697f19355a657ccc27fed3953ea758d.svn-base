@@ -1,0 +1,135 @@
+<template>
+  <div>
+    <div class="form_wraper">
+      <div class="header">维保预约</div>
+      <el-form
+        ref="form"
+        :model="formData"
+        :rules="rules"
+        class="form"
+        style="margin-left:10px"
+        label-width="auto"
+      >
+        <el-row :gutter="20">
+          <el-col :span="8">
+            <el-form-item label="维保单位" prop="wbdw">
+              <el-input v-model="formData.wbdw"></el-input>
+            </el-form-item>
+          </el-col>
+          <el-col :span="8">
+            <el-form-item label="联系人" prop="lxr">
+              <el-input v-model="formData.lxr"></el-input>
+            </el-form-item>
+          </el-col>
+          <el-col :span="8">
+            <el-form-item label="联系人电话">
+              <el-input v-model="formData.lxrdh"></el-input>
+            </el-form-item>
+          </el-col>
+        </el-row>
+        <el-row :gutter="20">
+          <el-col :span="8">
+            <el-form-item label="预约维保时间">
+              <el-input v-model="formData.yysj"></el-input>
+            </el-form-item>
+          </el-col>
+        </el-row>
+        <el-row :gutter="20">
+          <el-col :span="24">
+            <el-form-item label="通知详情">
+              <el-input type="textarea" v-model="formData.tzxq"></el-input>
+            </el-form-item>
+          </el-col>
+        </el-row>
+      </el-form>
+    </div>
+    <div class="button_wraper" v-if="lx=='wbdw'">
+      <el-button @click="handleselectElevator()">选择维保电梯</el-button>
+      <el-button @click="handleselectContact()" style="margin-left:20px">选择联系人</el-button>
+      <el-button @click="handleNotices()" style="margin-left:20px">通知</el-button>
+    </div>
+    <div class="button_wraper" v-else>
+      <el-button @click="handleselectElevator()">查看维保电梯</el-button>
+      <el-button @click="handleConfirm()" style="margin-left:20px">确认</el-button>
+      <el-button @click="handleReappointment()" style="margin-left:20px">请重新预约</el-button>
+    </div>
+    <el-dialog :visible.sync="showElevatorselectDialog" width="70%" top="5vh">
+      <div slot="title" class="dialog_title">选择电梯</div>
+      <select-elevator :show.sync="showElevatorselectDialog" @select="handlesetElevator($event)"></select-elevator>
+    </el-dialog>
+    <el-dialog :visible.sync="showContactselectDialog" width="70%" top="5vh">
+      <div slot="title" class="dialog_title">选择联系人</div>
+      <select-contact @select="handlesetContact"></select-contact>
+    </el-dialog>
+  </div>
+</template>
+<script>
+import selectElevator from "@/components/selectElevator.vue";
+import selectContact from "@/components/selectContact.vue";
+export default {
+  components: {
+    selectElevator,
+    selectContact
+  },
+  data() {
+    return {
+      formData: {
+        // lxr:''
+      },
+      showElevatorselectDialog: false, //显示电梯选择
+      showContactselectDialog: false,
+      lx: "wbdw",
+      rules: {
+        lxr: {
+          required: true,
+          message: "维保单位不能为空"
+        },
+        lxr: {
+          required: true,
+          message: "联系人不能为空"
+        },
+        lxr: {
+          required: true,
+          message: "联系人电话不能为空"
+        },
+        lxr: {
+          required: true,
+          message: "预约维保时间不能为空"
+        },
+        lxr: {
+          required: true,
+          message: "通知详情不能为空"
+        }
+      }
+    };
+  },
+  methods: {
+    handleselectElevator() {
+      this.showElevatorselectDialog = true;
+    },
+    handleselectContact() {
+      this.showContactselectDialog = true;
+    },
+    handlesetElevator(val) {
+      //设置电梯
+      console.log("设置电梯", val);
+      this.showElevatorselectDialog = false;
+      this.formData.wbdt = val;
+    },
+    handlesetContact(val) {
+      //设置电梯
+      console.log("设置联系人", val.join(","));
+      this.showContactselectDialog = false;
+      this.formData.lxr = val.join("");
+    },
+    // 通知
+    handleNotices() {},
+    // 确认
+    handleConfirm() {},
+    // 重新预约
+    handleReappointment() {}
+  }
+};
+</script>
+<style  scoped>
+</style>

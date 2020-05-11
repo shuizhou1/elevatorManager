@@ -1,0 +1,284 @@
+<template>
+<el-container style="height: 100%; ">
+    <div class="mod-config" style="width: 59.5%;border: 1px solid #eee;">
+       <el-form :inline="true" :model="dataForm" @keyup.enter.native="getDataList()">
+        <el-form-item label="类型代码" prop="typecode">
+        <el-input v-model="dataForm.typecode" placeholder="类型代码"></el-input>
+        </el-form-item>
+        <el-form-item label="类型名称" prop="typename">
+        <el-input v-model="dataForm.typename" placeholder="类型名称" ></el-input>
+        </el-form-item>
+      <el-form-item>
+      	<e-button ref="eproButton" v-on:handleClick="handleClick" :parentId="'61'" :busType="'query'" ></e-button>
+      <!--  <el-button @click="getDataList()" type="warning">查询</el-button>
+        <el-button v-if="isAuth('dictionary:dicttype:save')" type="primary" @click="addOrUpdateHandle()">新增</el-button>
+        <el-button v-if="isAuth('dictionary:dicttype:delete')" type="danger" @click="deleteHandle()" :disabled="dataListSelections.length <= 0">批量删除</el-button>
+-->      </el-form-item>
+    </el-form>
+    <el-table @row-dblclick="dbclickRow" @row-click="handdle" :row-class-name="tableRowClassName"
+      :data="dataList"
+      border
+      v-loading="dataListLoading"
+      @selection-change="selectionChangeHandle"
+      style="width: 100%;">
+      <el-table-column
+        type="selection"
+        header-align="center"
+        align="center"
+        width="50">
+      </el-table-column>
+      <el-table-column
+        prop="typecode"
+        header-align="center"
+        align="center"
+        label="类型代码">
+      </el-table-column>
+      <el-table-column
+        prop="typename"
+        header-align="center"
+        align="center"
+        label="类型名称">
+      </el-table-column>
+      <el-table-column
+        fixed="right"
+        header-align="center"
+        align="center"
+        width="150"
+        label="操作">
+        <template slot-scope="scope">
+        	 <e-button ref="eproButton1" v-on:handleClick="handleClick" :parentId="'61'" :busType="'edit'" :params="scope.row.cid+''"></e-button>
+     <!--     <el-button type="text" size="small" @click="addOrUpdateHandle(scope.row.cid)">修改</el-button>
+          <el-button type="text" size="small" @click="deleteHandle(scope.row.cid)">删除</el-button>-->
+        </template>
+      </el-table-column>
+    </el-table>
+    <el-pagination
+      @size-change="sizeChangeHandle"
+      @current-change="currentChangeHandle"
+      :current-page="pageIndex"
+      :page-sizes="[10, 20, 50, 100]"
+      :page-size="pageSize"
+      :total="totalPage"
+      layout="total, sizes, prev, pager, next, jumper">
+    </el-pagination>
+    <!-- 弹窗, 新增 / 修改 -->
+    <add-or-update v-if="addOrUpdateVisible" ref="addOrUpdate" @refreshDataList="getDataList"></add-or-update>
+    <dictentryAdd v-if="dictentryAddVisible" ref="dictentryAdd" @refreshDataList="refresh"></dictentryAdd>
+  </div>
+  
+  <div style="width: 39.5%;margin-left: 1%;border: 1px solid #eee;">
+    <el-form>
+      <el-form-item>
+        <e-button ref="eproButton1" v-on:handleClick="handleClick" :parentId="'61'" :busType="'query1'" ></e-button>
+      </el-form-item>
+    </el-form>
+    
+	  <div>
+	  	<dictentry ref="transEvent"></dictentry>
+	  </div>
+<!--       <el-button v-if="isAuth('dict:dictentry:save')" type="primary" plain @click="dictentryAdd()" style="margin-left: 10px;margin-top: 10px;">新增字典项</el-button>
+-->       <!--<el-button v-if="isAuth('sys:user:update')" type="info" plain @click="addOrUpdateHandle()" style="margin-left: 10px;margin-top: 10px;">修改字典项</el-button>
+       <el-button v-if="isAuth('dict:dictentry:delete')" type="success" plain @click="deleteUser()" style="margin-left: 10px;margin-top: 10px;">删除字典项</el-button>-->
+	</div>
+ </el-container>
+</template>
+
+<style>
+  .el-header {
+    /*background-color: #B3C0D1;
+    color: #333;*/
+    line-height: 64px;
+  }
+  
+  .el-aside {
+    /*color: #333;*/
+  }
+</style>
+
+<script>
+  import AddOrUpdate from './dicttype-add-or-update'
+  import Dictentry from './dictentry'
+  import DictentryAdd from './dictentry-add-or-update'
+  import {getDictEntry} from '@/utils/index' 
+  export default {
+    data () {
+      return {
+        msg:"test",     //传值给子页面
+      	isShow1:true,
+      	isShow2:false,
+        activeName2: 'first',
+        dataForm: {
+	        cid: '',                
+	        parentid: '',                
+	        seqno: '',                
+	        typecode: '',                
+	        typename: ''        
+        },
+        dataList: [],
+        pageIndex: 1,
+        pageSize: 10,
+        totalPage: 0,
+        dataListLoading: false,
+        dataListSelections: [],
+        addOrUpdateVisible: false,
+        dictentryAddVisible: true,
+        typecid:'',
+        typecode:'',
+        dictEntryOptions:[]
+      }
+    },
+    components: {
+      AddOrUpdate,
+      Dictentry,
+      DictentryAdd
+    },
+    activated () {
+      this.getDataList()
+    },
+    mounted: function () {
+    	getDictEntry("test1");
+    	this.dictEntryOptions = JSON.parse(sessionStorage.getItem('entryData'))
+    	/*var seleObj = document.getElementsByClassName("el-select");
+    	for(var i=0;i<seleObj.length;i++){
+    		var val = seleObj[i].getAttribute("entryCode");
+    		getDictEntry("010b2b2995f411e8861700163e048b51")
+    		this.dictEntryOptions = JSON.parse(sessionStorage.getItem('entryData'))
+    	}*/
+		},
+    methods: {
+    	handleClick(method,param) {
+				if(param === 'undefined') {
+					this.$options.methods[method].bind(this)();
+				} else {
+					this.$options.methods[method].bind(this, param)();
+				}
+	  	},
+    	tableRowClassName({row, rowIndex}) {
+        if (this.typecid == row.cid) {
+          return 'warning-row';
+        }
+        return '';
+      },
+      handleClick1(tab, event) {
+      	if(tab._props.name=='first'){
+      		this.isShow1=true;
+      		this.isShow2=false;
+      	}else if(tab._props.name=='second'){
+      		this.isShow1=false;
+          this.isShow2=true;
+      	}
+      },
+      // 获取数据列表
+      getDataList () {
+        this.dataListLoading = true
+        this.$http({
+          url: this.$http.adornUrl('/dictionary/dicttype/list'),
+          method: 'get',
+          params: this.$http.adornParams({
+            'page': this.pageIndex,
+            'limit': this.pageSize,
+            'key': this.dataForm.key,
+            'typecode': this.dataForm.typecode,
+            'typename': this.dataForm.typename
+          })
+        }).then(({data}) => {
+          if (data && data.code === 0) {
+            this.dataList = data.page.list
+            this.totalPage = data.page.totalCount
+          }else {
+            this.dataList = []
+            this.totalPage = 0
+          }
+          this.dataListLoading = false
+        })
+      },
+      dbclickRow(row,index){
+         alert("双击具体业务你自己实现,我把 row交给你了");
+      },
+      // 每页数
+      sizeChangeHandle (val) {
+        this.pageSize = val
+        this.pageIndex = 1
+        this.getDataList()
+      },
+      // 当前页
+      currentChangeHandle (val) {
+        this.pageIndex = val
+        this.getDataList()
+      },
+      // 多选
+      selectionChangeHandle (val) {
+        this.dataListSelections = val
+      },
+      // 新增 / 修改
+      addOrUpdateHandle (id) {
+        this.addOrUpdateVisible = true
+        this.$nextTick(() => {
+          this.$refs.addOrUpdate.init(id)
+        })
+      },
+      // 删除
+      deleteHandle (id) {
+        var ids = id ? [id] : this.dataListSelections.map(item => {
+          return item.cid
+        })
+        this.$confirm(`确定对[id=${ids.join(',')}]进行[${id ? '删除' : '批量删除'}]操作,所属的字典项也将一起删除?`, '提示', {
+          confirmButtonText: '确定',
+          cancelButtonText: '取消',
+          type: 'warning'
+        }).then(() => {
+          this.$http({
+            url: this.$http.adornUrl('/dictionary/dicttype/delete'),
+            method: 'post',
+            data: this.$http.adornData(ids, false)
+          }).then(({data}) => {
+            if (data && data.code === 0) {
+              this.$message({
+                message: '操作成功',
+                type: 'success',
+                duration: 1500,
+                onClose: () => {
+                  this.getDataList()
+                }
+              })
+            } else {
+              this.$message.error(data.msg)
+            }
+          })
+        })
+      },
+      handdle (row,event,column){
+      		//this.parentId = row.parentId;
+      		this.typecid = row.cid;
+      		this.typecode = row.typecode;
+      		this.$refs.transEvent.getDictEntry(row.cid)
+      },
+      refresh (){
+      	this.$refs.transEvent.getDictEntry(this.typecid)
+      },
+      //新增字典项
+      dictentryAdd (){
+      	if(this.typecid == '0' || this.typecid == ''){
+      		 this.$message({
+             message: '请选择一个字典类型',
+             type: 'warning'
+            });
+      		return false;
+      	}
+      	this.dictentryAddVisible = true;
+        this.$nextTick(() => {
+          this.$refs.dictentryAdd.init(null,this.typecid,this.typecode)
+        })
+      },
+    }
+  }
+</script>
+<style>
+	.el-table .warning-row {
+    background: oldlace;
+  }
+
+  .el-table .success-row {
+    background: #f0f9eb;
+  }
+</style>

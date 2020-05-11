@@ -1,0 +1,242 @@
+<template>
+	  <el-container style="height: 100%; border: 1px solid #eee">
+		  <el-aside width="900px" style="border: 1px solid #B3C0D1">
+		    <div class="mod-config">
+				    <el-form :inline="true" :model="dataForm" @keyup.enter.native="getDataList()" style="margin: 12px;auto">       
+					      <el-form-item label="用户名" prop="username">
+					        <el-input v-model.trim="dataForm.username" placeholder="用户名"></el-input>
+				        </el-form-item>
+				        <el-form-item>
+					        <el-button @click="getDataList()" type="warning">查询</el-button>
+					        <el-button v-if="isAuth('testModule:user:save')" type="primary" @click="addOrUpdateHandle()">新增</el-button>
+					        <el-button v-if="isAuth('testModule:user:delete')" type="danger" @click="deleteHandle()" :disabled="dataListSelections.length <= 0">批量删除</el-button>
+				        </el-form-item>
+				    </el-form>
+				    <el-table @row-dblclick="dbclickRow"
+				      :data="dataList"
+				      border
+				      v-loading="dataListLoading"
+				      @selection-change="selectionChangeHandle"
+				      style="width: 100%;">
+				      <el-table-column
+				        type="selection"
+				        header-align="center"
+				        align="center"
+				        width="50">
+				      </el-table-column>
+				      <el-table-column
+				        prop="userId"
+				        header-align="center"
+				        align="center"
+				        label="userId">
+				      </el-table-column>
+				      <el-table-column
+				        prop="username"
+				        header-align="center"
+				        align="center"
+				        label="用户名">
+				      </el-table-column>
+				      <el-table-column
+				        prop="mobile"
+				        header-align="center"
+				        align="center"
+				        label="手机">
+				      </el-table-column>
+				      <el-table-column
+				        prop="password"
+				        header-align="center"
+				        align="center"
+				        label="密码">
+				      </el-table-column>
+				      <el-table-column
+				        prop="createTime"
+				        header-align="center"
+				        align="center"
+				        label="创建时间">
+				      </el-table-column>
+				      <el-table-column
+				        prop="area"
+				        header-align="center"
+				        align="center"
+				        label="地区">
+				      </el-table-column>
+				      <el-table-column
+				        fixed="right"
+				        header-align="center"
+				        align="center"
+				        width="150"
+				        label="操作">
+				        <template slot-scope="scope">
+				          <el-button type="text" size="small" @click="addOrUpdateHandle(scope.row.userId)">修改</el-button>
+				          <el-button type="text" size="small" @click="deleteHandle(scope.row.userId)">删除</el-button>
+				        </template>
+				      </el-table-column>
+				    </el-table>
+				    <el-pagination
+				      @size-change="sizeChangeHandle"
+				      @current-change="currentChangeHandle"
+				      :current-page="pageIndex"
+				      :page-sizes="[10, 20, 50, 100]"
+				      :page-size="pageSize"
+				      :total="totalPage"
+				      layout="total, sizes, prev, pager, next, jumper">
+				    </el-pagination>
+				    <!-- 弹窗, 新增 / 修改 -->
+				    <add-or-update v-if="addOrUpdateVisible" ref="addOrUpdate" @refreshDataList="getDataList"></add-or-update>
+				 </div>
+		  </el-aside>
+	  
+	  <el-container style="border: 1px solid #B3C0D1">
+	    <el-header style="">
+	      <el-tabs v-model.trim="activeName2" type="card" @tab-click="handleClick">
+	        <el-tab-pane label="活动管理" name="first"></el-tab-pane>
+	        <el-tab-pane label="配置管理" name="second"></el-tab-pane>
+	        <el-tab-pane label="角色管理" name="third"></el-tab-pane>
+	        <el-tab-pane label="定时任务" name="fourth"></el-tab-pane>
+        </el-tabs>
+	    </el-header>
+	    
+	    <el-main>
+	    	<tab1 :child='msg' v-show='isShow1'></tab1>
+	    	<tab2 v-show='isShow2'></tab2>
+	    </el-main>
+	  </el-container>
+	</el-container>
+</template>
+
+<style>
+  .el-header {
+    /*background-color: #B3C0D1;
+    color: #333;*/
+    line-height: 64px;
+  }
+  
+  .el-aside {
+    /*color: #333;*/
+  }
+</style>
+
+<script>
+  import AddOrUpdate from './user-add-or-update'
+  import Tab1 from './tab1'
+  import Tab2 from './tab2'
+  export default {
+    data() {
+      return {
+      	msg:"test",     //传值给子页面
+      	isShow1:true,
+      	isShow2:false,
+        activeName2: 'first',
+        dataForm: {
+                username: ''        },
+        dataList: [],
+        pageIndex: 1,
+        pageSize: 10,
+        totalPage: 0,
+        dataListLoading: false,
+        dataListSelections: [],
+        addOrUpdateVisible: false
+      }
+    },
+    components: {
+      AddOrUpdate,
+      Tab1,
+      Tab2
+    },
+    activated () {
+      this.getDataList()
+    },
+     methods: {
+      handleClick(tab, event) {
+      	if(tab._props.name=='first'){
+      		this.isShow1=true;
+      		this.isShow2=false;
+      	}else if(tab._props.name=='second'){
+      		this.isShow1=false;
+          this.isShow2=true;
+      	}
+      },
+      // 获取数据列表
+      getDataList () {
+        this.dataListLoading = true
+        this.$http({
+          url: this.$http.adornUrl('/testModule/user/list'),
+          method: 'get',
+          params: this.$http.adornParams({
+            'currentPage': this.pageIndex,
+            'pageSize': this.pageSize,
+            'key': this.dataForm.key
+          })
+        }).then(({data}) => {
+         // if (data && data.code === 0) {
+         //  this.dataList = data.page.list
+         //   this.totalPage = data.page.totalCount
+         // } 
+          if (1==1) {
+            this.dataList = data.list
+            this.totalPage = data.totalCount
+          } else {
+            this.dataList = []
+            this.totalPage = 0
+          }
+          this.dataListLoading = false
+        })
+      },
+      dbclickRow(row,index){
+         alert("双击具体业务你自己实现,我把 row交给你了");
+      },
+      // 每页数
+      sizeChangeHandle (val) {
+        this.pageSize = val
+        this.pageIndex = 1
+        this.getDataList()
+      },
+      // 当前页
+      currentChangeHandle (val) {
+        this.pageIndex = val
+        this.getDataList()
+      },
+      // 多选
+      selectionChangeHandle (val) {
+        this.dataListSelections = val
+      },
+      // 新增 / 修改
+      addOrUpdateHandle (id) {
+        this.addOrUpdateVisible = true
+        this.$nextTick(() => {
+          this.$refs.addOrUpdate.init(id)
+        })
+      },
+      // 删除
+      deleteHandle (id) {
+        var ids = id ? [id] : this.dataListSelections.map(item => {
+          return item.userId
+        })
+        this.$confirm(`确定对[id=${ids.join(',')}]进行[${id ? '删除' : '批量删除'}]操作?`, '提示', {
+          confirmButtonText: '确定',
+          cancelButtonText: '取消',
+          type: 'warning'
+        }).then(() => {
+          this.$http({
+            url: this.$http.adornUrl('/testModule/user/delete'),
+            method: 'post',
+            data: this.$http.adornData(ids, false)
+          }).then(({data}) => {
+            if (data && data.code === 0) {
+              this.$message({
+                message: '操作成功',
+                type: 'success',
+                duration: 1500,
+                onClose: () => {
+                  this.getDataList()
+                }
+              })
+            } else {
+              this.$message.error(data.msg)
+            }
+          })
+        })
+      }
+    }
+  };
+</script>

@@ -1,0 +1,316 @@
+<template>
+    <div class="mod-config">
+        <el-form :inline="true" :model="dataForm" @keyup.enter.native="getDataList()">
+            <tree :option="treeOption" v-on:getTreeData="treeParams" class="full-width"></tree>
+            <div class="button-container">
+                <div class="input-container">
+                    <div class="item has-input">
+                        <div class="flex-container">
+                            <span class="selectTitle">投诉类型：</span>
+                            <el-select v-model="dataForm.type" class="select-item" placeholder="请选择类型">
+                                <el-option
+                                        v-for="(item,index) in typeList"
+                                        :key="index"
+                                        :label="item.label"
+                                        :value="item.id">
+                                </el-option>
+                            </el-select>
+                        </div>
+                    </div><div class="item has-input">
+                        <div class="flex-container">
+                            <span class="selectTitle">进度状态：</span>
+                            <el-select v-model="dataForm.state" class="select-item" placeholder="请选择状态">
+                                <el-option
+                                        v-for="(item,eq) in stateList"
+                                        :key="eq"
+                                        :label="item.label"
+                                        :value="item.id">
+                                </el-option>
+                            </el-select>
+                        </div>
+                    </div><div class="item has-input">
+                        <div class="flex-container">
+                            <span class="selectTitle">投诉来源：</span>
+                            <el-select v-model="dataForm.from" class="select-item" placeholder="请选择来源">
+                                <el-option
+                                        v-for="(item,ind) in fromList"
+                                        :key="ind"
+                                        :label="item.label"
+                                        :value="item.id">
+                                </el-option>
+                            </el-select>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="button-container">
+                <div class="input-container">
+                    <div class="item has-input widthx2">
+                        <div class="flex-container">
+                            <span class="selectTitle">投诉日期：</span>
+                            <el-date-picker
+                                    class="select-item"
+                                    v-model="timeRage"
+                                    type="datetimerange"
+                                    range-separator="至"
+                                    start-placeholder="开始日期"
+                                    end-placeholder="结束日期">
+                            </el-date-picker>
+                        </div>
+                    </div><div class="item has-input">
+                        <el-button
+						v-if="isAuth('statistics:affairInfo:statistics')"
+                                type="primary"
+                                @click="getDataList('init')"><i class="el-icon--left icon-query"></i>查询</el-button>
+                        <el-button v-if="isAuth('affairInfo:affairinfo:export')" type="save" @click="download" ><i class="el-icon--left icon-import"></i>导出</el-button>
+                        </div>
+                </div>
+            </div>
+        </el-form>
+        <el-table @row-dblclick="dbclickRow"
+                  :data="dataList"
+                  @header-dragend="handleDragend"
+                  border
+                  v-loading="dataListLoading"
+                  @selection-change="selectionChangeHandle"
+                  style="width: 100%;">
+            <el-table-column
+                    prop="affairCode"
+                    header-align="center"
+                    align="center"
+                    width="120"
+                    label="投诉单号">
+            </el-table-column>
+            <el-table-column
+                    prop="complainantName"
+                    header-align="center"
+                    align="center"
+                    label="投诉人">
+            </el-table-column>
+            <el-table-column
+                    prop="complainantPhone"
+                    header-align="center"
+                    align="center"
+                    width="108"
+                    label="投诉人电话">
+            </el-table-column>
+            <el-table-column
+                    prop="affairType"
+                    header-align="center"
+                    align="center"
+                    label="投诉类型">
+            </el-table-column>
+            <el-table-column
+                    prop="affairTime"
+                    header-align="center"
+                    align="center"
+                    width="152"
+                    label="投诉时间">
+            </el-table-column>
+            <el-table-column
+                    prop="affairStatus"
+                    header-align="center"
+                    align="center"
+                    label="处置进度状态">
+            </el-table-column>
+            <el-table-column
+                    prop="comeFormName"
+                    header-align="center"
+                    align="center"
+                    label="投诉来源">
+            </el-table-column>
+            <el-table-column
+                    prop="processUserName"
+                    header-align="center"
+                    align="center"
+                    label="处置人">
+            </el-table-column>
+            <el-table-column
+                    prop="districtName"
+                    header-align="center"
+                    align="center"
+                    label="所属区域">
+            </el-table-column>
+            <el-table-column
+                    prop="streetName"
+                    header-align="center"
+                    align="center"
+                    label="所属街道">
+            </el-table-column>
+            <el-table-column
+                    prop="communityName"
+                    header-align="center"
+                    align="center"
+                    label="所属社区">
+            </el-table-column>
+        </el-table>
+        <el-pagination
+                @size-change="sizeChangeHandle"
+                @current-change="currentChangeHandle"
+                :current-page="pageIndex"
+                :page-sizes="[10, 20, 50, 100]"
+                :page-size="pageSize"
+                :total="totalPage"
+                layout="total, sizes, prev, pager, next, jumper">
+        </el-pagination>
+    </div>
+</template>
+
+<script>
+    import config from '@/utils/config'
+    import tree from '@/components/tree-select/tree-select'
+    import { formatDate } from '@/utils/index'
+    export default {
+        data () {
+            return {
+                timeRage: [],
+                treeOption: {
+                    district: {},
+                    stree: {},
+                    community: {}
+                },
+                token: '',
+                typeList: config.typeList,
+                stateList: config.stateList,
+                fromList: config.fromList,
+                currentDistrictId: '',
+                url: this.$http.adornUrl('/affairInfo/affairinfo/export'),
+                dataForm: {
+                    district: {
+                        value: '',
+                        label: ''
+                    },
+                    street: {
+                        value: '',
+                        label: ''
+                    },
+                    community: {
+                        value: '',
+                        label: ''
+                    },
+                    state: '',
+                    from: ''
+                },
+                dataList: [],
+                pageIndex: 1,
+                pageSize: 10,
+                totalPage: 0,
+                dataListLoading: false,
+                dataListSelections: [],
+                addOrUpdateVisible: false
+            }
+        },
+        components: {
+            tree
+        },
+        activated () {
+            this.getDataList()
+        },
+        methods: {
+            handleDragend (n, o, a, b) {
+                config.tableDragendHandle(n, o, a)
+            },
+            treeParams (data) {
+                this.dataForm.district = data['district']
+                this.dataForm.street = data['street']
+                this.dataForm.community = data['community']
+            },
+            getToken () {
+                this.token = {
+                    token: this.$cookie.get('token')
+                }
+            },
+            download () {
+                this.getToken()
+                let params = {
+                    'token': this.token.token,
+                    'communityId': this.dataForm.community.value,
+                    'district': this.dataForm.district.value,
+                    'street': this.dataForm.street.value,
+                    'affairStatus': this.dataForm.state,
+                    'affairType': this.dataForm.type,
+                    'comeFrom': this.dataForm.from
+                }
+                let sTime,eTime
+                try {
+                    sTime = formatDate(this.timeRage[0], 'yyyy-MM-dd hh:mm:ss')
+                    eTime = formatDate(this.timeRage[1], 'yyyy-MM-dd hh:mm:ss')
+                } catch (e) {}
+                params['sAffairTime'] = sTime
+                params['eAffairTime'] = eTime
+                let arr = []
+                let str = ''
+                for (let key in params) {
+                    if (params[key] || params[key] === 0 || params[key] === '0') {
+                        arr.push(`${key}=${params[key]}`)
+                    }
+                }
+                str = arr.join('&')
+                console.log(this.dataForm.state)
+				console.log(arr)
+               window.open(this.url + `?${str}`)
+                // window.open(this.url + `?token=${this.token.token}`, '', str)
+            },
+            // 获取数据列表
+            getDataList (type) {
+                if (type === 'init') {
+                    this.pageIndex = 1
+                }
+                this.dataListLoading = true
+                let sAffairTime = ''
+                let eAffairTime = ''
+                console.log('getDatalist');
+                console.log(this.timeRage);
+                try {
+                    sAffairTime = formatDate(this.timeRage[0], 'yyyy-MM-dd hh:mm:ss')
+                    eAffairTime = formatDate(this.timeRage[1], 'yyyy-MM-dd hh:mm:ss')
+                } catch (e) {
+
+                }
+                this.$http({
+                    url: this.$http.adornUrl('/affairInfo/affairinfo/statistics'),
+                    method: 'get',
+                    params: this.$http.adornParams({
+                        'page': this.pageIndex,
+                        'limit': this.pageSize,
+                        'communityId': this.dataForm.community.value,
+                        'affairType': this.dataForm.type,
+                        'district': this.dataForm.district.value,
+                        'street': this.dataForm.street.value,
+                        'affairStatus': this.dataForm.state,
+                        'comeFrom': this.dataForm.from,
+                        'sAffairTime': sAffairTime,
+                        'eAffairTime': eAffairTime
+                    })
+                }).then(({ data }) => {
+                    if (data && data.code === 0) {
+                        this.dataList = data.page.list
+                        this.totalPage = data.page.totalCount
+                    } else {
+                        this.dataList = []
+                        this.totalPage = 0
+                    }
+                    this.dataListLoading = false
+                })
+            },
+            dbclickRow (row, index) {
+                // alert("双击具体业务你自己实现,我把 row交给你了");
+            },
+            // 每页数
+            sizeChangeHandle (val) {
+                this.pageSize = val
+                this.pageIndex = 1
+                this.getDataList()
+            },
+            // 当前页
+            currentChangeHandle (val) {
+                this.pageIndex = val
+                this.getDataList()
+            },
+            // 多选
+            selectionChangeHandle (val) {
+                this.dataListSelections = val
+            }
+        }
+    }
+</script>

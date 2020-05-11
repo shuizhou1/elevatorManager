@@ -1,0 +1,364 @@
+<template>
+  <div class="mod-home" v-loading="loading">
+    <el-form class="dialog_head_form" @keyup.enter.native="handleQuery">
+      <el-row :gutter="40">
+        <el-col :span="8">
+          <el-form-item label="注册代码" prop="regCode">
+            <el-input v-model="formData.regCode" clearable>
+              <template slot="append">
+                <el-button @click="selectElevator">选择</el-button>
+              </template>
+            </el-input>
+          </el-form-item>
+        </el-col>
+        <el-col :span="6">
+          <!-- <select-month></select-month> -->
+          <el-form-item label="日期">
+            <el-date-picker
+              v-model="formData.dateValue"
+              @change="dateChange"
+               start-placeholder="开始月份"
+              end-placeholder="结束月份"
+              value-format="yyyy-M"
+              type="monthrange"
+            ></el-date-picker>
+          </el-form-item>
+        </el-col>
+        <el-col :span="6">
+          <el-form-item label="区域">
+            <el-cascader
+              v-model="areaValue"
+              :options="areaData"
+              :props="{ checkStrictly: true }"
+              @change="handleAreaChange"
+              clearable
+            ></el-cascader>
+          </el-form-item>
+        </el-col>
+        <el-col :span="2">
+          <el-button @click="handleQuery" type="query">查询</el-button>
+        </el-col>
+      </el-row>
+    </el-form>
+    <el-tabs type="card" :value="currentKey" @tab-click="handleChange">
+      <el-tab-pane v-for="(item,index) in dataList" :key="index" :label="item.name" :name="item.id">
+        <div class="table_box" :style="{'height':height}">
+          <div
+            :id="'chartBox'+index"
+            v-show="currentIndex==index"
+            :style="{'height':chartHeight,'width':'100%'}"
+          ></div>
+        </div>
+      </el-tab-pane>
+    </el-tabs>
+    <select-elevator
+      v-if="showElevatorselectDialog"
+      ref="elevatorSelector"
+      @confirm="selectElevatorConfirm"
+    ></select-elevator>
+  </div>
+</template>
+
+<script>
+import echarts from "echarts";
+import config from "@/utils/config";
+import selectMonth from "@/components/selectMonth.vue";
+import selectElevator from "@/components/select-single-elevator.vue";
+import statical from "@/utils/mixins/staticalAnalysis";
+import pagination from "@/utils/mixins/pagination";
+export default {
+  mixins: [statical, pagination],
+  components: {
+    selectElevator,
+    selectMonth
+  },
+  activated() {
+    // 由于给echart添加了resize事件, 在组件激活时需要重新resize绘画一次, 否则出现空白bug
+    if (this.chart) {
+      // this.chart.resize();
+    }
+  },
+  data() {
+    return {
+      currentIndex: 0,
+      loading: false,
+      showElevatorselectDialog: false,
+      formData: {
+        regCode: "",
+        years: "",
+        months: "",
+        province: "",
+        city: "",
+        district: "",
+        startTime:null
+      },
+      currentKey:'line',
+      dataList: [
+        {
+          name: "维修统计",
+          id: "line"
+        },
+        {
+          name: "维保统计",
+          id: "rad"
+        }
+      ],
+      mainClientHeight: null,
+      clientWidth: this.$store.state.common.mainClientWidth,
+      charWidth: this.$store.state.common.mainClientWidth + "px",
+      chartHeight: "",
+      leftTop: true,
+      leftBottom: true,
+      rightTop: true,
+      rightBottom: true,
+      chart: null,
+      chartLine: null,
+      chartRadar: null,
+      ceshiHeight: this.documentClientHeight - 50 - 30 - 2 - 20,
+      height: "",
+      option: "",
+      chartLineOption: {
+        tooltip: {
+          trigger: "axis"
+        },
+        grid: {
+          left: "5%",
+          right: "4%",
+          bottom: "8%",
+          top: "12%",
+          containLabel: true
+        },
+        legend: {
+          bottom: 0,
+          data: [
+            {
+              name: "故障"
+            },
+            {
+              name: "正常"
+            }
+          ]
+        },
+        xAxis: {
+          type: "category",
+          boundaryGap: false,
+          name:'日期',
+          data: []
+        },
+        yAxis: {
+          type: "value",
+          name: "数量",
+          // nameRotate: "90",
+          // nameGap:30,
+          // nameLocation: "top",
+        },
+        series: [
+          {
+            name: "正常",
+            type: "line",
+            data: []
+          },
+          {
+            name: "故障",
+            type: "line",
+            data: []
+          }
+        ]
+      },
+      date: [],
+      data: [],
+      chartRadarOption: {
+         tooltip: {
+          formatter: " {a}: {b} <br/>数量: {c}  ({d})%"
+        },
+         legend: {
+          // y: "bottom"
+          x: "60",
+          top: "50",
+          orient: "vertical",
+          itemGrap: 200
+          // selected:{
+          //   '1-5年':false
+          // }
+          // padding:''
+        },
+        // radar: {
+        //   name: {
+        //     textStyle: {
+        //       color: "#fff",
+        //       backgroundColor: "#999",
+        //       borderRadius: 3,
+        //       padding: [3, 5]
+        //     }
+        //   },
+        //   radius: 200,
+        //   center: ["50%", "60%"],
+        //   indicator: []
+        // },\
+
+        series: [
+          {
+            name: "状态",
+            type: "pie",
+            // areaStyle: {normal: {}},
+            data: [ ]
+          }
+        ]
+      }
+    };
+  },
+  methods: {
+    handleChange(e) {
+      console.log("handlechange", e);
+      this.currentKey = e.name;
+      this.currentIndex = e.index;
+      if (e.name == 'line') {
+        this.getLine();
+      } else if (e.name == 'rad') {
+        this.getChartRadar();
+      }
+      // }
+    },
+    getLine() {
+      this.loading = true;
+      this.$http({
+        url: this.$http.adornUrl("/statistics/statistics/repairStatistics"),
+        method: "get",
+        params: this.$http.adornParams(this.formData)
+      })
+        .then(({ data }) => {
+          this.loading = false;
+          console.log("折线数据", data);
+          let [xData, sData1, sData2] = [[], [], []];
+          data.list.forEach(item => {
+            xData.push(item.createTime);
+            sData1.push(item.zhengchang);
+            sData2.push(item.guzhang);
+          });
+          this.chartLineOption.xAxis.data = xData;
+          this.chartLineOption.series[0].data = sData1;
+          this.chartLineOption.series[1].data = sData2;
+          this.$nextTick(() => {
+            this.chart = echarts.init(
+              document.getElementById(`chartBox${this.currentIndex}`),
+              // "light"
+            );
+            this.chart.setOption(this.chartLineOption);
+          });
+        })
+        .catch(e => {
+          this.loading = false;
+          console.log(e);
+        });
+    },
+    getChartRadar() {
+      this.$http({
+        url: this.$http.adornUrl(
+          "/statistics/statistics/maintenanceStatistics"
+        ),
+        method: "get",
+        params: this.$http.adornParams(this.formData)
+      }).then(({ data }) => {
+        if (data && data.code === 0) {
+          console.log("雷达图数据", data);
+          let sData = [];
+          for (let key in data.list[0]) {
+            sData.push({
+              name: this.formatCode(key),
+              value:data.list[0][key]
+            });
+            // counts.push(data.list[0][key]);
+          }
+          this.chartRadarOption.series[0].data = sData
+          this.$nextTick(() => {
+            this.chart = echarts.init(
+              document.getElementById(`chartBox${this.currentIndex}`),
+              // "light"
+            );
+            this.chart.setOption(this.chartRadarOption);
+          });
+          // this.chartRadar = echarts.init(
+          //   document.getElementById("J_chartRadarBox")
+          // );
+        }
+      });
+    },
+    handleQuery() {
+      console.log("formData", this.formData);
+      if (this.currentIndex == 0) {
+        this.getLine();
+      } else {
+        this.getChartRadar();
+      }
+    },
+    formatCode(code) {
+      let value;
+      if (code == "notstarted") {
+        value = "未开始";
+      } else if (code == "todotasks") {
+        value = "待处理";
+      } else if (code == "completed") {
+        value = "已完成";
+      }
+      return value;
+    }
+  },
+  created() {
+    this.getLine();
+  },
+  mounted() {
+    console.log("mounted");
+    // this.$nextTick(() => {
+    //   this.getLine();
+    // });
+
+    this.width = document.documentElement.clientWidth - 250 + "px";
+    this.height = document.documentElement.clientHeight - 300 + "px";
+    this.chartHeight = document.documentElement.clientHeight - 330 + "px";
+  }
+};
+</script>
+
+<style scoped lang="scss">
+.border {
+  border: 1px solid #ebeef5;
+}
+.table_box {
+  height: 500px;
+  width: 100%;
+  border: 1px solid #eee;
+  display: flex;
+}
+.table_left {
+  width: 200px;
+  display: flex;
+  flex: 0 0 200px;
+  flex-direction: column;
+}
+.table_item {
+  justify-content: center;
+  border-right: 1px solid #eee;
+  display: flex;
+  align-items: center;
+  font-size: 14px;
+  flex: 1;
+}
+.table_item.active {
+  color: blue;
+}
+.table_item_top {
+  height: 250px;
+}
+.table_item_bottom {
+  height: 249px;
+  border-top: 1px solid #eee;
+}
+.border_top {
+  border-top: 1px solid #eee;
+}
+.table_right {
+  // display: flex;
+  flex: 1 1 auto;
+}
+</style>
+

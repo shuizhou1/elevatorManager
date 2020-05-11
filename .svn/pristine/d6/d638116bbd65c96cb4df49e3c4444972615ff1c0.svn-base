@@ -1,0 +1,180 @@
+<template>
+  <div>
+    <div class="form_wraper">
+      <div class="header">维保预约</div>
+      <el-form
+        ref="form"
+        :model="formData"
+        :rules="rules"
+        class="form"
+        style="margin-left:10px"
+        label-width="auto"
+      >
+        <el-row :gutter="20">
+          <el-col :span="8">
+            <el-form-item label="维保单位" prop="maintenanceName">
+              <el-input v-model="formData.maintenanceName"></el-input>
+            </el-form-item>
+          </el-col>
+          <el-col :span="8">
+            <el-form-item label="联系人" prop="contactName">
+              <el-input v-model="formData.contactName"></el-input>
+            </el-form-item>
+          </el-col>
+          <el-col :span="8">
+            <el-form-item label="联系人电话" prop="contactPhone">
+              <el-input v-model="formData.contactPhone"></el-input>
+            </el-form-item>
+          </el-col>
+        </el-row>
+        <el-row :gutter="20">
+          <el-col :span="8">
+            <el-form-item label="预约维保时间" prop="maintenanceTime">
+              <el-input v-model="formData.maintenanceTime"></el-input>
+            </el-form-item>
+          </el-col>
+          <!-- <el-col :span="8"> -->
+              <!-- <el-form-item label="维保电梯" prop="regCode">
+                <el-input v-model="formData.regcode"></el-input>
+              </el-form-item>
+            </el-col>
+            <el-col :span="1">
+              <el-button @click="handleSelect">选择</el-button>
+            </el-col> -->
+        </el-row>
+        <el-row :gutter="20">
+          <el-col :span="24">
+            <el-form-item label="通知详情" prop="remarks">
+              <el-input type="textarea" v-model="formData.remarks"></el-input>
+            </el-form-item>
+          </el-col>
+        </el-row>
+      </el-form>
+    </div>
+    <div class="button_wraper" v-if="lx=='wbdw'">
+      <el-button @click="handleselectElevator()">选择维保电梯</el-button>
+      <el-button @click="handleselectContact()" style="margin-left:20px">选择联系人</el-button>
+      <el-button @click="handleNotices()" style="margin-left:20px">通知</el-button>
+    </div>
+    <div class="button_wraper" v-else>
+      <el-button @click="handleselectElevator()">查看维保电梯</el-button>
+      <el-button @click="handleConfirm()" style="margin-left:20px">确认</el-button>
+      <el-button @click="handleReappointment()" style="margin-left:20px">请重新预约</el-button>
+    </div>
+    <select-elevator v-if="showElevatorselectDialog"  ref="elevatorSelector" @confirm="elevatorselectConfirm"></select-elevator>
+    <select-contact v-if="showContactselectDialog" ref="contactSelector" @confirm="contactselectConfirm"></select-contact>
+  </div>
+</template>
+<script>
+import selectElevator from "@/components/selectElevator.vue";
+import selectContact from "@/components/selectContact.vue";
+import {isMobile} from '@/utils/validate';
+export default {
+  components: {
+    selectElevator,
+    selectContact
+  },
+  data() {
+     var validateMobile = (rule, value, callback) => {
+      if (isMobile(value) || isPhone(value)) {
+        callback();
+      } else {
+        callback("联系人电话格式有误");
+      }
+    };
+    return {
+      formData: {
+        maintenanceName:'',//维保单位
+        maintenanceId:'',
+        contactName:'',//维保联系人
+        contactPhone:'',//联系人电话
+        maintenanceTime:'',//预约时间
+        remarks:'',//通知
+        regCodes:'',//电梯注册码
+        userIds:'',//通知人id
+
+      },
+      showElevatorselectDialog: false, //显示电梯选择
+      showContactselectDialog: false,
+      lx: "wbdw",
+      rules: {
+         maintenanceName: [{
+          required: true,
+          message: "维保单位不能为空"
+        }],
+        contactName: [{
+          required: true,
+          message: "联系人不能为空",
+        },{
+          validator:validateMobile
+        }],
+        contactPhone: [{
+          required: true,
+          message: "联系人电话不能为空"
+        }],
+        maintenanceTime: [{
+          required: true,
+          message: "预约维保时间不能为空"
+        }],
+        remarks: [{
+          required: true,
+          message: "通知详情不能为空"
+        }]
+      }
+    };
+  },
+  methods: {
+    handleselectElevator() {
+      this.showElevatorselectDialog = true;
+      this.$nextTick(()=>{
+        this.$refs.elevatorSelector.init();
+      })
+    },
+    // 确认选择
+    elevatorselectConfirm(val){
+      console.log('确认选择',val);
+      this.formData.regcode = val.regcode;
+      this.formData.locals = val.locals;
+    },
+    handleselectContact() {
+      this.showContactselectDialog = true;
+       this.$nextTick(()=>{
+        this.$refs.contactSelector.init();
+      })
+    },
+    contactselectConfirm(val){
+      this.formData
+    },
+    
+    // 通知
+    handleNotices() {},
+    // 确认
+    handleConfirm() {
+      console.log('confirm',this.formData);
+      this.$refs["form"].validate(valid => {
+        console.log(this.formData);
+        if (valid) {
+          this.$http({
+            url: this.$http.adornUrl("/maintenancereservation/maintenancereservation/save"),
+            method: "post",
+            data: this.formData
+          })
+            .then(res => {
+              console.log("formsubmitssucsss", res);
+              if (res.data.code == 0) {
+                this.$message.success({message:'操作成功'})
+              }
+            })
+            .catch(e => {
+              console.log(e);
+            });
+        }
+      });
+    },
+    // 重新预约
+    handleReappointment() {}
+  }
+};
+</script>
+<style  scoped>
+</style>

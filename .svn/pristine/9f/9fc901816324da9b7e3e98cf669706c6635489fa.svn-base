@@ -1,0 +1,39 @@
+<!--  -->
+<template>
+  <div>
+    <!-- 维保管理 -->
+    <router-view></router-view>
+  </div>
+</template>
+
+<script>
+
+export default {
+  data() {
+    return {
+      editableTabs: [{
+          title: 'Tab 1',
+          name: '1',
+          content: 'Tab 1 content'
+        }, {
+          title: 'Tab 2',
+          name: '2',
+          content: 'Tab 2 content'
+        }],
+      editableTabsValue:'2'
+    };
+  },
+  
+  created() {
+    console.log("created");
+    console.log("params", this.$route.params);
+  },
+  methods: {
+    handleTabsEdit(e){
+      console.log(e);
+    }
+  }
+};
+</script>
+<style lang='less' scoped>
+</style>

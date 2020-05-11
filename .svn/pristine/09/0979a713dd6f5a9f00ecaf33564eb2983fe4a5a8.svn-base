@@ -1,0 +1,229 @@
+<template>
+  <el-dialog :modal="false"
+    :title="!dataForm.id ? '详情' : '详情'"
+    :close-on-click-modal="false" :fullscreen="true" class="changeIndex"
+    :visible.sync="visible" >
+    <el-form :model="dataForm"  ref="dataForm"  label-width="130px">
+    	<el-row>
+	    		<el-col :span="5">
+			      <el-form-item label="用户名" prop="username">
+			        <el-input v-model.trim="dataForm.username" placeholder="用户名" ></el-input>
+			      </el-form-item>
+			     </el-col>
+			    <el-col :span="5">
+			      <el-form-item label="性别" prop="sex">
+			        <el-input v-model.trim="dataForm.sex" placeholder="性别" ></el-input>
+			      </el-form-item>
+		      </el-col>
+		      <el-col :span="5">
+			      <el-form-item label="生日" prop="birth">
+			        <el-input v-model.trim="dataForm.birth" placeholder="生日" ></el-input>
+			      </el-form-item>
+		      </el-col>
+		      <el-col :span="5">
+			      <el-form-item label="职务" prop="jobtitle">
+			        <el-input v-model.trim="dataForm.jobtitle" placeholder="职务" ></el-input>
+			      </el-form-item>
+		      </el-col>
+	    </el-row>
+	    <el-row>
+	    		<el-col :span="5">
+			      <el-form-item label="住址" prop="homeaddr">
+			        <el-input v-model.trim="dataForm.homeaddr" placeholder="住址" ></el-input>
+			      </el-form-item>
+			     </el-col>
+			    <el-col :span="5">
+			      <el-form-item label="住址电话" prop="hometel">
+			        <el-input v-model.trim="dataForm.hometel" placeholder="住址电话" ></el-input>
+			      </el-form-item>
+		      </el-col>
+		      <el-col :span="5">
+			      <el-form-item label="办公电话" prop="bgdh">
+			        <el-input v-model.trim="dataForm.bgdh" placeholder="办公电话" ></el-input>
+			      </el-form-item>
+		      </el-col>
+		      <el-col :span="5">
+			      <el-form-item label="邮箱" prop="email">
+			        <el-input v-model.trim="dataForm.email" placeholder="邮箱" ></el-input>
+			      </el-form-item>
+		      </el-col>
+	    </el-row>
+	    <el-row>
+	    		<el-col :span="5">
+			      <el-form-item label="手机号" prop="mobile">
+			        <el-input v-model.trim="dataForm.mobile" placeholder="手机号" ></el-input>
+			      </el-form-item>
+			     </el-col>
+			    <el-col :span="5">
+			      <el-form-item label="员工标志" prop="ygbz">
+			        <el-input v-model.trim="dataForm.ygbz" placeholder="员工标志" ></el-input>
+			      </el-form-item>
+		      </el-col>
+		      <el-col :span="5">
+			      <el-form-item label="操作员标志" prop="czbz">
+			        <el-input v-model.trim="dataForm.czbz" placeholder="操作员标志" ></el-input>
+			      </el-form-item>
+		      </el-col>
+		      <el-col :span="5">
+			      <el-form-item label="是否收费员" prop="sfbz">
+			        <el-input v-model.trim="dataForm.sfbz" placeholder="是否收费员" ></el-input>
+			      </el-form-item>
+		      </el-col>
+	    </el-row>
+	    <el-row>
+	    		<el-col :span="5">
+			      <el-form-item label="维修员标志" prop="wxbz">
+			        <el-input v-model.trim="dataForm.wxbz" placeholder="维修员标志" ></el-input>
+			      </el-form-item>
+			     </el-col>
+			    <el-col :span="5">
+			      <el-form-item label="技能水平" prop="jnsp">
+			        <el-input v-model.trim="dataForm.jnsp" placeholder="技能水平" ></el-input>
+			      </el-form-item>
+		      </el-col>
+		      <el-col :span="5">
+			      <el-form-item label="坐席标志" prop="zxbz">
+			        <el-input v-model.trim="dataForm.zxbz" placeholder="坐席标志" ></el-input>
+			      </el-form-item>
+		      </el-col>
+		      <el-col :span="5">
+			      <el-form-item label="坐席员位置名" prop="agentplace">
+			        <el-input v-model.trim="dataForm.agentplace" placeholder="坐席员位置名" ></el-input>
+			      </el-form-item>
+		      </el-col>
+	    </el-row>
+	    <el-row>
+	    		<el-col :span="5">
+			      <el-form-item label="坐席组号" prop="acdgroupid">
+			        <el-input v-model.trim="dataForm.acdgroupid" placeholder="坐席组号" ></el-input>
+			      </el-form-item>
+			     </el-col>
+			    <el-col :span="5">
+			      <el-form-item label="坐席员技能编号" prop="skillnumber">
+			        <el-input v-model.trim="dataForm.skillnumber" placeholder="坐席员技能编号" ></el-input>
+			      </el-form-item>
+		      </el-col>
+		      <el-col :span="5">
+			      <el-form-item label="坐席员技能级别" prop="skillpriority">
+			        <el-input v-model.trim="dataForm.skillpriority" placeholder="坐席员技能级别" ></el-input>
+			      </el-form-item>
+		      </el-col>
+		      <el-col :span="5">
+			      <el-form-item label="身份证" prop="idcard">
+			        <el-input v-model.trim="dataForm.idcard" placeholder="身份证" ></el-input>
+			      </el-form-item>
+		      </el-col>
+	    </el-row>
+	   </el-form>
+  </el-dialog>
+</template>
+
+<script>
+  import Icon from '@/icons'
+  export default {
+    data () {
+      return {
+        visible: false,
+        dataForm: {
+          id: 0,
+          username: '',
+          sex: '',
+          birth: '',
+          jobtitle: '',
+          homeaddr: '',
+          hometel: '',
+          bgdh: '',
+          email: '',
+          mobile: '',
+          ygbz: '',
+          czbz: '',
+          sfbz: '',
+          wxbz: '',
+          jnsp: '',
+          zxbz: '',
+          agentplace: '',
+          acdgroupid: '',
+          skillnumber: '',
+          skillpriority: '',
+          idcard: ''
+        }
+      }
+    },
+    created () {
+    },
+    methods: {
+      init (id) {
+        this.dataForm.id = id || 0
+        this.$http({
+          url: this.$http.adornUrl('/sys/department/getUserDetail'),
+          method: 'post',
+          params: this.$http.adornParams({
+          	"userId":id
+          })
+        }).then(({data}) => {
+        	this.visible = true;
+	        	if(data.code=='0'){
+	        		this.dataForm.username = data.list[0].username;
+	        		this.dataForm.sex = data.list[0].sex;
+	        		this.dataForm.birth = data.list[0].birth;
+	        		this.dataForm.jobtitle = data.list[0].jobtitle;
+	        		this.dataForm.homeaddr = data.list[0].homeaddr;
+	        		this.dataForm.hometel = data.list[0].hometel;
+	        		this.dataForm.bgdh = data.list[0].bgdh;
+	        		this.dataForm.email = data.list[0].email;
+	        		this.dataForm.mobile = data.list[0].mobile;
+	        		this.dataForm.czbz = data.list[0].czbz;
+	        		this.dataForm.sfbz = data.list[0].sfbz;
+	        		this.dataForm.wxbz = data.list[0].wxbz;
+	        		this.dataForm.jnsp = data.list[0].jnsp;
+	        		this.dataForm.zxbz = data.list[0].zxbz;
+	        		this.dataForm.agentplace = data.list[0].agentplace;
+	        		this.dataForm.acdgroupid = data.list[0].acdgroupid;
+	        		this.dataForm.skillnumber = data.list[0].skillnumber;
+	        		this.dataForm.skillpriority = data.list[0].skillpriority;
+	        		this.dataForm.idcard = data.list[0].idcard;
+	        	}else{
+	        		this.$message.error('未知异常，请联系管理员');
+	        	}
+        })
+      },
+    }
+  }
+</script>
+
+<style lang="scss">
+  .mod-menu {
+    .menu-list__input,
+    .icon-list__input {
+       > .el-input__inner {
+        cursor: pointer;
+      }
+    }
+    &__icon-popover {
+      max-width: 370px;
+    }
+    &__icon-list {
+      max-height: 180px;
+      padding: 0;
+      margin: -8px 0 0 -8px;
+      > .el-button {
+        padding: 8px;
+        margin: 8px 0 0 8px;
+        > span {
+          display: inline-block;
+          vertical-align: middle;
+          width: 18px;
+          height: 18px;
+          font-size: 18px;
+        }
+      }
+    }
+    .icon-list__tips {
+      font-size: 18px;
+      text-align: center;
+      color: #e6a23c;
+      cursor: pointer;
+    }
+  }
+  
+</style>

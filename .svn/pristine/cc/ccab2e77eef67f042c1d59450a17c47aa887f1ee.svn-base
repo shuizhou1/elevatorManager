@@ -1,0 +1,100 @@
+<!--  -->
+<template>
+  <div>
+    <el-dialog
+      :fullscreen="true"
+        :modal="false"
+        :show-close="false"
+        :visible.sync="visible"
+        v-loading="loading"
+    >
+    <div slot="title" class="dialog_headslot">困人详情
+        <el-button @click="visible=false" style="margin-left:20px">返回</el-button>
+    </div>
+      <el-form  class="dialog_head_form" :rules="rules" :model="formData" label-width="auto">
+        <el-row :gutter="40">
+          <el-col :span="8">
+             <el-form-item prop="reason">
+               <el-select v-model="formData.reason" placeholder="请选择" clearable>
+                 <el-option v-for="(item,index) in dataList" :key="index" :label="item.label" :value="item.value"></el-option>
+               </el-select>
+             </el-form-item>
+          </el-col>
+        </el-row>
+       
+      </el-form>
+
+    </el-dialog>
+  </div>
+</template>
+
+<script>
+export default {
+  data () {
+    return {
+      visible:false,
+      loading:false,
+      dataList:[{
+        label:'测试',
+        value:'1'
+      },{
+        label:'开门故障',
+        value:'2'
+      },{
+        label:'人为因素',
+        value:'3'
+      }],
+      formData:{
+        reason:''
+      },
+      rules:{
+
+      }
+    };
+  },
+  components: {},
+  methods: {
+    init(){
+      this.visible = true;
+      this.$nextTick()
+      // this.getDataList()
+    },
+    getDataList(){
+      this.$http({
+        url:this.$http.adornUrl(''),
+        method:'get',
+        params:this.$http.adornParams({
+
+        })
+      }).then(({data})=>{
+        if(data&&data.code==0){
+
+        }
+      }).catch(e=>{
+        console.log(e)
+      })
+    },
+    formSubmit(){
+      this.loading = true;
+       this.$http({
+        url:this.$http.adornUrl(''),
+        method:'post',
+        data:this.$http.adornData({
+
+        })
+      }).then(({data})=>{
+        this.loading = false;
+        if(data&&data.code==0){
+
+        }
+      }).catch(e=>{
+        console.log(e)
+        this.loading = false;
+      })
+    }
+  }
+}
+
+</script>
+<style scoped>
+</style>

@@ -1,0 +1,74 @@
+// 颜色变量
+// -----------------------------
+$white:                         #fff;
+$block:                         #000;
+$blue:                          #6785f7;
+$success:                       #43b236;
+$warning: #E6b23C;
+$vitality:                      #f88962;
+$danger: #ff5157;
+$add: #36c65B;
+$save: #4080ef;
+$delete:                        #ff5157;
+$edit:                          #4080ff;
+$query: #E6b23C;
+// eg: .class {
+//     color: map_get($light-colors, blue);
+// }
+$semantic-colors: (
+    blue:                        $blue,
+    success:                     $success,
+    warning:                     $warning,
+    vitality:                    $vitality,
+    danger:                      $danger,
+);
+// 高亮
+$light-colors: (
+    blue:                      #1F61F3,
+    success:                   #43b236,
+    add:                       #1dd282,
+    warning:                   #e6c24c,
+    vitality:                  #f9a487,
+    danger:                    #fe696c
+);
+// 暗色
+$dark-colors: (
+    blue:                      #5878f3,
+    success:                   #43b236,
+    warning:                   #f1b05a,
+    vitality:                  #fe7c4e,
+    danger:                    #f8484c
+);
+
+// 主色调
+$primary:                       #4080ff;
+
+// 常规文字颜色 - 基本通用，不做修改，有需要直接添加，语义化命名。
+$text-colors: (
+    dark:                       #333,
+    light:                      #666,
+    gray:                       #999,
+    white:                      $white,
+    blue:                       $blue,
+    success:                    $success,
+    warning:                    $warning,
+    vitality:                   $vitality,
+    danger:                     $danger
+);
+
+// 项目中常用的背景色
+// -----------------------------
+$bg-colors: (
+    base:                       #f1f1f4, // base content bg
+    gray:                       #f7f7f8, // header footer toolbar bg
+    scroll:                     #ececf1, // scroll bar
+);
+
+// 描边颜色
+// -----------------------------
+$border-colors: (
+    base:                       #e1e1e8, // 基础的描边色
+    gray:                       #d1d1d8,
+    white:                      $white,
+    primary:                    $primary
+);

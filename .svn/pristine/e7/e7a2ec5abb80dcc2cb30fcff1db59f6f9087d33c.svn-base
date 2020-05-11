@@ -1,0 +1,155 @@
+<!--  -->
+<template>
+  <div>
+     <el-form class="dialog_head_form" @keyup.enter.native="getDataList">
+      <el-row :gutter="40">
+        <el-col :span="8">
+          <el-form-item label="注册代码" prop="regCode">
+            <el-input v-model="formData.regCode" clearable>
+              <template slot="append">
+                <el-button @click="selectElevator">选择</el-button>
+              </template>
+            </el-input>
+          </el-form-item>
+        </el-col>
+        <el-col :span="6">
+          <!-- <select-month></select-month> -->
+          <el-form-item label="日期">
+             <el-date-picker
+              v-model="formData.dateValue"
+              @change="dateChange"
+               start-placeholder="开始月份"
+              end-placeholder="结束月份"
+              value-format="yyyy-M"
+              type="monthrange"
+            ></el-date-picker>
+          </el-form-item>
+        </el-col>
+        <el-col :span="6">
+          <el-form-item label="区域">
+           <el-cascader
+              v-model="areaValue"
+              :options="areaData"
+              :props="{ checkStrictly: true }"
+              @change="handleAreaChange"
+              clearable
+            ></el-cascader>
+          </el-form-item>
+        </el-col>
+        <el-col :span="2">
+          <el-button @click="getDataList('init')" type="query">查询</el-button>
+        </el-col>
+      </el-row>
+    </el-form>
+    <div class="chart_title">
+     检修情况统计
+    </div>
+    <el-table border :data="dataList" v-loading="loading">
+      <el-table-column prop="regCode" align="center" label="注册代码"></el-table-column>
+      <el-table-column prop="local" align="center" label="电梯地址" show-overflow-tooltip></el-table-column>
+      <el-table-column prop="maintenanceName" align="center" label="维保单位" show-overflow-tooltip></el-table-column>
+      <el-table-column prop="sumPatrolTime" align="center" label="检修时长(小时)" width="140"></el-table-column>
+      <el-table-column prop="frequencyOfMaintenance" align="center" label="检修次数" width="80"></el-table-column>
+      <el-table-column prop="avgPatrolTime" align="center" label="平均时长(小时)" width="140"></el-table-column>
+      <el-table-column prop="patrolStrength"  align="center" :formatter="formatpoint" label="故障率" width="80"></el-table-column>
+    </el-table>
+    <el-pagination
+          @size-change="sizeChangeHandle"
+          @current-change="currentChangeHandle"
+          :current-page="pageIndex"
+          :page-sizes="[5, 10, 20, 50]"
+          :page-size="pageSize"
+          :total="totalCount"
+          layout="total, sizes, prev, pager, next, jumper"
+    ></el-pagination>
+      <select-elevator
+      v-if="showElevatorselectDialog"
+      ref="elevatorSelector"
+      @confirm="selectElevatorConfirm"
+    ></select-elevator>
+  </div>
+</template>
+
+<script>
+import statical from  '@/utils/mixins/staticalAnalysis';
+import pagination from '@/utils/mixins/pagination'
+export default {
+  mixins:[statical,pagination],
+  data () {
+    return {
+      showElevatorselectDialog: false,
+      month:new Date().getMonth(),
+      formData:{
+        dateValue:'',
+        regCode: "",
+        years: "",
+        months: "",
+        province: "",
+        city: "",
+        district: "",
+        startTime:null
+      },
+      pageIndex:1,
+      pageSize:10,
+      totalCount:0,
+      dataList:[],
+      loading:false,
+     
+    };
+  },
+  components: {},
+  activated(){
+    this.getDataList()
+  },
+  methods: {
+    getDataList(type){
+      if(type=="init"){
+        this.pageIndex = 1;
+      }
+      this.loading = true;
+      this.$http({
+        url:this.$http.adornUrl('/statistics/statistics/inspectionAnalysis'),
+        method:'get',
+        params:this.$http.adornParams({
+          page:this.pageIndex,
+          limit:this.pageSize,
+          years: this.formData.years,
+          months: this.formData.months,
+          regCode: this.formData.regCode,
+          province: this.formData.province,
+          city: this.formData.city,
+          district: this.formData.district,
+          startTime:this.formData.startTime
+        })
+      }).then(({data})=>{
+        this.loading = false;
+        if(data&&data.code==0){
+          console.log('datalist',data)
+          this.dataList = data.page.list;
+          this.totalCount = data.page.totalCount;
+        } 
+      }).catch(e=>{
+        this.loading = false;
+        console.log(e);
+      })
+    },
+      formatpoint(row, col, cellvalue) {
+      if (String(cellvalue).length >= 6) {
+        return cellvalue.toFixed(4);
+      } else {
+        return cellvalue;
+      }
+    },
+   
+  }
+}
+
+</script>
+<style scoped>
+.chart_title{
+font-size: 18px;
+color: #666;
+text-align: center;
+/* margin-bottom:10px; */
+}
+</style>

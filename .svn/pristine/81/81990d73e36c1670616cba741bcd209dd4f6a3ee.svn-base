@@ -1,0 +1,1200 @@
+<template>
+    <div class="detail-contaianer">
+        <div class="button-container" text-center>
+            <el-button type="back" @click="back()"><i class="el-icon--left icon-back"></i>返回</el-button>
+        </div>
+        <section class="main-content tab-container aff-detail">
+            <el-tabs type="border-card" @tab-click="clickTabs">
+                <el-tab-pane label="工单详情" :style="{ 'height': height }" class="aff-detail-content">
+                    <div class="fullWidth">
+                        <section class="content-left fullHeight">
+                            <div class="table-container">
+                                <div class="table-title">
+                                    事务详情
+                                </div>
+                                <div class="table-content">
+                                    <div class="button-container">
+                                        <div class="input-container">
+                                            <div class="item has-input widthx3">
+                                                <div class="flex-container">
+                                                    <span class="selectTitle">受理单号：</span>
+                                                    <span style="color: #999" class="select-item span-content">{{ affairInfo.affairCode }}</span>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="button-container">
+                                        <div class="input-container">
+                                            <div class="item has-input widthx3">
+                                                <div class="flex-container">
+                                                    <span class="selectTitle">上报时间：</span>
+                                                    <span style="color: #999" class="select-item span-content">{{ affairInfo.affairTime }}</span>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="button-container">
+                                        <div class="input-container">
+                                            <div class="item has-input widthx3">
+                                                <div class="flex-container">
+                                                    <span class="selectTitle">受理时间：</span>
+                                                    <span style="color: #999" class="select-item span-content">{{ affairInfo.createTime }}</span>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="button-container">
+                                        <div class="input-container">
+                                            <div class="item has-input width50">
+                                                <div class="flex-container">
+                                                    <span class="selectTitle">受理人：</span>
+                                                    <span style="color: #999" class="select-item span-content">{{ affairInfo.createUserName }}</span>
+                                                </div>
+                                            </div><div class="item has-input width50">
+                                            <div class="flex-container">
+                                                <span class="selectTitle">上报人：</span>
+                                                <span style="color: #999" class="select-item span-content">{{ affairInfo.complainantName }}</span>
+                                            </div>
+                                        </div>
+                                        </div>
+                                    </div>
+                                    <div class="button-container">
+                                        <div class="input-container">
+                                            <div class="item has-input width50">
+                                                <div class="flex-container">
+                                                    <span class="selectTitle">上报电话：</span>
+                                                    <span style="color: #999" class="select-item span-content">{{ affairInfo.complainantPhone }}</span>
+                                                </div>
+                                            </div><div class="item has-input width50">
+                                            <div class="flex-container">
+                                                <span class="selectTitle">事务类型：</span>
+                                                <span style="color: #999" class="select-item span-content">{{ typeMap[affairInfo.affairType] }}</span>
+                                            </div>
+                                        </div>
+                                        </div>
+                                    </div>
+                                    <div class="button-container">
+                                        <div class="input-container">
+                                            <div class="item has-input widthx3">
+                                                <div class="flex-container">
+                                                    <span class="selectTitle">电梯编码：</span>
+                                                    <span style="color: #999" class="select-item span-content">{{ affairInfo.regCode }}</span>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="button-container">
+                                        <div class="input-container">
+                                            <div class="item has-input width50">
+                                                <div class="flex-container">
+                                                    <span class="selectTitle">所属区域：</span>
+                                                    <span style="color: #999" class="select-item span-content">{{ affairInfo.districtName }}</span>
+                                                </div>
+                                            </div><div class="item has-input width50">
+                                            <div class="flex-container">
+                                                <span class="selectTitle">所属街镇：</span>
+                                                <span style="color: #999" class="select-item span-content">{{ affairInfo.streetName }}</span>
+                                            </div>
+                                        </div>
+                                        </div>
+                                    </div>
+                                    <div class="button-container">
+                                        <div class="input-container">
+                                            <div class="item has-input widthx3">
+                                                <div class="flex-container">
+                                                    <span class="selectTitle">所属社区：</span>
+                                                    <span style="color: #999" class="select-item span-content">{{ affairInfo.communityName }}</span>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="button-container">
+                                        <div class="input-container">
+                                            <div class="item has-input widthx3">
+                                                <div class="flex-container">
+                                                    <span class="selectTitle">电梯地址：</span>
+                                                    <span style="color: #999" class="select-item span-content">{{ affairInfo.location }}</span>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="button-container">
+                                        <div class="input-container">
+                                            <div class="item has-input widthx3">
+                                                <div class="flex-container">
+                                                    <span class="selectTitle">投诉内容：</span>
+                                                    <span style="color: #999" class="select-item span-content limt-height">
+                                                        {{ affairInfo.affairInfo }}
+                                                    </span>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="button-container">
+                                        <div class="input-container">
+                                            <div class="item has-input widthx3">
+                                                <div class="flex-container">
+                                                    <div style="margin-left:15px">话务员备注：</div>
+                                                    <div style="color: #999;vertical-align:baseline" class="select-item  limit-height">{{ affairInfo.operatorRemark }}</div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <el-button
+                                            type="primary"
+                                            @click="reciveFrom()"
+                                            v-if="affairInfo.affairStatus == 0 && isManager"
+                                            style="float: right;margin-top: 10px;">签收
+                                    </el-button>
+                                    <div class="clearboth"></div>
+                                </div>
+                            </div>
+                          
+                            <div class="table-container">
+                                <div class="table-title">
+                                    处置结果
+                                </div>
+                                <el-form :disabled="((affairInfo.affairStatus==4 || affairInfo.affairStatus == 0||hasCompelete||hasUnfinishedCoordination) || !isManager) ? true : false">
+                                <div class="table-content">
+                                    <div class="button-container">
+                                        <div class="input-container">
+                                            <div class="item has-input widthx3">
+                                                <div class="flex-container">
+                                                    <span class="selectTitle">处理结果：</span>
+                                                    <el-radio-group v-model="formResultData.result" class="select-item radio" :disabled="((affairInfo.affairStatus==4 || affairInfo.affairStatus == 0||hasCompelete||hasCoordinationStatus) || !isManager) ? true : false">
+                                                        <el-radio label="1">已完成</el-radio>
+                                                        <el-radio label="2">转办</el-radio>
+                                                    </el-radio-group>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="button-container">
+                                        <div class="input-container">
+                                            <div class="item has-input widthx3">
+                                                <div class="flex-container">
+                                                    <span class="selectTitle">记录时间：</span>
+                                                    <el-date-picker
+                                                            v-model="formResultData.submitTime"
+                                                            class="select-item"
+                                                            type="datetime"
+                                                            placeholder="选择日期时间">
+                                                    </el-date-picker>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="button-container" v-if="isManager&&formResultData.result==2">
+                                        <div class="input-container">
+                                            <div class="item has-input widthx2">
+                                                <div class="flex-container">
+                                                    <span class="selectTitle">转办接收人：</span>
+                                                    <el-input
+                                                            type="text"
+                                                            v-model="formResultData.receive"
+                                                            class="select-item"></el-input>
+                                                </div>
+                                            </div><div class="item has-input">
+                                            <div class="flex-container">
+                                                <el-button
+                                                        type="primary"
+                                                        @click="addOrUpdateHandle()">接收人名单</el-button>
+                                            </div>
+                                        </div>
+                                        </div>
+                                    </div>
+                                    <div class="button-container" v-if="isManager&&formResultData.result==2">
+                                        <div class="input-container">
+                                            <div class="item has-input widthx3">
+                                                <div class="flex-container">
+                                                    <span class="selectTitle">转办说明：</span>
+                                                    <el-input type="textarea" :rows="6"
+                                                              v-model="formResultData.explains" class="select-item"></el-input>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <el-button
+                                            :type="'primary'"
+                                            :disabled="(((affairInfo.affairStatus === '1' || affairInfo.affairStatus === '2') || !isManager)) || saveTr ? true : false"
+                                               @click="saveResult()"
+                                               style="float: right;margin-top: 10px;">保存</el-button>
+                                    <div class="clearboth"></div>
+                                </div>
+                            </el-form>
+                            </div>
+                        </section><section class="content-right fullHeight">
+                            <div class="table-container">
+                                <div class="table-title">
+                                    处理过程记录
+                                </div>
+                                <div class="message-table-content">
+                                    <div class="item-message" v-for="(item,index) in logMessage" :key="index">
+                                        <span>{{ logMessage.length - index }} </span><span>{{ item.createTime }}</span><span>{{ item.nickname }}</span><span>{{ item.msg }}</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </section>
+                    </div>
+                </el-tab-pane>
+               
+                 <el-tab-pane label="协调会详情">
+                     <el-form :disabled="hasCompelete||hasCoordinationStatus||affairInfo.affairStatus==4||affairInfo.affairStatus==0">
+                     <div class="table-container">
+                                <!-- <div class="table-title">
+                                    事务处置
+                                </div> -->
+                                <div class="table-content">
+                                    <div class="button-container">
+                                        <div class="input-container">
+                                            <div class=" has-input item widthx3">
+                                                <div class="flex-container">
+                                                    <span class="selectTitle">协调会时间：</span>
+                                                    <el-date-picker
+                                                            v-model="formData.harmonizeTime"
+                                                            type="datetime"
+                                                            :disabled="!isManager"
+                                                            class="select-item"
+                                                            placeholder="选择日期时间">
+                                                    </el-date-picker>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="input-container">
+                            <div class=" has-input item widthx3">
+                                <div class="flex-container">
+                                    <span class="selectTitle">处置人：</span>
+                                    <el-input  :disabled="!isManager" v-model="formData.processUserName"  placeholder="处置人" class="select-item"></el-input>
+                                    
+                                </div>
+                            </div>
+                            
+                        </div>
+                              <div class="input-container">
+                            <div class=" has-input item widthx3">
+                                <div class="flex-container">
+                                    <span class="selectTitle">会议主题：</span>
+                                    <el-input  :disabled=" !isManager" v-model="formData.coordinationTitle" placeholder="会议主题" class="select-item"></el-input>
+                                    
+                                </div>
+                            </div>
+                            
+                        </div>
+                        <div class="input-container">
+                            <div class=" has-input item widthx3">
+                                <div class="flex-container">
+                                    <span class="selectTitle">与会专家：</span>
+                                    <el-input  :disabled=" !isManager" v-model="experts" placeholder="与会专家" class="select-item"></el-input>
+                                    <el-button  :disabled="!isManager" style="height:40px;margin-left:10px" type="primary" @click="showExpertSelect()">选择</el-button>
+                                 </div> 
+                            </div>
+                          
+                        </div>
+                         <div class="input-container">
+                            <div class="has-input item widthx3">
+                                <div class="flex-container">
+                                    <span class="selectTitle">通知备注：</span>
+                                    <el-input  :disabled=" !isManager" type="textarea"  rows="4" v-model="formData.coordinationInfo"  class="select-item"></el-input>
+                                </div>
+                            </div>
+                          
+                        </div>
+                                    <div class="button-container">
+                                        <div class="input-container">
+                                            <div class="item has-input widthx3">
+                                                <div class="flex-container">
+                                                    <span class="selectTitle">过程记录：</span>
+                                                    <el-input
+                                                            type="textarea"
+                                                            :rows="4"
+                                                            :disabled=" !isManager"
+                                                            v-model="formData.process"
+                                                            class="select-item"></el-input>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="button-container">
+                                        <div class="input-container">
+                                            <div class="item has-input widthx3">
+                                                <div class="flex-container">
+                                                    <span class="selectTitle">协商结果：</span>
+                                                    <el-radio-group
+                                                            :disabled="!isManager"
+                                                            v-model="formData.result"
+                                                                    class="select-item radio">
+                                                        <el-radio :label="'1'">协调成功</el-radio>
+                                                        <el-radio :label="'2'">协调失败</el-radio>
+                                                    </el-radio-group>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="button-container">
+                                        <div class="input-container">
+                                            <div class="item has-input widthx3">
+                                                <div class="flex-container">
+                                                    <span class="selectTitle">记录日期：</span>
+                                                    <el-date-picker
+                                                            v-model="formData.submitTime"
+                                                            :disabled="!isManager"
+                                                            type="date"
+                                                            class="select-item"
+                                                            placeholder="选择日期">
+                                                    </el-date-picker>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <el-button type="primary" style="float: right;margin-top: 10px;"
+                                               :disabled="(cControl || !isManager) || saveCo" @click="formDataSubmit()">保存</el-button>
+                                    <div class="clearboth"></div>
+                                </div>
+                            </div>
+                            </el-form>
+                    <div class="button-container">
+                       
+                    </div>
+                   
+                    
+                </el-tab-pane>
+                 <el-tab-pane label="协调会记录">
+                    <div class="button-container">
+                        <div class="input-container">
+                            <div class="item has-input width50">
+                                <div class="flex-container">
+                                    <span class="selectTitle">投诉日期：</span>
+                                    <el-date-picker
+                                            class="select-item"
+                                            v-model="timeRage"
+                                            type="daterange"
+                                            start-placeholder="开始日期"
+                                            end-placeholder="结束日期">
+                                    </el-date-picker>
+                                </div>
+                            </div><div class="item has-input">
+                            <div class="flex-container">
+                                <span class="selectTitle">投诉处置人：</span>
+                                <el-input v-model="dataForm.createUserId" placeholder="投诉处置人" class="select-item"></el-input>
+                            </div>
+                        </div>
+                            <el-button @click="getDataList('init')" type="primary"><i class="el-icon--left icon-query"></i>查询</el-button>
+
+                            <!--    <div class="item has-input">
+                                    <el-button
+                                            type="primary"
+                                            @click="getDataList()"><i class="el-icon&#45;&#45;left icon-query"></i>查询</el-button>
+                                    <el-button v-if="isAuth('elevator:elevatorinfo:delete')" type="danger" @click="deleteHandle()"
+                                               :disabled="dataListSelections.length <= 0"><i class="el-icon&#45;&#45;left icon-dele"></i>批量删除
+                                    </el-button>
+                                </div>-->
+                        </div>
+                    </div>
+                    <el-table
+                              :data="dataList"
+                              border
+                              @header-dragend="handleDragend"
+                              :max-height="400"
+                              v-loading="dataListLoading"
+                              @selection-change="selectionChangeHandle">
+                        <el-table-column
+                                prop="coordinationTime"
+                                header-align="center"
+                                align="center"
+                                width="167"
+                                label="协调会时间">
+                        </el-table-column><el-table-column
+                                prop="coordinationInfo"
+                                header-align="center"
+                                align="center"
+                                label="预约备注">
+                        </el-table-column><el-table-column
+                                prop="summaryTime"
+                                header-align="center"
+                                align="center"
+                                width="167"
+                                label="记录时间">
+                        </el-table-column><el-table-column
+                                prop="summaryInfo"
+                                header-align="center"
+                                align="center"
+                                label="过程记录">
+                        </el-table-column><el-table-column
+                                prop="coordinationStatus"
+                                header-align="center"
+                                align="center"
+                                label="协商结果">
+                        </el-table-column><el-table-column
+                                prop="coordinationInfo"
+                                header-align="center"
+                                align="center"
+                                label="备注">
+                        </el-table-column><el-table-column
+                                header-align="center"
+                                align="center"
+                                width="100"
+                                fixed="right"
+                                label="操作">
+                            <template slot-scope="scope">
+                                <el-button type="text" size="small" @click="getDetail(scope.row.id)">详情</el-button>
+                            </template>
+                        </el-table-column>
+                    </el-table>
+                    <el-pagination
+                            @size-change="sizeChangeHandle"
+                            @current-change="currentChangeHandle"
+                            :current-page="pageIndex"
+                            :page-sizes="[10, 20, 50, 100]"
+                            :page-size="pageSize"
+                            :total="totalPage"
+                            layout="total, sizes, prev, pager, next, jumper">
+                    </el-pagination>
+                </el-tab-pane>
+            </el-tabs>
+        </section>
+        <!--协调会详情-->
+        <el-dialog
+                title="协调会详情"
+                :visible.sync="coordinationDialog"
+                top="0"
+                width="75%"
+                custom-class="noMargin smallDialog"
+                :before-close="handleClose">
+            <div class="button-container">
+                <div class="input-container">
+                    <div class="item has-input widthx3">
+                        <div class="flex-container">
+                            <span class="selectTitle">协调会时间：</span>
+                            <span style="color: #999" class="select-item span-content">{{ coordinationDetail.coordinationTime }}</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        <div class="input-container">
+                <div class=" has-input item widthx3">
+                    <div class="flex-container">
+                        <span class="selectTitle">处置人：</span>
+                        <el-input  :disabled="true" placeholder="处置人" v-model="coordinationDetail.processUserName" class="select-item"></el-input>
+                        
+                    </div>
+                </div>
+                
+            </div>
+              <div class="input-container">
+                <div class=" has-input item widthx3">
+                    <div class="flex-container">
+                        <span class="selectTitle">会议主题：</span>
+                        <el-input  :disabled="true" placeholder="会议主题" v-model="coordinationDetail.coordinationTitle" class="select-item"></el-input>
+                        
+                    </div>
+                </div>
+                
+            </div>
+            <div class="input-container">
+                <div class=" has-input item widthx3">
+                    <div class="flex-container">
+                        <span class="selectTitle">与会专家：</span>
+                        <el-input  :disabled="true" v-model="coordinationDetail.experts" placeholder="与会专家" class="select-item"></el-input>
+                        </div> 
+                </div>
+                
+            </div>
+                <div class="input-container">
+                <div class="has-input item widthx3">
+                    <div class="flex-container">
+                        <span class="selectTitle">通知备注：</span>
+                        <el-input  :disabled="true" type="textarea"  rows="4" v-model="coordinationDetail.coordinationInfo"  class="select-item"></el-input>
+                    </div>
+                </div>
+                
+            </div>
+            <div class="button-container">
+                <div class="input-container">
+                    <div class="item has-input widthx3">
+                        <div class="flex-container">
+                            <span class="selectTitle">预约备注：</span>
+                            <el-input
+                                    type="textarea"
+                                    :rows="6"
+                                    :disabled="true"
+                                    v-model="coordinationDetail.coordinationInfo"
+                                    class="select-item"></el-input>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="button-container">
+                <div class="input-container">
+                    <div class="item has-input widthx3">
+                        <div class="flex-container">
+                            <span class="selectTitle">过程记录：</span>
+                            <el-input
+                                    type="textarea"
+                                    :rows="6"
+                                    :disabled="true"
+                                    v-model="coordinationDetail.summaryInfo"
+                                    class="select-item"></el-input>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="button-container">
+                <div class="input-container">
+                    <div class="item has-input widthx3">
+                        <div class="flex-container">
+                            <span class="selectTitle">协商结果：</span>
+                            <el-radio-group
+                                    :disabled="true"
+                                    v-model="coordinationDetail.coordinationStatus"
+                                    class="select-item radio">
+                                <el-radio :label="'1'">协调成功</el-radio>
+                                <el-radio :label="'2'">协调失败</el-radio>
+                            </el-radio-group>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="button-container">
+                <div class="input-container">
+                    <div class="item has-input widthx3">
+                        <div class="flex-container">
+                            <span class="selectTitle">记录时间：</span>
+                            <span style="color: #999" class="select-item span-content">{{ coordinationDetail.summaryTime }}</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <span slot="footer" class="dialog-footer">
+                <el-button type="primary" @click="coordinationDialog = false">确 定</el-button>
+            </span>
+        </el-dialog>
+        <!-- 弹窗, 新增 / 修改 -->
+        <add-or-update v-if="addOrUpdateVisible" ref="addOrUpdate" @refreshDataList="getDataList" v-on:selectItem="getItem"></add-or-update>
+        <expert-select v-if="showExpertSelectDialog" ref="expertSelect" @confirm="handleExpertSelect"></expert-select>
+    </div>
+</template>
+
+<script>
+    import AddOrUpdate from './affairinfo-transfer'
+    import expertSelect from './expert-select'
+    import { formatDate } from '@/utils/index'
+    import config from '@/utils/config'
+
+    export default {
+        name: 'affair-info-detail',
+        components: {
+            AddOrUpdate,
+            expertSelect
+        },
+        activated() {
+            this.id = this.$route.query.id
+            this.init();
+        },
+        methods: {
+            clickTabs (tab) {
+                if (tab.paneName === '1') {
+                    this.getDataList()
+                }
+            },
+            handleClose () {
+                this.coordinationDialog = false
+            },
+            handleDragend (n, o, a, b) {
+                config.tableDragendHandle(n, o, a)
+            },
+            getDetail (id) {
+                this.$http({
+                    url: this.$http.adornUrl(`/affairCoordination/affaircoordination/info/${id}`),
+                    method: 'get',
+                    data: this.$http.adornData()
+                }).then(({data}) => {
+                    if (data && data.code === 0) {
+                        this.coordinationDialog = true
+                        this.coordinationDetail = data.affairCoordination
+                    }
+                })
+            },
+            getItem (item) {
+                this.peopleInfo = item
+                this.formResultData.receive = item.nickname
+            },
+            back () {
+                window.history.back()
+            },
+            // 每页数
+            sizeChangeHandle (val) {
+                this.pageSize = val
+                this.pageIndex = 1
+                this.getDataList()
+            },
+            // 当前页
+            currentChangeHandle (val) {
+                this.pageIndex = val
+                this.getDataList()
+            },
+            // 多选
+            selectionChangeHandle (val) {
+                this.dataListSelections = val
+            },
+            // 新增 / 修改
+            addOrUpdateHandle (id) {
+                this.addOrUpdateVisible = true
+                this.$nextTick(() => {
+                    this.$refs.addOrUpdate.getDataList(id)
+                })
+            },
+            // 协调会保存或更新
+            formDataSubmit() {
+                if (!this.formData.harmonizeTime) {
+                    this.$message.error('请输入协调会时间')
+                    return
+                }
+                if (!this.formData.coordinationTitle) {
+                    this.$message.error('请输入协调会主题')
+                    return
+                }
+                 if (!this.formData.coordinationExpertIds) {
+                    this.$message.error('请选择与会专家')
+                    return
+                }
+                 if (!this.formData.coordinationInfo) {
+                    this.$message.error('请输入通知备注')
+                    return
+                }
+                // if (!this.formData.process) {
+                //     this.$message.error('请输入过程记录')
+                //     return
+                // }
+                // if (!this.formData.result) {
+                //     this.$message.error('请选择协商结果')
+                //     return
+                // }
+                // if (!this.formData.submitTime) {
+                //     this.$message.error('请选择记录时间')
+                //     return
+                // }
+                let coordinationTime, summaryTime
+                console.log(this.formData.harmonizeTime);
+                try {
+                    coordinationTime = formatDate(this.formData.harmonizeTime, 'yyyy-MM-dd hh:mm:ss')
+                } catch (e) {
+                    coordinationTime = this.formData.harmonizeTime
+                }
+                try {
+                    summaryTime = formatDate(this.formData.submitTime, 'yyyy-MM-dd hh:mm:ss')
+                } catch (e) {
+                    summaryTime = this.formData.submitTime
+                }
+                let params = {
+                    id: this.coordinationId, // 协调会id
+                    coordinationTime: coordinationTime, // 协调会时间
+                    coordinationTitle: this.formData.coordinationTitle,//协调会主题
+                    coordinationExpertIds: this.formData.coordinationExpertIds,//与会专家
+                    coordinationInfo: this.formData.coordinationInfo, // 通知备注
+                    summaryInfo: this.formData.process, // 过程记录
+                    summaryTime: summaryTime, // 记录时间
+                    coordinationStatus: this.formData.result
+                }
+                if (this.affairInfo.affairStatus === '2') {
+                    params.affairStatus = 3
+                }
+                this.saveCo = true;
+                const loading = this.$loading({
+                        lock: true,
+                        text: '正在保存',
+                        spinner: 'el-icon-loading',
+                        background: 'rgba(0, 0, 0, 0.7)'
+                    });
+                this.$http({
+                    url: this.$http.adornUrl(`/affairCoordination/affaircoordination/saveOrUpdate`),
+                    method: 'post',
+                    data: this.$http.adornData(params)
+                }).then(({ data }) => {
+                    loading.close();
+                    if (data.code === 0) {
+                        this.$message.success('提交成功')
+                        this.saveCo = false
+                        this.init()
+                      
+                    } else {
+                        this.saveCo = true
+                        this.$message.error(data.message)
+                    }
+                }).catch(e=>{
+                    loading.close();
+                    this.$message.error('系统错误')
+                })
+            },
+            // 签收
+            reciveFrom() {
+                // affairStatus
+                // affairCode
+                // id
+                this.$http({
+                    url: this.$http.adornUrl(`/affairCoordination/affaircoordination/saveOrUpdate`),
+                    method: 'post',
+                    data: this.$http.adornData({
+                        affairStatus: '3',
+                        affairCode: this.affairInfo.affairCode,
+                        id: this.id
+                    })
+                }).then(({ data }) => {
+                    if (data && data.code === 0) {
+                        this.$message.success('已签收')
+                        this.init()
+                    }
+                })
+            },
+            // 保存结果
+            saveResult () {
+                if (!this.formResultData.submitTime) {
+                    this.$message.error('请输入记录时间')
+                    return
+                }
+                if (this.formResultData.result == '2') {
+                    if (!this.formResultData.receive) {
+                        this.$message.error('请选择转办接收人')
+                        return
+                    }
+                    if (!this.formResultData.explains) {
+                        this.$message.error('请输入转办说明')
+                        return
+                    }
+                }
+                let coordinationTime
+                try {
+                    coordinationTime = formatDate(this.formResultData.submitTime, 'yyyy-MM-dd hh:mm:ss')
+                } catch (e) {
+                    coordinationTime = this.formResultData.submitTime
+                }
+                let params = {
+                    id: this.coordinationId, // 协调会id
+                    transferTime: coordinationTime, // 协调会时间
+                    transferInfo: this.formResultData.explains,
+                    transferUser: this.peopleInfo.userId, // 过程记录
+                    affairStatus: this.formResultData.result
+                }
+                this.saveTr = true
+                this.$http({
+                    url: this.$http.adornUrl(`/affairCoordination/affaircoordination/saveOrUpdate`),
+                    method: 'post',
+                    data: this.$http.adornData(params)
+                }).then(({ data }) => {
+                    if (data.code === 0) {
+                        this.$message.success('提交成功')
+                        this.saveTr = false
+                        this.init()
+                    } else {
+                        this.saveTr = false
+                        this.$message.error(data.message)
+                    }
+                })
+            },
+            // 获取数据列表
+            // 获取数据列表
+            getDataList (type) {
+                if (type === 'init') {
+                    this.pageIndex = 1
+                }
+                this.dataListLoading = true
+                let sTime, eTime
+                try {
+                    sTime = formatDate(this.timeRage[0], 'yyyy-MM-dd hh:mm:ss')
+                    eTime = formatDate(this.timeRage[1], 'yyyy-MM-dd hh:mm:ss')
+                } catch (e) {}
+                this.$http({
+                    url: this.$http.adornUrl('/affairCoordination/affaircoordination/list'),
+                    method: 'get',
+                    params: this.$http.adornParams({
+                        'page': this.pageIndex,
+                        'limit': this.pageSize,
+                        'processUser': this.dataForm.createUserId,
+                        'sCoordinationTime': sTime,
+                        'eCoordinationTime': eTime,
+                        'affairCode': this.affairInfo.affairCode
+                    })
+                }).then(({data}) => {
+                    if (data && data.code === 0) {
+                        this.dataList = data.page.list
+                        this.dataList.forEach((item, index) => {
+                            item.coordinationStatus = this.resultWorld[item.coordinationStatus]
+                        })
+                        this.totalPage = data.page.totalCount
+                    } else {
+                        this.dataList = []
+                        this.totalPage = 0
+                    }
+                    this.dataListLoading = false
+                })
+            },
+            init() {
+                this.rControl = false
+                this.$http({
+                    url: this.$http.adornUrl(`/affairInfo/affairinfo/moreinfo/${this.id}`),
+                    method: 'get',
+                    params: this.$http.adornParams()
+                }).then(({ data }) => {
+                    if (data && data.code === 0) {
+                        let res = data['data']
+                        this.logMessage = res.log
+                        this.affairInfo = res.info
+                        console.log('this.affairInfo.coordinationStatus',this.affairInfo.coordinationStatus)
+                       
+                        if (this.affairInfo.coordinationStatus == 1 || this.affairInfo.coordinationStatus == 2) {
+                            this.hasCoordinationStatus = true
+                            // 有协商结果
+                        }else {
+                            this.hasCoordinationStatus = false;
+
+                        }
+                        if(this.affairInfo.affairStatus==1||this.affairInfo.affairStatus==2){
+                            //工单完结
+                            this.hasCompelete = true;
+                        }else {
+                            this.hasCompelete =false;
+                        }
+                        if(this.affairInfo.coordinationTime&&!this.affairInfo.coordinationStatus){
+                            //有未完成的协调会
+                            this.hasUnfinishedCoordination = true;
+                        }else {
+                            this.hasUnfinishedCoordination = false;
+                        }
+
+                        // if(this.affairInfo)
+                        console.log(this.affairInfo.coordinationStatus,'869------')
+                        if (this.affairInfo.coordinationStatus == '1') {
+                        console.log('true','869------')
+
+                            this.rControl = true
+                            this.formResultData.result = '1'
+                        }
+                        if (this.affairInfo.coordinationStatus == '2') {
+                            this.rControl = false
+                            this.formResultData.result = '2'
+                        }
+                        // 数据回显
+                        this.coordinationId = this.affairInfo.coordinationId
+                        this.formData.harmonizeTime = this.affairInfo.coordinationTime
+                        this.formData.processUserName = this.affairInfo.processUserName
+                        this.formData.coordinationTitle = this.affairInfo.coordinationTitle
+                        this.formData.coordinationExpertIds = this.affairInfo.coordinationExpertIds
+                        this.experts = this.affairInfo.coordinationExpertNames
+
+                        if(this.affairInfo.coordinationExpertIds){
+                        }
+                        if(this.affairInfo.affairStatus==1||this.affairInfo.affairStatus==2){
+                            console.log(888)
+                            this.formResultData.result = this.affairInfo.affairStatus
+                        }
+                        this.formData.coordinationInfo = this.affairInfo.coordinationInfo
+                        
+                        this.formData.process = this.affairInfo.summaryInfo
+                        this.formData.submitTime = this.affairInfo.summaryTime
+                        this.formData.result = this.result = this.affairInfo.coordinationStatus
+                        this.formResultData.submitTime = this.affairInfo.transferTime
+                        this.formResultData.receive = this.affairInfo.transferUserName
+                        this.formResultData.explains = this.affairInfo.transferInfo
+                        console.log(this.$store.state.user.id, this.affairInfo.processUser === this.$store.state.user.id)
+                        this.isManager = false //
+                        if (this.affairInfo.processUser === this.$store.state.user.id) {
+                            this.isManager = true
+                        }
+                        this.getDataList()
+                        // isManager
+                    }
+                })
+            },
+            showExpertSelect(){
+                //显示专家选择 
+                this.showExpertSelectDialog = true; 
+                this.$nextTick(()=>{
+                 this.$refs.expertSelect.init(this.formData.coordinationExpertIds);
+                })
+            },
+            // 选择结果
+            handleExpertSelect(e){
+                console.log('选择结果',e);
+                this.experts = e.name;
+                this.formData.coordinationExpertIds = e.id;
+            }
+        },
+        data() {
+            return {
+                saveCo: false,
+                saveTr: false,
+                isManager: false, //判断登录用户是否是工单用户
+                hasCoordinationStatus:false,//有协调会结果
+                hasUnfinishedCoordination:false,//有未完成的协调会
+                hasCompelete:false,//工单完结
+                coordinationDetail: {},
+                coordinationDialog: false,
+                timeRage: [],
+                cControl: false,
+                rControl: false,
+                peopleInfo: {},
+                typeMap: config.typeMapList,
+                height: (this.$store.state.common.mainClientHeight - 84) + 'px',
+                tableHeight: (this.$store.state.common.mainClientHeight - 84 - 94 - 50),
+                resultWorld: { '1': '协调成功', '2': '协调失败' },
+                dataForm: {
+                    coordinationTime: '',
+                    createUserId: ''
+                },
+                dataList: [],
+                expertOptions:[],//专家列表
+                pageIndex: 1,
+                pageSize: 10,
+                totalPage: 0,
+                dataListLoading: false,
+                dataListSelections: [],
+                addOrUpdateVisible: false,
+                result: 1,
+                formDataRules: {},
+                logMessage: [],
+                affairInfo: {},
+                id: '',
+                formResultData: {
+                    result: '',
+                    submitTime: '',
+                    explains: '',
+                    receive: ''
+                },
+                coordinationId: '', // 协调会id
+                formData: {
+                    harmonizeTime: '',
+                    coordinationTitle:'',//主题
+                    coordinationExpertIds: '',
+                    coordinationInfo:'',//通知备注
+                    process: '',
+                    result: '',
+                    submitTime: '',
+                    processUserName:'处置人'
+                },
+                experts:'',//专家
+                showExpertSelectDialog:''//显示专家选择
+            }
+        }
+    }
+</script>
+
+<style scoped lang="scss">
+    .span-content {
+        white-space: nowrap;
+        height: auto !important;
+        overflow: auto;
+    }
+    .limt-height {
+        max-height: 162px;
+        height: auto !important;
+        overflow-y: auto;
+        white-space: normal;
+    }
+    .table-content {
+        background: #f4f5f5;
+    }
+    .button-container {
+        margin-top: 10px;
+        vertical-align: top;
+    }
+    .detail-contaianer {
+        margin: -20px;
+    }
+    .clearboth {
+        clear: both;
+    }
+
+    .receive-input {
+        .el-button {
+            margin-left: 20px;
+        }
+        .el-input {
+            width: auto;
+        }
+    }
+
+    .formData-container {
+        margin-top: 50px;
+    }
+
+    .harmonize-title {
+        text-align: center;
+        padding-right: 54px;
+        border: 1px solid #000;
+        border-bottom: none;
+        height: 36px;
+        line-height: 36px;
+    }
+
+    .affair-content {
+        min-height: 80px;
+        max-height: 190px;
+        .item {
+            display: inline-block;
+            line-height: 36px;
+            width: 100%;
+            display: flex;
+            flex-direction: row;
+            :first-child {
+                margin-right: 10px;
+                width: 100px;
+            }
+            :nth-child(2) {
+                flex: 1;
+                overflow: auto;
+                max-height: 190px;
+                word-wrap: break-word;
+            }
+        }
+    }
+
+    .dark {
+        color: #333;
+    }
+
+    .ele-content {
+        .item {
+            display: inline-block;
+            height: 36px;
+            line-height: 36px;
+            :first-child {
+                margin-right: 10px;
+            }
+        }
+    }
+
+    .area-content {
+        .area-item {
+            display: inline-block;
+            height: 36px;
+            line-height: 36px;
+            :first-child {
+                margin-right: 10px;
+            }
+            :nth-child(2) {
+                width: 100px;
+                display: inline-block;
+            }
+        }
+    }
+
+    .table-label {
+        text-align: right;
+        color: #333333;
+    }
+
+    .p-r-m {
+        padding-right: 10px;
+    }
+
+    .width50 {
+        width: 50%;
+        display: inline-block;
+    }
+
+    .color-gray {
+        color: #999;
+    }
+
+    .fullHeight {
+        height: 100%;
+    }
+
+    .fullWidth {
+        width: 100%;
+        .content-left {
+            width: 50%;
+            display: inline-block;
+            vertical-align: top;
+            padding-right: 5px;
+        }
+        .content-right {
+            width: 50%;
+            display: inline-block;
+            vertical-align: top;
+            padding-left: 5px;
+        }
+    }
+
+    .table-title {
+        font-size: 16px;
+        color: #666;
+        line-height: 44px;
+        height: 44px;
+        padding-left: 15px;
+    }
+
+    .message-table-content {
+        background: #f4f5f5;
+        padding: 10px;
+        .item-message {
+            > span {
+                margin: 10px;
+                display: inline-block;
+            }
+        }
+    }
+
+    .table-content {
+        padding: 10px 10px 10px 0px;
+    }
+
+    .el-row {
+        &:last-child {
+            margin-bottom: 0;
+        }
+    }
+
+    .el-col {
+        border-radius: 4px;
+        line-height: 36px;
+        display: inline-block;
+        width: 45%;
+    }
+
+    .bg-purple-light {
+    }
+
+    .grid-content {
+        border-radius: 4px;
+        min-height: 36px;
+    }
+
+    .row-bg {
+        padding: 10px 0;
+    }
+</style>
+<style lang="scss">
+    .tab-container {
+        &.aff-detail {
+            .el-tabs__content {
+                padding: 0;
+            }
+            #pane-0 {
+                margin: 15px;
+            }
+             #pane-1 {
+                margin: 15px;
+            }
+             #pane-2 {
+                margin: 15px;
+            }
+            .aff-detail-content {
+                overflow-y: auto;
+            }
+        }
+    }
+    .el-tabs--border-card {
+        &>.el-tabs__header {
+            .el-tabs__item {
+                &:hover {
+                    color: #666 !important;
+                }
+                &.is-active {
+                    background: #4bc08b;
+                    color: white;
+                }
+            }
+        }
+    }
+</style>

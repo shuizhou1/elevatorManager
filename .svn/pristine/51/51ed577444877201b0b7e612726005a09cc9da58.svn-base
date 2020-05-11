@@ -1,0 +1,193 @@
+<!--  -->
+<template>
+  <div>    
+    <div class="header">自主维护列表</div>
+    <el-form
+      ref="form"
+      :model="formData"
+      class="form"
+      style="margin-left:10px"
+      label-width="auto"
+      @keyup.enter.native="getDataList('init')"
+    >
+      <el-row :gutter="40">
+        <el-col :span="8">
+          <el-form-item label="创建人" >
+            <el-input v-model="formData.createUserName"></el-input>
+          </el-form-item>
+        </el-col>
+        <el-col :span="8">
+          <el-form-item label="电梯注册码">
+            <el-input v-model="formData.regCode"></el-input>
+          </el-form-item>
+        </el-col>
+        <el-col :span="6" :offset="1">
+          <el-button @click="getDataList('init')" type="query">查询</el-button>
+          <el-button v-if="isAuth('selfmaintenanceplan:selfmaintenanceplan:save')" @click="handleAddorUpdate()"  type="add">新增</el-button>
+        </el-col>
+      </el-row>
+    </el-form>
+    <!--<div class="header">自主维护列表</div>-->
+    <el-table
+      ref="multipleTable"
+      v-loading="loading"
+      border
+      :data="tableData"
+      tooltip-effect="dark"
+      style="width: 100%"
+    >
+      <!-- <el-table-column type="selection" width="50" align="center"></el-table-column> -->
+      <el-table-column prop="local" label="设备地址" align="center"></el-table-column>
+      <el-table-column prop="regCodes" label="电梯注册码" align="center"></el-table-column>
+      <el-table-column prop="maintenanceName" show-overflow-tooltip label="维保单位" align="center"></el-table-column>
+       <el-table-column label="操作" header-align="center" align="center" width="100px">
+            <template slot-scope="scope">
+              <el-button
+                size="mini"
+                style="padding:8px 10px;font-size:12px;height:36px"
+                type="primary"
+                @click="goDetail(scope.row.id)"
+              >详情</el-button>
+               <!-- <el-button
+                size="mini"
+                style="padding:8px 10px;font-size:12px;height:36px"
+                type="warning"
+                @click="goDetail(scope.row.id)"
+              >重新维护</el-button> -->
+            </template>
+      </el-table-column>
+    </el-table>
+    <div class="pagination_wraper">
+      <el-pagination
+        layout="total, sizes, prev, pager, next, jumper"
+        :total="totalCount"
+        @size-change="sizeChangeHandle"
+        @current-change="currentChangeHandle"
+        :page-sizes="[5,10,20,50]"
+        :page-size="pageSize"
+      ></el-pagination>
+    </div>
+    <add-or-update v-if="addOrUpdateVisible" ref="addOrUpdate" @refreshDataList="getDataList"></add-or-update>
+    <detail v-if="detailVisible" ref="detail" @refreshDataList="getDataList"></detail>
+  </div>
+</template>
+
+<script>
+import addOrUpdate from './selfmaintenace-add-or-update.vue';
+import detail from './selfmaintenance-detail';
+export default {
+  components:{
+    addOrUpdate,
+    detail
+  },
+  data() {
+    return {
+      addOrUpdateVisible:false,
+      detailVisible:false,
+      formData: {
+        createUserName:'',//检查人员
+        regCode:''//确认人
+      },
+      tableData: [
+      ],
+      selectDataList:[],
+      dialogVisible: false,
+      loading:false,
+      pageSize: 10,
+      pageIndex: 1,
+      totalCount:0
+    };
+  },
+  activated() {
+    this.getDataList()
+  },
+  methods: {
+    getDataList(type) {
+      console.log("获取数据");
+      this.loading = true;
+      if(type=='init'){
+        this.pageIndex=1;
+      }
+      this.$http({
+        url: this.$http.adornUrl("/selfmaintenanceplan/selfmaintenanceplan/list"),
+        method: "get",
+        params:this.$http.adornParams({
+          limit: this.pageSize,
+          page: this.pageIndex,
+          processUserName:this.formData.processUserName,//检查人员
+          checkDirectorUserName:this.formData.checkDirectorUserName//确认人
+        })
+      })
+        .then(({data}) => {
+          if(data&&data.code==0){
+            this.loading = false;
+            this.totalCount = data.page.totalCount;
+            this.tableData = data.page.list;
+            console.log(data)
+          }
+        })
+    },
+    formatStatus(row,col,value){
+      if(value==1){
+        return '待确认'
+      }
+       if(value==2){
+        return '待维护'
+      }
+       if(value==3){
+        return '待审核'
+      }
+       if(value==4){
+        return '通过'
+      }
+      if(value==5){
+        return '不通过'
+      }
+    },
+    handleSelectionChange(val) {
+      console.log("选项改变", val);
+      this.selectDataList = val;
+    },
+    handleAddorUpdate(id) {
+      console.log("添加/更新");
+      this.addOrUpdateVisible = true;
+      this.$nextTick(()=>{
+        this.$refs.addOrUpdate.init(id)
+      })
+    },
+    goDetail(id){
+      this.detailVisible = true;
+      this.$nextTick(()=>{
+        this.$refs.detail.init(id);
+      })
+    },
+    //每页数改变
+    sizeChangeHandle(e){
+      this.pageSize = e;
+      this.pageIndex = 1;
+      this.getDataList()
+    },
+    // 当前页
+    currentChangeHandle(e) {
+      this.page = e;
+      this.getDataList()
+    }
+  }
+};
+</script>
+<style lang='scss' scoped>
+.title {
+  font-size: 22px;
+  padding-bottom: 10px;
+  // border-bottom: 1px solid #dedede;
+}
+.subTitle {
+  font-size: 18px;
+  padding: 10px 10px;
+  border-bottom: 1px solid #dedede;
+}
+.pagination_wraper {
+  margin: 20px 0;
+  text-align: center;
+}
+</style>

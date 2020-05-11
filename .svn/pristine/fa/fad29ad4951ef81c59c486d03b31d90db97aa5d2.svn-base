@@ -1,0 +1,22 @@
+*{
+  margin: 0;
+  padding: 0;
+}
+html,body{
+  position: relative;
+  line-height: 20px;
+  width: 100%;
+  height: 100%;
+  color: #555;
+}
+.fl{
+  float: left;
+}
+.fr{
+  float: right;
+}
+.clearfix:after{
+  content: '';
+  display: block;
+  clear: both;
+}

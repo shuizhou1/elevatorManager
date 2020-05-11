@@ -1,0 +1,286 @@
+<template>
+<div>
+
+  <el-dialog
+    :close-on-click-modal="false"
+    :show-close="false"
+    :fullscreen="true"
+    :modal="false"
+    :visible.sync="visible"
+    :v-loading="loading"
+  >
+    <div slot="title" class="dialog_headslot">
+      维保预约
+      <el-button  @click="handleReturn" style="margin-left:20px">返回</el-button>
+    </div>
+    <div class="form_wraper">
+      <el-form
+        ref="form"
+        :model="formData"
+        :rules="rules"
+        class="dialog_head_form"
+        style="margin-left:10px"
+        label-width="auto"
+      >
+        <el-row :gutter="60">
+          <el-col :span="12">
+            <el-form-item label="维保单位" prop="maintenanceName">
+              <el-input v-model="formData.maintenanceName" disabled></el-input>
+            </el-form-item>
+          </el-col>
+          <el-col :span="12">
+            <el-form-item label="预约时间" prop="maintenanceTime">
+              <el-date-picker
+                v-model="formData.maintenanceTime"
+                format="yyyy 年 MM 月 dd 日"
+                value-format="yyyy-MM-dd HH:mm:ss"
+                type="datetime"
+              ></el-date-picker>
+            </el-form-item>
+          </el-col>
+          <!-- <el-col :span="1">
+            <el-button @click="selectMaintenanceUnit">选择</el-button>
+          </el-col> -->
+        </el-row>
+        <el-row :gutter="60">
+            <el-col :span="12">
+            <el-form-item label="申请人" prop="contactName">
+							<label slot="label">申&nbsp;请&nbsp;人&nbsp;</label>
+              <el-input v-model="formData.contactName"></el-input>
+            </el-form-item>
+          </el-col>
+          <el-col :span="12">
+            <el-form-item label="联系电话" prop="contactPhone">
+              <el-input v-model="formData.contactPhone"></el-input>
+            </el-form-item>
+          </el-col>
+        </el-row>
+				 <!-- <el-row :gutter="60">
+				    <el-col :span="12">
+				    <el-form-item label="不通过原因" prop="reservationReason">
+				      <el-input v-model="formData.reservationReason"></el-input>
+				    </el-form-item>
+				  </el-col>
+				</el-row> -->
+        <el-row :gutter="20">
+          <el-col :span="24">
+            <el-form-item label="通知详情" prop="remarks">
+              <el-input
+                type="textarea"
+                :autosize="{ minRows: 2, maxRows: 3}"
+                v-model="formData.remarks"
+              ></el-input>
+            </el-form-item>
+          </el-col>
+        </el-row>
+      </el-form>
+    </div>
+    <div class="button_wraper">
+      <el-button v-if="isAuth('maintenance:maintenanceplan:xzlxr')"  type="warning" @click="handleselectContact()" style="margin-left:20px">选择联系人</el-button>
+      <el-button v-if="isAuth('maintenance:maintenanceplan:yy')"  type="primary" @click="formSubmit()" style="margin-left:20px">预约</el-button>
+    </div>
+    <select-contact
+      v-if="showContactselectDialog"
+      ref="contactSelector"
+      @confirm="contactselectConfirm"
+    ></select-contact>
+    
+  </el-dialog>
+</div>
+
+</template>
+<script>
+import selectContact from "@/components/selectContact.vue";
+
+import { isMobile, isPhone } from "@/utils/validate";
+export default {
+  components: {
+    selectContact
+  },
+  created(){
+    this.formData.maintenanceName = this.unitName;
+    this.formData.maintenanceId = this.unitId;
+  },
+  data() {
+    var validateMobile = (rule, value, callback) => {
+      if (isMobile(value) || isPhone(value)) {
+        callback();
+      } else {
+        callback("联系电话格式有误");
+      }
+    };
+    return {
+      visible: false,
+    
+      loading: false,
+      formData: {
+        maintenanceName: "", //维保单位
+        maintenanceId: "",
+        contactName: "", //维保联系人
+        contactPhone: "", //联系人电话
+        maintenanceTime: "", //预约时间
+        remarks: "", //通知
+        regCodes: "", //注册代码
+        userIds: "" ,//通知人id
+        planId: "", //通知人id
+				reservationReason: ""
+      },
+      showElevatorselectDialog: false, //显示电梯选择
+      showContactselectDialog: false,
+      showMaintenanceunitselctDialog: false, //维保单位
+      rules: {
+        maintenanceName: [
+          {
+            required: true,
+            message: "维保单位不能为空"
+          }
+        ],
+        contactName: [
+          {
+            required: true,
+            message: "申请人不能为空"
+          }
+        ],
+        contactPhone: [
+          {
+            required: true,
+            message: "联系电话不能为空"
+          },
+          {
+            validator: validateMobile
+          }
+        ],
+        maintenanceTime: [
+          {
+            required: true,
+            message: "预约时间不能为空"
+          }
+        ],
+        remarks: [
+          {
+            required: true,
+            message: "通知详情不能为空"
+          }
+        ],
+        regCodes: [
+          {
+            required: true,
+            message: "请选择维保电梯"
+          }
+        ]
+      },
+    };
+  },
+  computed: {
+    unitType() {
+      console.log("userInfo", this.$store.getters["user/userInfo"]);
+      return this.$store.getters["user/userInfo"].unitType;
+    },
+    unitName() {
+      console.log("userInfo", this.$store.getters["user/userInfo"]);
+      return this.$store.getters["user/userInfo"].unitName;
+    },
+    unitId() {
+      console.log("userInfo", this.$store.getters["user/userInfo"]);
+      return this.$store.getters["user/userInfo"].unitId;
+    },
+  },
+  methods: {
+    init(row,regcodes) {
+      console.log("regcodes", regcodes);
+      console.log("row", row);
+      this.formData.regCodes = regcodes;
+      this.formData.planId = row.planId;
+      this.formData.remarks = `对${row.planName}进行维护`
+      this.visible = true;
+      this.$nextTick(() => {
+        this.$refs["form"].resetFields();
+      });
+    },
+    handleselectContact() {
+      this.showContactselectDialog = true;
+      this.$nextTick(() => {
+        this.$refs.contactSelector.init();
+      });
+    },
+    contactselectConfirm(val) {
+      console.log("联系人", val);
+      this.formData.userIds = val.map(item => item.userId).join(",");
+    },
+    // 选择维保单位
+    selectMaintenanceUnit() {
+      this.showMaintenanceunitselctDialog = true;
+      this.$nextTick(() => {
+        this.$refs.maintenanceunitSelector.init(this.formData.maintenanceId);
+      });
+    },
+    selectMaintenanceuniConfirm(val) {
+      console.log("确认选择", val);
+      this.formData.maintenanceId = val.id;
+      this.formData.maintenanceName = val.unitName;
+    },
+    // 提交表单
+    formSubmit() {
+      console.log('formsubmit',this.formData);
+      this.loading = true;
+      this.$refs["form"].validate(valid => {
+        if (valid) {
+           if (!this.formData.userIds) {
+            this.$message({
+              type: "warning",
+              message: "请选择联系人",
+              duration: 1500
+            });
+            return false;
+          }
+          this.$http({
+            url: this.$http.adornUrl(
+              `/maintenancereservation/maintenancereservation/${
+                !this.formData.id ? "save" : "update"
+              }`
+            ),
+            method: "post",
+            data: this.$http.adornData(this.formData)
+          })
+            .then(({ data }) => {
+              console.log("formsubmitssucsss", data);
+              if (data && data.code == 0) {
+                this.loading = false;
+                this.$message({
+                  type: "success",
+                  message: "保存成功",
+                  duration: 1500,
+                  onClose: () => {
+                    this.visible = false;
+                    this.$refs["form"].resetFields();
+                    this.$emit("refreshDataList");
+                  }
+                });
+              }
+            })
+            .catch(e => {
+              console.log(e);
+            });
+        }
+      });
+    },
+
+    handleConfirm() {
+      // 预约确认
+      this.formData.reservationStatus = 1;
+      this.formSubmit();
+    },
+    // 重新预约
+    handleReappointment() {
+      this.formData.reservationStatus = 0;
+      this.formSubmit();
+    },
+    handleReturn(){
+      this.visible = false;
+      this.$emit('refreshDataList')
+    }
+  }
+};
+</script>
+<style  scoped>
+</style>

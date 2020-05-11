@@ -1,0 +1,700 @@
+<!--  -->
+<template>
+  <div>
+    <el-dialog
+      :close-on-click-modal="false"
+      :show-close="false"
+      :fullscreen="true"
+      :modal="false"
+      :visible.sync="visible"
+      v-loading="loading"
+    >
+      <div slot="title" class="dialog_headslot">
+        {{!this.formData.id ? '维保计划' : '维保计划'}}
+        <el-button @click="visible=false" style="margin-left:20px">返回</el-button>
+      </div>
+      <el-table
+        border
+        ref="singleTable"
+        :data="wbdtTableData"
+        highlight-current-row
+        :row-class-name="tableRowClassName"
+        @row-click="handlerowClick"
+      >
+        <el-table-column align="center" label="序号" type="index" width="50"></el-table-column>
+        <el-table-column align="center" prop="planname" label="计划名称" width="180"></el-table-column>
+        <el-table-column align="center" prop="regcode" width="250" label="注册代码"></el-table-column>
+        <el-table-column
+          align="center"
+          prop="elevatorstatus"
+          label="电梯类型"
+          :formatter="formatelevatorstatus"
+        ></el-table-column>
+        <!-- <el-table-column align="center" prop="onlinestatus" :formatter="formatonlinestatus" label="状态"></el-table-column> -->
+        <el-table-column
+          align="center"
+          prop="maintenancestutas"
+          :formatter="formatstatus"
+          label="状态"
+          width="150"
+        >
+          <template slot-scope="scope">
+            <span v-if="scope.row.maintenancestutas=='1'">待处理</span>
+            <span v-else-if="scope.row.maintenancestutas=='2'">处理中</span>
+            <span v-else-if="scope.row.maintenancestutas=='3'">已提交</span>
+            <span
+              v-else-if="scope.row.maintenancestutas=='4'"
+            >待维修</span>
+            <span v-else-if="scope.row.maintenancestutas=='5'">已维修</span>
+            <span v-else-if="scope.row.maintenancestutas=='6'">完成</span>
+            <span v-else-if="scope.row.maintenancestutas=='7'">不通过</span>
+          </template>
+        </el-table-column>
+        <el-table-column
+          align="center"
+          prop="plantime"
+          :formatter="formatDate"
+          label="计划时间"
+          width="200"
+        ></el-table-column>
+        <el-table-column label="操作" header-align="center" align="center" width="100px"   v-if="isAuth('repairplan:repairplan:save')">
+        <template slot-scope="scope">
+           <el-button
+            size="mini"
+            :disabled="scope.row.maintenancestutas!='4'||scope.row.hasRepair=='true'"
+            style="padding:8px 10px;font-size:12px;height:36px"
+            type="danger"
+             @click.stop="handleRepair(scope.row)"
+          >维修</el-button>
+        </template>
+        </el-table-column>
+      </el-table>
+      <div class="pagination_wraper">
+        <el-pagination
+          @size-change="sizeChangeHandle"
+          @current-change="currentChangeHandle"
+          :current-page="pageIndex"
+          :page-sizes="[5, 10, 20, 50]"
+          :page-size="pageSize"
+          :total="totalCount"
+          layout="total, sizes, prev, pager, next, jumper"
+        ></el-pagination>
+      </div>
+      <div class="form_wraper">
+        <el-form ref="form" :model="formData" :rules="rules" class="form" :disabled="hasDelete">
+          <el-row :gutter="60">
+            <el-col :span="12">
+               <el-form-item
+                label="维保时间"
+                prop="maintenanceTime"
+                clearable
+              >
+                <el-date-picker
+                  disabled
+                  v-model.trim="formData.maintenanceTime"
+                  format="yyyy 年 MM 月 dd 日"
+                  value-format="yyyy-MM-dd HH:mm:ss"
+                  type="datetime"
+                ></el-date-picker>
+              </el-form-item>
+            </el-col>
+            <el-col :span="12">
+              <el-form-item label="维保单位">
+                <el-input
+                  v-model.trim="maintenanceName"
+                  disabled
+                ></el-input>
+              </el-form-item>
+            </el-col>
+          </el-row>
+
+          <el-row :gutter="60">
+            <el-col :span="12">
+              <el-form-item label="维保人员" prop="processUser">
+                <el-input
+                  v-model.trim="formData.processUser"
+                  clearable
+                  disabled
+                ></el-input>
+              </el-form-item>
+            </el-col>
+            <!-- :disabled="unitType!=3||formData.maintenanceStutas==3||formData.maintenanceStutas==4||formData.maintenanceStutas==5||formData.maintenanceStutas==6" -->
+            <el-col :span="12">
+              <el-form-item label="维保电梯" prop="regCode">
+                <el-input v-model.trim="formData.regCode" disabled></el-input>
+              </el-form-item>
+            </el-col>
+          </el-row>
+          <el-row :gutter="30">
+            <el-col :span="24">
+              <el-form-item prop="remarks">
+								<label slot="label">备&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;注</label>
+                <el-input
+                  type="textarea"
+                  v-model.trim="formData.remarks"
+                  clearable
+                  :disabled="unitType!=3||formData.maintenanceStutas==3||formData.maintenanceStutas==6||formData.maintenanceStutas==4||formData.maintenanceStutas==5"
+                ></el-input>
+              </el-form-item>
+            </el-col>
+          </el-row>
+          <div class="form-view-wraper" v-if="formData.maintenanceStutas==6||formData.maintenanceStutas==7">
+            <el-row :gutter="30" >
+              <el-col :span="12">
+                <div class="form-view-item">
+                  物业单位：
+                  <span>{{formData.propertyId}}</span>
+                </div>
+              </el-col>
+              <el-col :span="12">
+                <div class="form-view-item">
+                  确认时间：
+                  <span>{{formData.propertyCheckTime}}</span>
+                </div>
+              </el-col>
+            </el-row>
+            <el-row :gutter="30" v-if="formData.maintenanceStutas==7">
+              <el-col :span="24">
+                <div class="form-view-item">
+                  审核不通过原因：
+                  <span>{{formData.reason}}</span>
+                </div>
+              </el-col>
+              <!-- <el-col :span="20">
+                <div class="for-view-item">{{formData.auditReason}}</div>
+              </el-col> -->
+            </el-row>
+          </div>
+         <!-- <el-row  v-if="unitType!=3&&formData.maintenanceStutas==3||formData.maintenanceStutas==5">
+          <el-col :span="24">
+            <el-form-item label="审核不通过原因" prop="reason">
+              <el-input type="textarea" v-model.trim="formData.reason"  :disabled="formData.maintenanceStutas==5" clearable></el-input>
+            </el-form-item>
+          </el-col>
+          </el-row> -->
+        </el-form>
+      </div>
+
+      <!-- 维保各项情况表 -->
+      <el-table :data="formData.list" border style="width: 100%">
+        <el-table-column type="index" label="序号" align="center" width="50"></el-table-column>
+        <el-table-column prop="content"  show-overflow-tooltip align="center" label="维保项目"></el-table-column>
+        <el-table-column prop="demand" show-overflow-tooltip align="center" label="维保基本要求"></el-table-column>
+        <el-table-column prop="wbqk" align="center" label="维保情况" width="350px">
+          <template slot-scope="scope">
+            <el-radio-group
+              :disabled="unitType!=3||formData.maintenanceStutas==3||formData.maintenanceStutas==4||formData.maintenanceStutas==5||formData.maintenanceStutas==6"
+              @change="handleRadioChange(scope.row,scope.$index)"
+              v-model.trim="formData.list[scope.$index].maintenancestatus"
+            >
+              <el-radio label="1">确认正常</el-radio>
+              <el-radio label="2">调整、更换</el-radio>
+              <el-radio label="3">需维修</el-radio>
+            </el-radio-group>
+          </template>
+        </el-table-column>
+      </el-table>
+      <div class="button_wraper">
+        <el-button
+          type="add"
+          v-if="!hasDelete&&(isAuth('maintenance:maintenanceplan:bc')&&(formData.maintenanceStutas==1)||formData.maintenanceStutas==2)"
+          @click="handleSave('form')"
+          style="margin-right:20px"
+        >保存</el-button>
+        <el-button
+          type="save"
+          v-if="!hasDelete&&(isAuth('maintenance:maintenancelist:sb')&&formData.maintenanceStutas==1||isAuth('maintenance:maintenancelist:sb')&&formData.maintenanceStutas==2)"
+          @click="handleReport('form')"
+          style="margin-right:20px"
+        >提交</el-button>
+        <el-button
+          type="save"
+          v-if="!hasDelete&&(isAuth('maintenance:maintenancelist:sb')&&formData.maintenanceStutas==7)"
+          @click="handleReport('form')"
+          style="margin-right:20px"
+        >重新提交</el-button>
+        <!-- <el-button type="success" v-if="isAuth('maintenance:maintenanceplan:pass')&&formData.maintenanceStutas==3"    @click="handlePass()">审核通过</el-button> -->
+        <el-button
+          type="add"
+          v-if="!hasDelete&&(isAuth('maintenance:maintenanceplan:dispass')&&formData.maintenanceStutas==3||isAuth('maintenance:maintenanceplan:dispass')&&formData.maintenanceStutas==5)"
+          @click="showCheckRemark"
+        >审核</el-button>
+        <el-button
+          type="warning"
+          :disabled="disableExport"
+          v-if="!hasDelete&&(unitType==2&&isAuth('maintenance:maintenanceplan:dcbyjl'))"
+          @click="handleExport()"
+          style="margin-left:20px"
+        >导出保养记录</el-button>
+      </div>
+    </el-dialog>
+    <audit-component v-if="dispassresonVisible" ref="audit" @confirm="handleAuditConfirm"></audit-component>
+    <repair-add-or-update
+      v-if="addOrUpdateVisible"
+      ref="addOrUpdate"
+      @refreshDataList="getwbjlData"
+    ></repair-add-or-update>
+  </div>
+</template>
+
+<script>
+import repairAddOrUpdate from "../repairplan/repair-add-or-update";
+import auditComponent from "@/components/audit.vue";
+import { formatDate } from '../../../utils/index'
+
+export default {
+  components: {
+    auditComponent,
+    repairAddOrUpdate
+  },
+  data() {
+    return {
+      disableExport:false,//导出保养记录按钮
+      disableFormSubmit:false,
+      hasDelete:false,//是否作废
+      startDate:'',
+      dispassresonVisible: false,
+      addOrUpdateVisible: false,
+      pageSize: 5,
+      pageIndex: 1,
+      totalCount: 1,
+      loading: false,
+      visible: false,
+      wbdtTableData: [],
+      wbitemData: [],
+      currentIndex: 0,
+      regCode: "", //当前电梯
+      maintenanceName: "",
+      formData: {
+        id: "",
+        authId: "",
+        comeFrom: "",
+        depotCheckTime: "", //仓库单位确认时间
+        depotId: "", //仓库单位名称
+        isdel: 0,
+        list: [],
+        maintenanceName: "", //维保单位名称
+        maintenanceTime:"",
+        maintenanceId: "", //维保单位名称
+        maintenanceStatus: "", //维保情况
+        planCode: "", //计划编号
+        planName: "", //
+        planTime: "", //计划时间
+        planId: "1",
+        processUser: "", //维护保养人
+        propertyCheckTime: "", //物业单位确认时间
+        propertyId: "", //物业单位名称
+        regCode: "", //电梯编号
+        remarks: "", //备注
+        planElevId: "" ,//电梯计划id
+        reason:''//不通过原因
+      },
+      addRules: {
+        maintenanceTime: [
+          {
+            required: true,
+            message: "维保时间不能为空"
+          }
+        ],
+        processUser: [
+          {
+            required: true,
+            message: "维保人员不能为空"
+          }
+        ]
+      }
+    };
+  },
+  computed: {
+    unitType() {
+      return this.$store.getters["user/userInfo"].unitType;
+    },
+    userInfo() {
+      return this.$store.getters["user/userInfo"];
+    },
+    rules() {
+      if (this.formData.id) {
+        let obj = {};
+        return obj;
+      } else {
+        return this.addRules;
+      }
+    },
+  },
+   mounted() {
+     this.$nextTick(()=>{
+    //  if(this.formData.maintenanceStutas==1||this.formData.maintenanceStutas==2){
+      this.formData.memaintenanceTime = formatDate(new Date(), 'yyyy-MM-dd hh:mm:ss');
+      this.timeInter = setInterval(() => {
+          this.formData.maintenanceTime = formatDate(new Date(), 'yyyy-MM-dd hh:mm:ss');
+      }, 1000)
+    //  }
+     })
+
+  },
+  methods: {
+    init(row) {
+      // 维保内容列表数据
+      console.log("row", row);
+      this.formData.id = row.planId;
+      this.maintenanceName = row.unitName;
+      this.disableExport = false;
+      if( row.maintenanceStatus=='4') {this.hasDelete = true;}
+      else {
+        this.hasDelete = false;
+        console.log('hasdelete',false)
+      }
+      this.visible = true;
+      this.$nextTick(() => {
+        this.$refs["form"].resetFields();
+       
+        if (this.formData.id) {
+          // this.loading = true;
+          this.getwbjlData();
+        }
+      });
+    },
+    handleRepair(rows) {
+			this.regCode = rows.regcode;
+			this.currentIndex = rows.index;
+			this.getTableData();
+				//alert(rows.planElevId)
+      if(rows.hasRepair=='true'){
+        this.$message({
+          type:'warning',
+          message:'你已经提交过维修申请!',
+          duration:1500
+        })
+          return false;
+      }
+      console.log('388');
+      let regCode = rows.regcode;
+      this.addOrUpdateVisible = true;
+      this.$nextTick(() => {
+        this.$refs.addOrUpdate.handleRepair(regCode, rows.planElevId);
+      });
+    },
+    // 维保记录
+    getwbjlData() {
+      console.log("维保记录");
+      this.loading = true;
+      this.$http({
+        url: this.$http.adornUrl(`/maintenanceplan/maintenanceplan/info`),
+        method: "get",
+        params: this.$http.adornParams({
+          planId: this.formData.id,
+          limit: this.pageSize,
+          page: this.pageIndex
+        })
+      })
+        .then(({ data }) => {
+          if (data && data.code == 0) {
+            console.log(data);
+            let page = data.page.list;
+            this.totalCount = data.page.totalCount;
+            this.wbdtTableData = page;
+            if (page.length) {
+              // this.currentIndex = 0;
+              this.regCode = page[this.currentIndex].regcode;
+              console.log("246", page[1]);
+              this.$nextTick(() => {
+                this.$refs.singleTable.setCurrentRow(page[this.currentIndex]);
+                this.getTableData();
+              });
+            }
+          }
+        })
+        .catch(e => {});
+    },
+    getTableData() {
+      console.log("维保记录");
+      // this.loading = true;
+      this.$http({
+        url: this.$http.adornUrl(`/maintenanceplan/maintenanceplan/infos`),
+        method: "get",
+        params: this.$http.adornParams({
+          regCode: this.regCode,
+          planId: this.formData.id
+        })
+      })
+        .then(({ data }) => {
+          this.loading = false;
+          if (data && data.code == 0) {
+            console.log("表格", data.maintenancePlan);
+            this.formData = data.maintenancePlan;
+            if(this.unitType==3&&(this.formData.processUser==''||this.formData.processUser==null)){
+              this.formData.processUser = this.userInfo.nickname;
+            }
+          }
+        })
+        .catch(e => {});
+    },
+    tableRowClassName({ row, rowIndex }) {
+      row.index = rowIndex;
+      // return "";
+    },
+    // 格式化时间
+    formatDate(row, column, cellValue) {
+      if (cellValue && cellValue.length) return cellValue.substr(0, 10);
+    },
+    formatonlinestatus(row, col, value) {
+      if (value == 1) {
+        return "在线";
+      }
+      if (value == 0) {
+        return "离线";
+      }
+    },
+    formatstatus(row, col, value) {
+      if (value == 1) {
+        return "待处理";
+      }
+      if (value == 2) {
+        return "处理中";
+      }
+      if (value == 3) {
+        return "已提交";
+      }
+      if (value == 4) {
+        return "待维修";
+      }
+      if (value == 5) {
+        return "已维修";
+      }
+      if (value == 6) {
+        return "完成";
+      }
+      if (value == 7) {
+        return "审核不通过";
+      }
+    },
+    formatelevatorstatus(col, row, value) {
+      if (value == 1) {
+        return "客梯";
+      }
+      if (value == 2) {
+        return "货梯";
+      }
+    },
+    handleRadioChange(row, index) {
+      console.log(row);
+      console.log("formData", this.formData);
+    },
+    // 点击改变当前行
+    handlerowClick(row) {
+      console.log('当前行改变',row);
+      if(row){
+        this.regCode = row.regcode;
+        this.currentIndex = row.index;
+        this.getTableData();
+      }
+
+    },
+    // 每页数
+    sizeChangeHandle(val) {
+      this.pageSize = val;
+      this.pageIndex = 1;
+      this.getDataList();
+    },
+    // 当前页
+    currentChangeHandle(val) {
+      console.log(val);
+      this.pageIndex = val;
+      console.log(this.pageIndex);
+      this.getDataList();
+    },
+    handleReport() {
+      // console.log('提交')
+       this.$refs["form"].validate(valid => {
+        if (valid) {
+          let list = this.formData.list;
+          //	alert(list);
+          let len = list.length;
+          let arr = [];
+          list.forEach(item=>{
+            if(item.maintenancestatus!=''&&item.maintenancestatus!=null) {
+              // console.log(typeof item.maintenancestatus);
+              arr.push(item.maintenancestatus)
+            }
+          });
+          console.log(arr);
+          if(arr.length<len){
+            this.$message({
+                type: "warning",
+                message: "请填完所有项目",
+                duration: 1500
+              });
+              return false;
+          }
+          // console.log(arr.indexOf('2'))
+          // console.log(arr.indexOf('3'))
+          if((arr.indexOf('2')>-1||arr.indexOf('3')>-1)&&!this.formData.remarks){
+             this.$message({
+                type: "warning",
+                message: "请填写备注",
+                duration: 1500
+              });
+              return false;
+          }
+          console.log(arr.indexOf('3'))
+          if (arr.indexOf('3') > -1||arr.indexOf('2') > -1) {
+            this.formData.maintenanceStatus = 4;
+          } else {
+            this.formData.maintenanceStatus = 3;
+          }
+          this.loading = true;
+          this.disableFormSubmit = true;
+          this.$http({
+            url: this.$http.adornUrl(
+              `/maintenanceplan/maintenanceplan/${
+                this.formData.id ? "update" : "save"
+              }`
+            ),
+            method: "post",
+            data: this.formData
+          })
+            .then(res => {
+              console.log("formsubmitssucsss", res);
+              this.loading = false;
+              this.disableFormSubmit = false;
+              if (res.data.code == 0) {
+                console.log();
+                this.$message({
+                  type: "success",
+                  message: "保存成功",
+                  duration: 1500,
+                  onClose: () => {
+                    // this.visible = false;
+                    // this.$emit("refreshDataList");
+                    this.getwbjlData(this.planId);
+                  }
+                });
+              } else {
+              }
+            })
+            .catch(e => {
+              console.log(e);
+            });
+        }
+      });
+
+      // this.formSubmit().then(() => {
+      //   this.visible = false;
+      
+      // });
+    },
+    handleSave() {
+      this.formData.maintenanceStatus = 2;
+      this.formSubmit().then(() => {
+        // this.visible = false;
+        // this.$emit("refreshDataList");
+      });
+    },
+    showCheckRemark(id) {
+      console.log(" showCheckRemark", id);
+      // this.checkId = id;
+      this.dispassresonVisible = true;
+      this.$nextTick(() => {
+        this.$refs.audit.init();
+      });
+    },
+    handleAuditConfirm(obj) {
+      console.log("handleAuditConfirm", obj);
+      // this.auditStatus = obj.auditStatus;
+      if (obj.auditStatus == 1) {
+        this.handlePass();
+      } else {
+        this.formData.reason = obj.reason;
+        this.handleDisPass();
+      }
+    },
+    handlePass() {
+      this.formData.maintenanceStatus = 6;
+      // 确认时间，维保人员
+      // let date = new Date().toLocaleString()
+      
+      this.formData.propertyCheckTime = formatDate(new Date(), 'yyyy-MM-dd hh:mm:ss');
+      this.formData.propertyId = this.userInfo.nickname;
+      this.formSubmit().then(() => {
+        // this.visible = false;
+        // this.$emit("refreshDataList");
+      });
+    },
+    handleDisPass() {
+      this.formData.maintenanceStatus = 7;
+      // let date = new Date().toLocaleString();
+      this.formData.propertyCheckTime = formatDate(new Date(), 'yyyy-MM-dd hh:mm:ss');
+      console.log(this.formData.propertyCheckTime)
+      this.formData.propertyId = this.userInfo.nickname;
+      this.formSubmit().then(() => {
+        // this.visible = false;
+        // this.$emit("refreshDataList");
+      });
+    },
+    formSubmit() {
+      console.log("formsubmit", this.formData);
+      return new Promise((resolve, reject) => {
+        this.$refs["form"].validate(valid => {
+          if (valid) {
+            this.loading = true;
+            this.disableFormSubmit = true;
+            this.$http({
+              url: this.$http.adornUrl(
+                `/maintenanceplan/maintenanceplan/${
+                  this.formData.id ? "update" : "save"
+                }`
+              ),
+              method: "post",
+              data: this.formData
+            })
+              .then(res => {
+                console.log("formsubmitssucsss", res);
+                this.loading = false;
+                this.disableFormSubmit = false;
+                if (res.data.code == 0) {
+                  console.log();
+                  this.$message({
+                    type: "success",
+                    message: "保存成功",
+                    duration: 1500,
+                    onClose: () => {
+                      this.getwbjlData(this.planId);
+                    }
+                  });
+                  resolve();
+                } else {
+                  reject();
+                }
+              })
+              .catch(e => {
+                console.log(e);
+                reject();
+              });
+          }
+        });
+      });
+    },
+    // 导出
+    handleExport() {
+      console.log("导出");
+      this.disableExport = true;
+      let token = this.$cookie.get("token");
+      let url = this.$http.adornUrl(
+        `/maintenanceplan/maintenanceplan/imports?token=` +
+          token +
+          `&regCode=` +
+          this.regCode +
+          `&planId=` +
+          this.formData.id
+      );
+      const a = document.createElement('a');
+      a.href = url;
+      document.body.appendChild(a);
+      a.click();
+    }
+  }
+};
+</script>
+<style scoped>
+
+</style>

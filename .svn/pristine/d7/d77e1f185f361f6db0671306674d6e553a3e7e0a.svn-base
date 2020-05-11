@@ -1,0 +1,376 @@
+<template>
+    <div class="mod-config">
+        <el-form :inline="true" :model="dataForm" @keyup.enter.native="getDataList()">
+            <tree :option="treeOption" v-on:getTreeData="treeParams" class="full-width"></tree>
+            <div class="button-container">
+                <div class="input-container">
+                    <div class="item has-input">
+                        <div class="flex-container">
+                            <span class="selectTitle">设备注册码：</span>
+                            <el-input v-model="dataForm.regCode" placeholder="请输入注册码" class="select-item"></el-input>
+                        </div>
+                    </div><div class="item has-input">
+                    <div class="flex-container">
+                        <span class="selectTitle">小区名称：</span>
+                        <el-input v-model="dataForm.xiaoqu" placeholder="请输入小区名称" class="select-item"></el-input>
+                    </div>
+                </div>
+                </div>
+            </div>
+
+            <div class="list-button">
+                <el-button
+				v-if="isAuth('elevator:elevatorinfo:list')"
+                        type="primary"
+                        @click="getDataList('init')"><i class="el-icon--left icon-query"></i>查询</el-button>
+                <el-button
+                        v-if="isAuth('elevator:elevatorinfo:save')"
+                        type="success" @click="addOrUpdateHandle()"><i class="el-icon--left icon-new"></i>新增
+                </el-button>
+                <el-button v-if="isAuth('elevator:elevatorinfo:deletes')" type="danger" @click="deleteHandle()"
+                           :disabled="dataListSelections.length <= 0"><i class="el-icon--left icon-dele"></i>批量删除
+                </el-button>
+                <el-button v-if="isAuth('elevator:elevatorinfo:downloadFile')" type="save" @click="downLoadExcel()" ><i class="el-icon--left el-icon-download"></i>下载模板</el-button>
+                <el-upload
+                        v-if="isAuth('elevator:elevatorinfo:importExcel')"
+                        class="upload-demo"
+                        :http-request="request"
+                        :on-success="messageInfo"
+                        :on-error="messageError"
+                        style="display: inline-block"
+                        name="file"
+                        :action="$http.adornUrl('/elevator/elevatorinfo/importExcel')">
+                    <el-button type="import"><i class="el-icon--left icon-import"></i>批量导入</el-button>
+                </el-upload>
+            </div>
+        </el-form>
+        <el-table @row-dblclick="dbclickRow"
+                  :data="dataList"
+                  :height="tableHeight"
+                  @header-dragend="handleDragend"
+                  border
+                  v-loading="dataListLoading"
+                  @selection-change="selectionChangeHandle"
+                  style="width: 100%;">
+            <el-table-column
+                    type="selection"
+                    header-align="center"
+                    align="center"
+                    width="50">
+            </el-table-column>
+            <el-table-column
+                    prop="regCode"
+                    header-align="center"
+                    align="center"
+                    width="190"
+                    label="设备注册码">
+            </el-table-column>
+            <el-table-column
+                    prop="districtName"
+                    header-align="center"
+                    align="center"
+                    width="80"
+                    label="所属区域">
+            </el-table-column>
+            <el-table-column
+                    prop="streetName"
+                    header-align="center"
+                    align="center"
+                    width="80"
+                    label="所属街道">
+            </el-table-column>
+            <el-table-column
+                    prop="communityName"
+                    header-align="center"
+                    align="center"
+                    width="80"
+                    label="所属社区">
+            </el-table-column>
+            <el-table-column
+                    prop="xiaoqu"
+                    header-align="center"
+                    align="center"
+                    label="小区名称">
+            </el-table-column>
+            <el-table-column
+                    prop="location"
+                    header-align="center"
+                    align="center"
+                    label="设备地址">
+            </el-table-column>
+            <el-table-column
+                    header-align="center"
+                    align="center"
+                    width="100"
+                    label="操作">
+                <template slot-scope="scope">
+                    <el-button 
+					v-if="isAuth('elevator:elevatorinfo:update')"
+					type="text" size="small" @click="addOrUpdateHandle(scope.row.id)">修改</el-button>
+                    <el-button type="text" size="small"
+					v-if="isAuth('elevator:elevatorinfo:delete')"
+					 @click="deleteHandle(scope.row.id)">删除</el-button>
+                </template>
+            </el-table-column>
+        </el-table>
+        <el-pagination
+                @size-change="sizeChangeHandle"
+                @current-change="currentChangeHandle"
+                :current-page="pageIndex"
+                :page-sizes="[10, 20, 50, 100]"
+                :page-size="pageSize"
+                :total="totalPage"
+                layout="total, sizes, prev, pager, next, jumper">
+        </el-pagination>
+        <!-- 弹窗, 新增 / 修改 -->
+        <add-or-update v-if="addOrUpdateVisible" ref="addOrUpdate" @refreshDataList="getDataList"></add-or-update>
+    </div>
+</template>
+
+<script>
+    import AddOrUpdate from './elevatorinfo-add-or-update'
+    import tree from '@/components/tree-select/tree-select'
+    import axios from 'axios'
+    import config from '@/utils/config.js'
+
+    export default {
+        data () {
+            return {
+                tableHeight: this.$store.state.common.mainClientHeight - 40 - 156 - 45,
+                file: '',
+                treeOption: {
+                    district: {},
+                    stree: {},
+                    community: {}
+                },
+                request: function () {},
+                currentDistrictId: '',
+                streetList: [],
+                communityNameList: [],
+                list: [],
+                dataForm: {
+                    regCode: '',
+                    district: {
+                        value: '',
+                        label: ''
+                    },
+                    street: {
+                        value: '',
+                        label: ''
+                    },
+                    community: {
+                        value: '',
+                        label: ''
+                    },
+                    xiaoqu: '',
+                    communityName: ''
+                },
+                dataList: [],
+                pageIndex: 1,
+                pageSize: 10,
+                totalPage: 0,
+                dataListLoading: false,
+                dataListSelections: [],
+                addOrUpdateVisible: false
+            }
+        },
+        components: {
+            AddOrUpdate,
+            tree
+        },
+        activated() {
+            console.log('actived');
+            this.getDataList()
+        },
+        beforeCreate () {
+            this.tableHeight = this.$store.state.common.mainClientHeight
+        },
+        mounted () {
+            this.getToken()
+            this.tableHeight = this.$store.state.common.mainClientHeight
+        },
+        methods: {
+            handleDragend (n, o, a, b) {
+                config.tableDragendHandle(n, o, a)
+            },
+            messageError () {
+                this.$message.error('上传失败')
+            },
+            messageInfo (response, file, fileList) {},
+            treeParams (data) {
+                this.dataForm.district = data['district']
+                this.dataForm.street = data['street']
+                this.dataForm.community = data['community']
+            },
+            getToken () {
+                this.request = function (data) {
+                    const formData = new FormData()
+                    formData.append('file', data.file)
+                    formData.append('type', data.file.type)
+                    return axios.request({
+                        url: this.$http.adornUrl('/elevator/elevatorinfo/importExcel'),
+                        method: 'post',
+                        data: formData,
+                        headers: {
+                            'Content-Type': 'application/json; charset=utf-8',
+                            'token': this.$cookie.get('token')
+                        },
+                        responseType: 'arraybuffer'
+                    }).then(res => {
+                        let URL = window.URL || window.webkitURL
+                        let blob = new Blob([res.data],
+                            { type: 'application/vnd.ms-excel' })
+                        let url = URL.createObjectURL(blob)
+                        this.$confirm('确认下载导入表格,确认是否导入成功', '提示', {
+                            confirmButtonText: '确定',
+                            type: 'warning'
+                        }).then(() => {
+                            let downloadA = document.createElement('a')
+                            downloadA.href = url
+                            downloadA.download = '仪器设备导入结果'
+                            downloadA.click()
+                            URL.revokeObjectURL(downloadA.href)
+                        })
+                    })
+                }
+            },
+            // 下载模板
+            downLoadExcel () {
+                let URL = window.URL || window.webkitURL
+                let downloadA = document.createElement('a')
+                downloadA.href = this.$http.adornUrl(`/elevator/elevatorinfo/downloadFile?token=${this.$cookie.get('token')}`)
+                downloadA.download = '仪器设备导入结果'
+                downloadA.click()
+                URL.revokeObjectURL(downloadA.href)
+            },
+            // 导入
+            importData () {
+                this.$http({
+                    url: this.$http.adornUrl('/elevator/elevatorinfo/importExcel'),
+                    method: 'get',
+                    params: this.$http.adornParams({
+                        filePath: 'C:\\Users\\62779\\Documents\\Tencent Files\\627795026\\FileRecv\\设备仪器导入.xls'
+                    })
+                }).then(res => {
+                })
+            },
+            // 获取数据列表
+            getDataList (type) {
+                if (type === 'init') {
+                    this.pageIndex = 1
+                }
+                this.dataListLoading = true
+                this.$http({
+                    url: this.$http.adornUrl('/elevator/elevatorinfo/list'),
+                    method: 'get',
+                    params: this.$http.adornParams({
+                        'page': this.pageIndex,
+                        'limit': this.pageSize,
+                        'regCode': this.dataForm.regCode,
+                        'district': this.dataForm.district.value,
+                        'street': this.dataForm.street.value,
+                        'community': this.dataForm.community.value,
+                        'xiaoqu': this.dataForm.xiaoqu
+                    })
+                }).then(({ data }) => {
+                    if (data && data.code === 0) {
+                        this.dataList = data.page.list
+                        this.totalPage = data.page.totalCount
+                    } else {
+                        this.dataList = []
+                        this.totalPage = 0
+                    }
+                    this.dataListLoading = false
+                })
+            },
+            dbclickRow (row, index) {
+                // alert("双击具体业务你自己实现,我把 row交给你了");
+            },
+            // 每页数
+            sizeChangeHandle (val) {
+                this.pageSize = val
+                this.pageIndex = 1
+                this.getDataList()
+            },
+            // 当前页
+            currentChangeHandle (val) {
+                this.pageIndex = val
+                this.getDataList()
+            },
+            // 多选
+            selectionChangeHandle(val) {
+                this.dataListSelections = val
+            },
+            // 新增 / 修改
+            addOrUpdateHandle (id) {
+                this.addOrUpdateVisible = true
+                this.$nextTick(() => {
+                    this.$refs.addOrUpdate.init(id)
+                })
+            },
+            // 删除
+            deleteHandle (id) {
+                var ids = id ? [id] : this.dataListSelections.map(item => {
+                    return item.id
+                })
+                this.$confirm(`确定对[id=${ids.join(',')}]进行[${id ? '删除' : '批量删除'}]操作?`, '提示', {
+                    confirmButtonText: '确定',
+                    cancelButtonText: '取消',
+                    type: 'warning'
+                }).then(() => {
+                    this.$http({
+                        url: this.$http.adornUrl('/elevator/elevatorinfo/delete'),
+                        method: 'post',
+                        data: this.$http.adornData(ids, false)
+                    }).then(({ data }) => {
+                        if (data && data.code === 0) {
+                            this.$message({
+                                message: '操作成功',
+                                type: 'success',
+                                duration: 1500,
+                                onClose: () => {
+                                    this.getDataList()
+                                }
+                            })
+                        } else {
+                            this.$message.error(data.msg)
+                        }
+                    })
+                })
+            }
+        }
+    }
+</script>
+<style lang="scss">
+    .el-dialog__body {
+        .el-form-item {
+            input {
+                width: 100%;
+            }
+        }
+    }
+    .list-button {
+        margin-bottom: 10px;
+        .el-button {
+            height: 44px;
+        }
+    }
+    .upload-demo {
+        ul {
+            display: none;
+        }
+    }
+    .regCode-input {
+        input {
+            width: 218px;
+        }
+    }
+    .upload-demo {
+        display: inline-block;
+        white-space: nowrap;
+        button {
+            display: inline-block;
+            margin: 0 15px;
+        }
+    }
+</style>

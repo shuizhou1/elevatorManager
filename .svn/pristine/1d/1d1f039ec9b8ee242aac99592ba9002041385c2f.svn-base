@@ -1,0 +1,599 @@
+<template>
+  <el-dialog
+    :close-on-click-modal="false"
+    :show-close="false"
+    :fullscreen="true"
+    :modal="false"
+    :visible.sync="visible"
+    v-loading="loading"
+  >
+    <div slot="title" class="dialog_headslot">
+      {{!this.formData.id ? '电梯信息' : '电梯信息'}}
+      <el-button @click="visible=false" style="margin-left:20px">返回</el-button>
+    </div>
+    <el-form
+      :model="formData"
+      :rules="rules"
+      ref="dataForm"
+      @keyup.enter.native="dataFormSubmit()"
+      class="form"
+      label-width="80px"
+    >
+      <el-row :gutter="40">
+        <el-col :span="8">
+          <el-form-item label="注册代码" prop="regCode">
+            <el-input v-model="formData.regCode"></el-input>
+          </el-form-item>
+        </el-col>
+        <el-col :span="8">
+          <el-form-item label="电梯地址" prop="local">
+            <el-input v-model="formData.local"></el-input>
+          </el-form-item>
+        </el-col>
+        <el-col :span="8">
+          <el-form-item label="电梯类型" prop="elevatorStatus">
+            <el-select v-model="formData.elevatorStatus" clearable placeholder="请选择">
+              <el-option
+                v-for="item in options"
+                :key="item.value"
+                :label="item.label"
+                :value="item.value"
+              ></el-option>
+            </el-select>
+          </el-form-item>
+        </el-col>
+      </el-row>
+      <el-row :gutter="40">
+        <el-col :span="8">
+          <el-form-item label="终端编码" prop="colLmdId">
+            <el-input v-model="formData.colLmdId"></el-input>
+          </el-form-item>
+        </el-col>
+        <el-col :span="8">
+          <el-form-item label="电梯ID号" prop="colLiftId">
+            <el-input v-model="formData.colLiftId"></el-input>
+          </el-form-item>
+        </el-col>
+        <el-col :span="8">
+          <el-form-item label="在线状态" prop="onlineStatus">
+            <el-select v-model="formData.onlineStatus" clearable placeholder="请选择">
+              <el-option
+                v-for="item in onlineStatusOptions"
+                :key="item.value"
+                :label="item.label"
+                :value="item.value"
+              ></el-option>
+            </el-select>
+          </el-form-item>
+        </el-col>
+      </el-row>
+      <el-row :gutter="40">
+        <el-col :span="8">
+          <el-form-item label="维保单位" prop="maintenanceName">
+            <el-input v-model="formData.maintenanceName" disabled>
+              <template slot="append">
+                <el-button @click="showMaintenanceUnitDialog">选择</el-button>
+              </template>
+            </el-input>
+          </el-form-item>
+        </el-col>
+        <el-col :span="8">
+          <el-form-item label="物业单位" prop="propertyName">
+            <el-input v-model="formData.propertyName" disabled>
+              <template slot="append">
+                <el-button @click="showPropertyUnitDialog">选择</el-button>
+              </template>
+            </el-input>
+          </el-form-item>
+        </el-col>
+        <el-col :span="8">
+          <el-form-item label="仓库单位" prop="depotName">
+            <el-input v-model="formData.depotName" disabled>
+              <template slot="append">
+                <el-button @click="showDepotUnitDialog">选择</el-button>
+              </template>
+            </el-input>
+          </el-form-item>
+        </el-col>
+      </el-row>
+      <el-row :gutter="40">
+        <el-col :span="8">
+          <el-form-item label="业主单位" prop="ownerName">
+            <el-input v-model="formData.ownerName" disabled>
+              <template slot="append">
+                <el-button @click="showOwnerUnitDialog">选择</el-button>
+              </template>
+            </el-input>
+          </el-form-item>
+        </el-col>
+        <el-col :span="8">
+          <el-form-item label="投产时间" prop="commissioningTime">
+            <el-date-picker v-model="formData.commissioningTime" type="date" placeholder="选择日期"></el-date-picker>
+          </el-form-item>
+        </el-col>
+        <el-col :span="8">
+          <el-form-item label="电梯品牌" prop="elevatorBrand">
+            <el-input v-model="formData.elevatorBrand"></el-input>
+          </el-form-item>
+        </el-col>
+      </el-row>
+      <el-row :gutter="40">
+        <el-col :span="8">
+          <el-form-item label="使用场所" prop="place">
+            <el-select v-model="formData.place" placeholder="请选择">
+              <el-option
+                v-for="item in placeOption"
+                :key="item.value"
+                :label="item.label"
+                :value="item.value"
+              ></el-option>
+            </el-select>
+          </el-form-item>
+        </el-col>
+        <el-col :span="8">
+          <el-form-item label="所在区域" prop="areaValue">
+            <el-cascader
+              v-model="formData.areaValue"
+              :options="areaData"
+              @change="handleAreaChange"
+              clearable
+            ></el-cascader>
+          </el-form-item>
+        </el-col>
+      </el-row>
+    </el-form>
+    <div class="footer">
+      <el-button type="primary" v-if="isAuth('elevatorinformation:elevatorinformation:update')" @click="dataFormSubmit" style="margin-right:20px">保存</el-button>
+    </div>
+    <select-maintenance-unit
+      v-if="maintenanceunitDialogVisible"
+      ref="maintenanceunitSelector"
+      @confirm="selectMaintenanceunitConfirm"
+    ></select-maintenance-unit>
+    <select-property-unit
+      v-if="propertyunitDialogVisible"
+      ref="propertyunitSelector"
+      @confirm="selectPropertyunitConfirm"
+    ></select-property-unit>
+    <select-depot-unit
+      v-if="depotunitDialogVisible"
+      ref="depotunitSelector"
+      @confirm="selectDepotunitConfirm"
+    ></select-depot-unit>
+    <select-owner-unit
+      v-if="ownerunitDialogVisible"
+      ref="ownerunitSelector"
+      @confirm="selectOwnerunitConfirm"
+    ></select-owner-unit>
+  </el-dialog>
+</template>
+
+<script>
+import { isMobile, isPhone } from "@/utils/validate";
+import selectMaintenanceUnit from "@/components/selectmaintenanceunit.vue";
+import selectDepotUnit from "./selectDepotunit.vue";
+import selectPropertyUnit from "./selectPropertyunit.vue";
+import selectOwnerUnit from "./selectOwnerunit.vue";
+import { formatDate } from "../../../../utils/index";
+export default {
+  components: {
+    selectMaintenanceUnit,
+    selectDepotUnit,
+    selectPropertyUnit,
+    selectOwnerUnit
+  },
+  data() {
+    var validateMobile = (rule, value, callback) => {
+      if (isMobile(value) || isPhone(value)) {
+        callback();
+      } else {
+        callback("申请人联系电话格式有误");
+      }
+    };
+
+    return {
+      loading: false,
+      visible: false,
+      areaData: [], //区域数据
+      areaValue: [],
+      maintenanceunitDialogVisible: false,
+      propertyunitDialogVisible: false,
+      depotunitDialogVisible: false,
+      ownerunitDialogVisible: false,
+      type: "", //电梯类型
+      formData: {
+        areaValue: [],
+        regCode: "",
+        elevatorStatus: "", //电梯类型
+        local: "", //电梯地址
+        maintenanceId: "", //维保单位id
+        maintenanceName: "",
+        propertyId: "", //物业单位id
+        propertyName: "",
+        depotId: "", //仓库单位id
+        depotName: "",
+        ownerId: "", //业主id
+        ownerName: "",
+        onlineStatus: "",
+        colLmdId: "", //终端编码
+        colLiftId: "", //电梯di号
+        elevatorBrand: "", //品牌
+        commissioningTime: "", //投产时间
+        province: "", //省
+        city: "", //市
+        district: "", //区
+        place: "" //场所
+      },
+
+      addRules: {
+        regCode: [
+          {
+            required: true,
+            message: "电梯注册码不能为空",
+            trigger: "blur"
+          }
+        ],
+        elevatorStatus: [
+          {
+            required: true,
+            message: "请选择电梯类型",
+            trigger: "blur"
+          }
+        ], //电梯类型
+        colLmdId: [
+          {
+            required: true,
+            message: "终端编码不能为空",
+            trigger: "blur"
+          }
+        ], //电梯地址
+        colLiftId: [
+          {
+            required: true,
+            message: "电梯id号不能为空",
+            trigger: "blur"
+          }
+        ], //维保单位id
+        local: [
+          {
+            required: true,
+            message: "电梯地址不能为空",
+            trigger: "blur"
+          }
+        ], //电梯地址
+        maintenanceName: [
+          {
+            required: true,
+            message: "请选择维保单位",
+            trigger: "blur"
+          }
+        ], //维保单位id
+
+        propertyName: [
+          {
+            required: true,
+            message: "请选择物业单位",
+            trigger: "blur"
+          }
+        ], //物业单位id
+
+        depotName: [
+          {
+            required: true,
+            message: "请选择仓库单位",
+            trigger: "blur"
+          }
+        ],
+        ownerName: [
+          {
+            required: true,
+            message: "请选择业主单位",
+            trigger: "blur"
+          }
+        ], //业主id
+        onlineStatus: [
+          {
+            required: true,
+            message: "状态不能为空",
+            trigger: "blur"
+          }
+        ],
+        //投产时间
+        commissioningTime: [
+          {
+            required: true,
+            message: "投产时间不能为空",
+            trigger: "blur"
+          }
+        ],
+        //区域
+        areaValue: [
+          {
+            required: true,
+            message: "所在区域不能为空",
+            trigger: "blur"
+          }
+        ],
+        place: [
+          {
+            required: true,
+            message: "使用场所不能为空",
+            trigger: "blur"
+          }
+        ],
+        ///品牌
+        elevatorBrand: [
+          {
+            required: true,
+            message: "电梯品牌不能为空",
+            trigger: "blur"
+          }
+        ]
+      },
+      options: [
+        {
+          value: "1",
+          label: "客梯"
+        },
+        {
+          value: "2",
+          label: "货梯"
+        }
+      ],
+      onlineStatusOptions: [
+        {
+          value: "1",
+          label: "在线"
+        },
+        {
+          value: "2",
+          label: "离线"
+        }
+      ],
+      commissioningTimeOption: [
+        {
+          label: "小于5年",
+          value: "1"
+        },
+        {
+          label: "5到十年",
+          value: "2"
+        },
+        {
+          label: "10年以上",
+          value: "3"
+        }
+      ],
+      placeOption: [
+        {
+          label: "办公",
+          value: "1"
+        },
+        {
+          label: "工地",
+          value: "2"
+        }
+      ]
+    };
+  },
+  computed: {
+    rules() {
+      if (this.formData.id) {
+        let obj = {};
+        return obj;
+      } else {
+        return this.addRules;
+      }
+    }
+  },
+  created() {
+    this.getAreaData();
+  },
+  methods: {
+    init(id) {
+      console.log("id", id);
+      this.formData.id = id;
+      this.visible = true;
+      this.$nextTick(() => {
+        // console.log(this.$refs["formData"])
+        this.$refs["dataForm"].resetFields();
+        if (this.formData.id) {
+          this.loading = true;
+          this.$http({
+            url: this.$http.adornUrl(
+              `/elevatorinformation/elevatorinformation/info/${this.formData.id}`
+            ),
+            method: "get",
+            params: this.$http.adornParams()
+          })
+            .then(({ data }) => {
+              console.log(data.elevatorInformation);
+              this.loading = false;
+              if (data && data.code == 0) {
+                let list = data.elevatorInformation;
+                console.log("电梯数据", list);
+                this.formData = list;
+                let arr = [];
+                arr.push(list.province);
+                arr.push(list.city);
+                arr.push(list.district);
+                console.log("地区数据", arr);
+                this.formData.areaValue = arr;
+                // this.getAreaData().then(()=>{
+
+                // })
+              }
+            })
+            .catch(e => {
+              this.loading = false;
+            });
+        } else {
+          // this.getAreaData();
+        }
+      });
+    },
+    getAreaData() {
+      return new Promise((resolve, reject) => {
+        this.$http({
+          url: this.$http.adornUrl("/district/district/alllist"),
+          method: "get",
+          params: this.$http.adornParams(this.formData)
+        })
+          .then(({ data }) => {
+            if (data && data.code == 0) {
+              console.log("地区数据", data.list);
+              let areaData = [];
+              data.list.forEach(item => {
+                let city = [];
+                item.sonLevel.forEach(value => {
+                  let area = [];
+                  value.sonLevel.forEach(lump => {
+                    area.push({
+                      value: lump.id,
+                      label: lump.districtName
+                    });
+                  });
+                  city.push({
+                    value: value.id,
+                    label: value.districtName,
+                    children: area
+                  });
+                });
+                areaData.push({
+                  value: item.id,
+                  label: item.districtName,
+                  children: city
+                });
+              });
+              this.areaData = areaData;
+              console.log("地区data", areaData);
+              resolve();
+            }
+          })
+          .catch(e => {
+            console.log(e);
+            reject();
+          });
+      });
+    },
+    handleAreaChange(arr) {
+      console.log("地区改变", arr);
+      if (arr && arr.length) {
+        this.formData.province = arr[0];
+        this.formData.city = arr[1] ? arr[1] : "";
+        this.formData.district = arr[2] ? arr[2] : "";
+        // console.log('obj', obj)
+        console.log("formData", this.formData);
+      } else {
+        this.formData.province = "";
+        this.formData.city = "";
+        this.formData.district = "";
+      }
+    },
+    // 选择维保单位
+    showMaintenanceUnitDialog() {
+      this.maintenanceunitDialogVisible = true;
+      this.$nextTick(() => {
+        this.$refs.maintenanceunitSelector.init(this.formData.maintenanceId);
+      });
+    },
+    selectMaintenanceunitConfirm(value) {
+      console.log("维保单位选择", value);
+      this.formData.maintenanceId = value.id;
+      this.formData.maintenanceName = value.unitName;
+    },
+    // 选择物业单位
+    showPropertyUnitDialog() {
+      this.propertyunitDialogVisible = true;
+      this.$nextTick(() => {
+        this.$refs.propertyunitSelector.init(this.formData.propertyId);
+      });
+    },
+    selectPropertyunitConfirm(value) {
+      console.log("物业单位选择", value);
+      this.formData.propertyId = value.id;
+      this.formData.propertyName = value.unitName;
+    },
+    // 选择仓库单位
+    showDepotUnitDialog() {
+      this.depotunitDialogVisible = true;
+      this.$nextTick(() => {
+        this.$refs.depotunitSelector.init(this.formData.depotId);
+      });
+    },
+    selectDepotunitConfirm(value) {
+      console.log("仓库位选择", value);
+      this.formData.depotId = value.id;
+      this.formData.depotName = value.unitName;
+    },
+    // 选择业主单位
+    showOwnerUnitDialog() {
+      this.ownerunitDialogVisible = true;
+      this.$nextTick(() => {
+        this.$refs.ownerunitSelector.init(this.formData.ownerId);
+      });
+    },
+    selectOwnerunitConfirm(value) {
+      console.log("业主单位选择", value);
+      this.formData.ownerId = value.id;
+      this.formData.ownerName = value.unitName;
+    },
+
+    // 表单提交
+    dataFormSubmit() {
+      console.log("formsubmit", this.formData.commissioningTime);
+      console.log(typeof this.formData.commissioningTime);
+      this.$refs["dataForm"].validate(valid => {
+        if (valid) {
+          let time = this.formData.commissioningTime;
+          if (typeof time == "object") {
+            console.log("if");
+            this.formData.commissioningTime = formatDate(
+              time,
+              "yyyy-MM-dd hh:mm:ss"
+            );
+          } else if (typeof time == "string") {
+            console.log("else");
+            this.formData.commissioningTime = time + " 00:00:00";
+          }
+          this.loading = true;
+          this.$http({
+            url: this.$http.adornUrl(
+              `/elevatorinformation/elevatorinformation/${
+                !this.formData.id ? "save" : "update"
+              }`
+            ),
+            method: "post",
+            data: this.$http.adornData(this.formData)
+          }).then(({ data }) => {
+            this.loading = false;
+            if (data && data.code === 0) {
+              this.$message({
+                message: "保存成功",
+                type: "success",
+                duration: 1500,
+                onClose: () => {
+                  this.visible = false;
+                  this.$emit("refreshDataList");
+                }
+              });
+            } else {
+              this.$message.error(data.error);
+            }
+          }).catch(e=>{
+            this.loading = false;
+            console.log(e);
+          })
+        }
+      });
+    }
+  }
+};
+</script>
+<style scoped>
+.footer {
+  text-align: center !important;
+  margin-top: 20px;
+  padding-bottom: 10px;
+}
+</style>

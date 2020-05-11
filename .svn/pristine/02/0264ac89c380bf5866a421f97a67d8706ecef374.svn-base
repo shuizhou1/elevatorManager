@@ -1,0 +1,217 @@
+<!--  -->
+<template>
+  <!-- <div> -->
+  <el-dialog
+    title="查询条件"
+    :lock-scroll="true"
+    :show-close="false"
+    :fullscreen="true"
+    :modal="false"
+    :visible.sync="visible"
+  >
+    <el-form   :inline="true" :model="queryElevatorForm" @keyup.enter.native="getDataList()">
+      <el-form-item label="维保单位">
+        <el-input v-model="queryElevatorForm.unitname" placeholder="维保单位" clearable></el-input>
+      </el-form-item>
+      <el-form-item label="电梯地址">
+        <el-input v-model="queryElevatorForm.locals" placeholder="电梯地址" clearable></el-input>
+      </el-form-item>
+      <el-form-item>
+        <el-button @click="getDataList()" type="primary">查询</el-button>
+      </el-form-item>
+    </el-form>
+    <el-table
+      :data="elevatorDataList"
+      ref="multipleTable"
+      max-height="400"
+      border
+      :show-close="false"
+      v-loading="dataListLoading"
+      highlight-current-row
+      @selection-change="elevatorChange"
+      style="width: 100%;margin-bottom:30px"
+    >
+      <el-table-column type="selection" :selectable="rowSelectable" width="50" align="center"></el-table-column>
+      <el-table-column
+        prop="regcode"
+        header-align="center"
+        align="center"
+        width="180"
+        label="设备注册码"
+      ></el-table-column>
+      <el-table-column prop="unitname" header-align="center" align="center" label="维保单位"></el-table-column>
+      <el-table-column prop="locals" header-align="center" align="center" label="电梯地址"></el-table-column>
+      <el-table-column
+        prop="elevatorstatus"
+        :formatter="formatElevatorstatus"
+        header-align="center"
+        align="center"
+        width="80"
+        label="电梯类型"
+      ></el-table-column>
+    </el-table>
+    <el-pagination
+      @size-change="sizeChangeHandle"
+      @current-change="currentChangeHandle"
+      :current-page="pageIndex"
+      :page-sizes="[10, 20, 50, 100]"
+      :page-size="pageSize"
+      :total="totalCount"
+      layout="total, sizes, prev, pager, next, jumper"
+    ></el-pagination>
+    <div class="dialog_footer">
+      <el-button type="primary" @click="selectConfirm()">确 定</el-button>
+      <el-button @click="visible=false">返回</el-button>
+    </div>
+  </el-dialog>
+  <!-- </div> -->
+</template>
+
+<script>
+export default {
+  props: ["show"],
+  data() {
+    return {
+      regcodes:[],
+      pageSize: 10,
+      pageIndex: 1,
+      totalCount: 0,
+      rules: {},
+      visible: false,
+      dataListLoading: false, //loading
+      elevatorDataList: [],
+      elevators: null,
+      queryElevatorForm: {
+        regCode: "", //注册码
+        unitname: "", //维保单位
+        locals: "", //设备地址
+        elevatorstatus: "" //电梯类型1客梯2货梯
+      },
+      selecDataList: [] //选择结果
+    };
+  },
+ computed:{
+   unitType(){
+     return this.$store.getters['user/userInfo'].unitType
+   }
+ },
+  created() {
+    console.log("create");
+  },
+  methods: {
+    formatElevatorstatus(row, col, val) {
+      console.log(val);
+      if (val == 1) {
+        return "客梯";
+      } else {
+        return "货梯";
+      }
+    },
+    init(regcode) {
+      console.log("初始化",regcode);
+      this.visible = true;
+      if (regcode) {
+        this.queryElevatorForm.regCode = regcode;
+        if(regcode.indexOf(',')>-1){
+          this.regcodes = regcode.split(',')
+        }else {
+          let arr = []
+          arr.push(regcode)
+          this.regcodes = arr;
+        }
+      }
+       this.getDataList();
+
+    },
+
+    scrollbackSelect(data) {
+      // 回显选择
+      console.log("回显选择",data);
+      console.log("queryElevatorForm.regCode",this.regcodes);
+      console.log("queryElevatorForm.regCode",this.queryElevatorForm.regCode);
+      data.forEach(item => {
+        if (this.regcodes.indexOf(item.regcode) > -1) {
+          this.$nextTick(()=>{
+           this.$refs.multipleTable.toggleRowSelection(item, true);
+          })
+        }
+      });
+    },
+    // 是否可选
+    rowSelectable(){
+      return true;
+      // return this.unitType == '2'
+    },
+    // 获取数据
+    getDataList() {
+      this.dataListLoading = true;
+      let url = this.unitType == '3'? "/elevatorinformation/elevatorinformation/list" : '/elevatorinformation/elevatorinformation/maintenanceElv'
+      this.$http({
+        url: this.$http.adornUrl(url),
+        method: "get",
+        params: this.$http.adornParams({
+          page: this.pageIndex,
+          limit: this.pageSize,
+          unitname: this.queryElevatorForm.unitname,
+          locals: this.queryElevatorForm.locals
+        })
+      }).then(({ data }) => {
+        if (data && data.code === 0) {
+          this.elevatorDataList = data.page.records;
+          this.totalCount = data.page.totalCount;
+          if(this.queryElevatorForm.regCode){
+            this.scrollbackSelect(data.page.records);
+          }
+        } else {
+          // this.dataList = [];
+          this.totalCount = 0;
+        }
+        this.dataListLoading = false;
+      });
+    },
+    // 每页数
+    sizeChangeHandle(val) {
+      this.pageSize = val;
+      this.pageIndex = 1;
+      this.getDataList();
+    },
+    // 当前页
+    currentChangeHandle(val) {
+      this.pageIndex = val;
+      this.getDataList();
+    },
+    elevatorChange(e) {
+      console.log("选择改变", e);
+      if (e) {
+        this.selectDataList = e;
+      }
+    },
+    selectConfirm() {
+      console.log("确认选择 elevatorSelectConfirm");
+      console.log("确认选择 ", this.selectDataList);
+
+      if (this.selectDataList.length) {
+        this.$emit("confirm", this.selectDataList);
+        this.visible = false;
+      } else {
+        this.$message.warning("请选择电梯！");
+      }
+    }
+  }
+};
+</script>
+<style lang='scss' scoped>
+.title {
+  font-size: 22px;
+  padding-bottom: 10px;
+}
+.subTitle {
+  font-size: 18px;
+  padding: 10px 10px;
+  border-bottom: 1px solid #dedede;
+}
+.pagination_wraper {
+  margin: 20px 0;
+  text-align: center;
+}
+</style>

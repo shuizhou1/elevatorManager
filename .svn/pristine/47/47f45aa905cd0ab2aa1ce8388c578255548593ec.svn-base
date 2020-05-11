@@ -1,0 +1,342 @@
+<template>
+    <div class="mod-config">
+        <el-form :inline="true" :model="dataForm" @keyup.enter.native="getDataList()">
+            <div class="button-container">
+                <div class="input-container">
+                    <div class="item has-input widthx2">
+                        <div class="flex-container">
+                            <span class="selectTitle">受理日期：</span>
+                            <el-date-picker
+                                    class="select-item"
+                                    v-model="timeRage"
+                                    type="datetimerange"
+                                    :editable="false"
+                                    start-placeholder="开始日期"
+                                    end-placeholder="结束日期">
+                            </el-date-picker>
+                        </div>
+                    </div><div class="item has-input">
+                    <div class="flex-container">
+                        <span class="selectTitle">处置人：</span>
+                        <el-input v-model="dataForm.processUser" placeholder="处置人" class="select-item"></el-input>
+                    </div>
+                </div>
+                <!--    <div class="item has-input">
+                        <el-button
+                                type="primary"
+                                @click="getDataList()"><i class="el-icon&#45;&#45;left icon-query"></i>查询</el-button>
+                        <el-button v-if="isAuth('elevator:elevatorinfo:delete')" type="danger" @click="deleteHandle()"
+                                   :disabled="dataListSelections.length <= 0"><i class="el-icon&#45;&#45;left icon-dele"></i>批量删除
+                        </el-button>
+                    </div>-->
+                </div>
+            </div>
+            <div class="button-container">
+                <div class="input-container">
+                    <div class="item has-input width50">
+                        <div class="flex-container">
+                            <span class="selectTitle">电梯编号：</span>
+                            <el-input v-model="dataForm.regCode" placeholder="电梯编号" class="select-item"></el-input>
+                        </div>
+                    </div><div class="item has-input width50">
+                    <div class="flex-container">
+                        <span class="selectTitle">受理单号：</span>
+                        <el-input v-model="dataForm.affairCode" placeholder="受理单号" class="select-item"></el-input>
+                    </div>
+                </div>
+                </div>
+            </div>
+            <div class="button-container">
+                <div class="input-container">
+                    <div class="item has-input">
+                        <div class="flex-container">
+                            <span class="selectTitle">事务类型：</span>
+                            <el-select
+                                       v-model="dataForm.affairType"
+                                       class="select-item"
+                                       placeholder="请选择类型">
+                                <el-option
+                                        v-for="(item, index) in type"
+                                        :key="index"
+                                        :label="item.label"
+                                        :value="item.id">
+                                </el-option>
+                            </el-select>
+                        </div>
+                    </div><div class="item has-input">
+                        <div class="flex-container">
+                            <span class="selectTitle">处置状态：</span>
+                            <el-select
+                                       class="select-item"
+                                       v-model="dataForm.affairStatus"
+                                       placeholder="请选择状态">
+                                <el-option
+                                        v-for="(item, index) in state"
+                                        :key="index"
+                                        :label="item.label"
+                                        :value="item.id">
+                                </el-option>
+                            </el-select>
+                        </div>
+                    </div><div class="item has-input">
+                        <el-button
+                                type="primary"
+                                @click="getDataList('init')"
+								v-if="isAuth('affairInfo:affairinfo:list')"><i class="el-icon--left icon-query"></i>查询</el-button>
+                        <el-button v-if="isAuth('affairInfo:affairinfo:delete')" type="danger" @click="deleteHandle()"
+                                   :disabled="dataListSelections.length <= 0"><i class="el-icon--left icon-dele"></i>批量删除
+                        </el-button>
+                    </div>
+                </div>
+            </div>
+        </el-form>
+        <el-table @row-dblclick="dbclickRow"
+                  :data="dataList"
+                  @header-dragend="handleDragend"
+                  max-height='500'
+                  border
+                  v-loading="dataListLoading"
+                  @selection-change="selectionChangeHandle"
+                  style="width: 100%;">
+            <el-table-column
+                    type="selection"
+                    header-align="center"
+                    align="center"
+                    width="50">
+            </el-table-column>
+            <el-table-column
+                    prop="affairTime"
+                    header-align="center"
+                    align="center"
+                    width="160"
+                    label="受理时间">
+            </el-table-column>
+            <el-table-column
+                    prop="affairStatus"
+                    header-align="center"
+                    align="center"
+                    label="工单状态">
+                    <!--label="工单状态 4待话务员处理 0待处理 1完成 2转办 3处理中">-->
+            </el-table-column>
+            <el-table-column
+                    prop="affairCode"
+                    header-align="center"
+                    align="center"
+                    width="120"
+                    label="受理单号">
+            </el-table-column>
+            <el-table-column
+                    prop="affairType"
+                    header-align="center"
+                    align="center"
+                    label="事务类型">
+            </el-table-column>
+            <el-table-column
+                    prop="districtName"
+                    header-align="center"
+                    align="center"
+                    label="区">
+            </el-table-column>
+            <el-table-column
+                    prop="communityName"
+                    header-align="center"
+                    align="center"
+                    label="社区">
+            </el-table-column>
+            <el-table-column
+                    prop="processUserName"
+                    header-align="center"
+                    align="center"
+                    width="80"
+                    label="处置人">
+            </el-table-column>
+            <el-table-column
+                    fixed="right"
+                    header-align="center"
+                    align="center"
+                    width="100"
+                    label="操作">
+                <template slot-scope="scope">
+                    <el-button type="text" v-if="isAuth('affairInfo:affairinfo:infos')"  size="small" @click="gotoDetail(scope.row)">详情</el-button>
+                </template>
+            </el-table-column>
+        </el-table>
+        <el-pagination
+                @size-change="sizeChangeHandle"
+                @current-change="currentChangeHandle"
+                :current-page="pageIndex"
+                popper-class="ceshi"
+                :page-sizes="[10, 20, 50, 100]"
+                :page-size="pageSize"
+                :total="totalPage"
+                layout="total, sizes, prev, pager, next, jumper">
+        </el-pagination>
+        <!-- 弹窗, 新增 / 修改 -->
+        <add-or-update v-if="addOrUpdateVisible" ref="addOrUpdate" @refreshDataList="getDataList"></add-or-update>
+    </div>
+</template>
+
+<script>
+    import AddOrUpdate from './affairinfo-add-or-update'
+    import config from '@/utils/config'
+    import { formatDate } from '@/utils/index'
+
+    export default {
+        data() {
+            return {
+                timeRage: [],
+                type: config.typeList,
+                state: config.stateList,
+                typeName: {},
+                stateName: {},
+                dataForm: {
+                    sAffairTime: '', eAffairTime: '', regCode: '', affairCode: '', affairType: '', affairStatus: '', processUser: '', processUserName: ''
+                },
+                dataList: [],
+                pageIndex: 1,
+                pageSize: 10,
+                totalPage: 0,
+                dataListLoading: false,
+                dataListSelections: [],
+                addOrUpdateVisible: false
+            }
+        },
+        components: {
+            AddOrUpdate
+        },
+        mounted () {
+
+        },
+        activated () {
+            this.getDataList()
+        },
+        methods: {
+            handleDragend (n, o, a, b) {
+                config.tableDragendHandle(n, o, a)
+            },
+            // 获取数据列表
+            getDataList (type) {
+                if (type === 'init') {
+                    this.pageIndex = 1
+                }
+                this.dataListLoading = true
+                let sAffairTime = ''
+                let eAffairTime = ''
+                this.type.forEach((item, index) => {
+                    if (item.id || item.id === 0) {
+                        this.typeName[item.id] = item.label
+                    }
+                })
+                this.state.forEach((item, index) => {
+                    if (item.id || item.id === 0) {
+                        this.stateName[item.id] = item.label
+                    }
+                })
+                try {
+                    // sAffairTime = formatDate(this.timeRage[0], 'yyyy-MM-dd hh:mm:ss')
+                    // eAffairTime = formatDate(this.timeRage[1], 'yyyy-MM-dd hh:mm:ss')
+                } catch (e) {
+
+                }
+                this.$http({
+                    url: this.$http.adornUrl('/affairInfo/affairinfo/list'),
+                    method: 'get',
+                    params: this.$http.adornParams({
+                        'page': this.pageIndex,
+                        'limit': this.pageSize,
+                        'sAffairTime': sAffairTime,
+                        'eAffairTime': eAffairTime,
+                        'regCode': this.dataForm.regCode,
+                        'affairCode': this.dataForm.affairCode,
+                        'affairType': this.dataForm.affairType,
+                        'affairStatus': this.dataForm.affairStatus,
+                        'processUser': this.dataForm.processUser
+                    })
+                }).then(({ data }) => {
+                    if (data && data.code === 0) {
+                        this.dataList = data.page.list
+                        console.log('datalist',data.page);
+                        this.dataList.forEach(item => {
+                            item.affairStatus = this.stateName[item.affairStatus]
+                            item.affairType = this.typeName[item.affairType]
+                        })
+                        this.totalPage = data.page.totalCount
+                    } else {
+                        this.dataList = []
+                        this.totalPage = 0
+                    }
+                    this.dataListLoading = false
+                })
+            },
+            gotoDetail (row) {
+                console.log('row',row);
+                this.$router.push({
+                    name: 'affairInfoDetail',
+                    query: {
+                        id: row.coordinationId
+                    }
+                })
+            },
+            dbclickRow (row, index) {
+                // this.$router.push({
+                //     name: 'affairInfoDetail',
+                //     params: {
+                //         id: row.id
+                //     }
+                // })
+            },
+            // 每页数
+            sizeChangeHandle (val) {
+                this.pageSize = val
+                this.pageIndex = 1
+                this.getDataList()
+            },
+            // 当前页
+            currentChangeHandle(val) {
+                this.pageIndex = val
+                this.getDataList()
+            },
+            // 多选
+            selectionChangeHandle(val) {
+                this.dataListSelections = val
+            },
+            // 新增 / 修改
+            addOrUpdateHandle(id) {
+                this.addOrUpdateVisible = true
+                this.$nextTick(() => {
+                    this.$refs.addOrUpdate.init(id)
+                })
+            },
+            // 删除
+            deleteHandle(id) {
+                var ids = id ? [id] : this.dataListSelections.map(item => {
+                    return item.id
+                })
+                this.$confirm(`确定${id ? '删除' : '批量删除'}?`, '提示', {
+                    confirmButtonText: '确定',
+                    cancelButtonText: '取消',
+                    type: 'warning'
+                }).then(() => {
+                    this.$http({
+                        url: this.$http.adornUrl('/affairInfo/affairinfo/delete'),
+                        method: 'post',
+                        data: this.$http.adornData(ids, false)
+                    }).then(({ data }) => {
+                        if (data && data.code === 0) {
+                            this.$message({
+                                message: '操作成功',
+                                type: 'success',
+                                duration: 1500,
+                                onClose: () => {
+                                    this.getDataList()
+                                }
+                            })
+                        } else {
+                            this.$message.error(data.msg)
+                        }
+                    })
+                })
+            }
+        }
+    }
+</script>

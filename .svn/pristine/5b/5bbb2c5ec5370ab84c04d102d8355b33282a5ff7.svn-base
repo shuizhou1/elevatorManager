@@ -1,0 +1,20 @@
+import Vue from 'vue'
+import App from './App.vue'
+import router from './router/index.js'
+import store from './store'
+import http from './utils/request'
+import VueCookie from 'vue-cookie'
+import elementUi from 'element-ui'
+import 'element-ui/lib/theme-chalk/index.css'
+import './assets/css/index.css'
+import './assets/css/main.css'
+Vue.use(elementUi);
+Vue.use(VueCookie);
+Vue.prototype.$ajax = http;
+Vue.config.productionTip = false
+
+new Vue({
+  router,
+  store,
+  render: h => h(App)
+}).$mount('#app')

@@ -1,0 +1,216 @@
+<template>
+  <el-dialog
+    :title="!this.dataForm.id ? '新增' : '修改'"
+    :close-on-click-modal="false"
+    :fullscreen="true"
+    :modal="false"
+    :visible.sync="visible"
+  >
+    <el-form
+      :model="dataForm"
+      :rules="dataRule"
+      ref="dataForm"
+      @keyup.enter.native="dataFormSubmit()"
+      label-width="95px"
+    >
+      <!-- <el-form-item label="创建时间" prop="createTime">
+      <el-input v-model="dataForm.createTime" placeholder="创建时间" ></el-input>
+      </el-form-item>-->
+      <!-- <el-form-item label="创建者ID" prop="createUserId">
+      <el-input v-model="dataForm.createUserId" placeholder="创建者ID" ></el-input>
+      </el-form-item>-->
+      <el-form-item label="姓名" prop="name">
+        <el-input v-model="dataForm.name" placeholder="姓名"></el-input>
+      </el-form-item>
+      <el-row>
+        <el-col :span="24">
+          <el-form-item label="联系电话" prop="phone">
+            <el-input v-model="dataForm.phone" placeholder="联系电话"></el-input>
+          </el-form-item>
+        </el-col>
+      </el-row>
+      <el-row>
+        <el-col :span="24">
+          <el-form-item label="单位名称" prop="unitName">
+            <el-input v-model="dataForm.unitName" placeholder="单位名称"></el-input>
+          </el-form-item>
+        </el-col>
+      </el-row>
+      <el-row>
+        <el-col :span="24">
+          <el-form-item label="单位地址" prop="unitLocal">
+            <el-input v-model="dataForm.unitLocal" placeholder="单位地址"></el-input>
+          </el-form-item>
+        </el-col>
+      </el-row>
+      <el-row>
+        <el-col :span="24">
+          <el-form-item label="备注" prop="remarks">
+            <el-input v-model="dataForm.remarks" placeholder="备注"></el-input>
+          </el-form-item>
+        </el-col>
+      </el-row>
+    </el-form>
+
+    <span slot="footer" class="dialog-footer">
+      <el-button @click="visible = false">取消</el-button>
+      <el-button type="primary" :disabled="confirmDisabled" @click="dataFormSubmit()">确定</el-button>
+    </span>
+  </el-dialog>
+</template>
+
+<script>
+import { isEmail, isMobile, isPhone, isIDCard } from "@/utils/validate";
+export default {
+  data() {
+    var validateMobile = (rule, value, callback) => {
+      if (!isMobile(value)) {
+        callback(new Error("手机号格式错误"));
+      } else {
+        callback();
+      }
+    };
+    return {
+      visible: false,
+      confirmDisabled:false,
+      dataForm: {
+        id: "",
+        authId: "",
+        createTime: "",
+        createUserId: "",
+        name: "", //姓名
+        phone: "", //电话
+        unitName: "", //单位名
+        unitLocal: "", //单位地址
+        remarks: "", //单位地址
+        comeFrom: "",
+        version: "",
+        orgId: ""
+      },
+      dataRule: {},
+      rules: {
+        name: [
+          {
+            required: true,
+            message: "姓名不能为空"
+          }
+        ],
+        phone: [
+          {
+            required: true,
+            message: "手机号码不能为空"
+          },
+          {
+            validator: validateMobile
+          }
+        ],
+        unitName: [
+          {
+            required: true,
+            message: "单位名称不能为空"
+          }
+        ],
+        unitLocal: [
+          {
+            required: true,
+            message: "单位地址不能为空"
+          }
+        ]
+      }
+    };
+  },
+  methods: {
+    init(id) {
+      console.log(this.dataForm);
+      this.dataForm.id = id;
+      this.visible = true;
+      this.confirmDisabled = false;
+      // 初始化验证规则
+      if (!id) {
+        // 新增
+        this.dataRule = this.rules;
+      }
+      this.$nextTick(() => {
+        this.$refs["dataForm"].resetFields();
+        if (this.dataForm.id) {
+          this.$http({
+            url: this.$http.adornUrl(
+              `/expertcontact/expertcontact/info/${this.dataForm.id}`
+            ),
+            method: "get",
+            params: this.$http.adornParams()
+          }).then(({ data }) => {
+            if (data && data.code === 0) {
+              this.dataForm.id = data.expertContact.id;
+              this.dataForm.authId = data.expertContact.authId;
+              this.dataForm.createTime = data.expertContact.createTime;
+              this.dataForm.createUserId = data.expertContact.createUserId;
+              this.dataForm.name = data.expertContact.name;
+              this.dataForm.phone = data.expertContact.phone;
+              this.dataForm.unitName = data.expertContact.unitName;
+              this.dataForm.unitLocal = data.expertContact.unitLocal;
+              this.dataForm.remarks = data.expertContact.remarks;
+              this.dataForm.updatePerson = data.expertContact.updatePerson;
+              this.dataForm.comeFrom = data.expertContact.comeFrom;
+              this.dataForm.version = data.expertContact.version;
+              this.dataForm.orgId = data.expertContact.orgId;
+            }
+          });
+        }
+      });
+    },
+
+    // 表单提交
+    dataFormSubmit() {
+      this.$refs["dataForm"].validate(valid => {
+        if (valid) {
+          this.confirmDisabled = true;
+          this.$http({
+            url: this.$http.adornUrl(
+              `/expertcontact/expertcontact/${
+                !this.dataForm.id ? "save" : "update"
+              }`
+            ),
+            method: "post",
+            data: this.$http.adornData({
+              id: this.dataForm.id,
+              id: this.dataForm.id || undefined,
+              authId: this.dataForm.authId,
+              createTime: this.dataForm.createTime,
+              createUserId: this.dataForm.createUserId,
+              name: this.dataForm.name,
+              phone: this.dataForm.phone,
+              unitName: this.dataForm.unitName,
+              unitLocal: this.dataForm.unitLocal,
+              remarks: this.dataForm.remarks,
+              updatePerson: this.dataForm.updatePerson,
+              comeFrom: this.dataForm.comeFrom,
+              version: this.dataForm.version,
+              orgId: this.dataForm.orgId
+            })
+          }).then(({ data }) => {
+            if (data && data.code === 0) {
+              this.$message({
+                message: "操作成功",
+                type: "success",
+                duration: 1500,
+                onClose: () => {
+                  this.visible = false;
+                  this.$emit("refreshDataList");
+                }
+              });
+            } else {
+              this.$message.error(data.msg);
+            }
+          });
+        }
+      });
+    }
+  }
+};
+</script>
+<style scoped>
+.el-form-item {
+  margin-bottom: 20px !important;
+}
+</style>

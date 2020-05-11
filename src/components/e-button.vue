@@ -1,0 +1,117 @@
+<template>
+    <div >
+        <span v-for="(button,index) in buttons" :key="index" class="el_button_span">
+            <el-button :type="button.color" :disabled="button.disabled" v-if="isAuth(button.perms)" @click="handleClick(button.buttonfunction)"
+                   >{{button.name}}
+        </el-button>
+        </span>
+       
+    </div>
+</template>
+
+<script>
+    export default {
+        props: {
+            parentId: {
+                type: String
+            },
+            busType: {
+                type: String
+            },
+            params: {
+                type: String
+            }
+        },
+        data () {
+            return {
+                buttons: [{
+                    name: '查询',
+                    buttonfunction: 'getDataList',
+                    color: '',
+                    perms: 'sys:user:list'
+                },
+                    {
+                        name: '新增',
+                        buttonfunction: 'addOrUpdateHandle',
+                        color: '',
+                        perms: 'sys:user:save'
+                    },
+                    {
+                        name: '删除',
+                        buttonfunction: 'deleteHandle',
+                        color: '',
+                        perms: 'sys:user:deletes'
+                    },
+                    // {
+                    //     name: '导出Excel',
+                    //     buttonfunction: 'exportExcel',
+                    //     color: '',
+                    //     perms: 'sys:user:delete'
+                    // },
+                    // {
+                    //     name: '导入Excel',
+                    //     buttonfunction: 'importExcel',
+                    //     color: '',
+                    //     perms: 'sys:user:delete'
+                    // }
+                ]
+            }
+        },
+        mounted() {
+            this.init()
+        },
+        methods: {
+            handleClick(method) {
+                this.$emit('handleClick', method, this.params)
+            },
+            permsList(data) {
+                console.log('permsList',data)
+                var buttones = []
+                if (data != null) {
+                    for (var i = 0; i < data.length; i++) {
+                        var button = {}
+                         var perms = data[i].perms;
+                        if (perms !== null && perms.indexOf(',') !== -1) {
+                            perms = perms.split(',')[0];
+                        }
+                        button.perms = perms;
+                        button.color = data[i].color;
+                        button.buttonfunction = data[i].buttonfunction;
+                        button.name = data[i].name;
+                        buttones.push(button);
+                    }
+                }
+                console.log(buttones)
+                this.buttons = buttones;
+            },
+            init() {
+                this.$http({
+                    url: this.$http.adornUrl('/sys/menu/findButton'),
+                    method: 'post',
+                    params: this.$http.adornParams({
+                        'parentId': this.parentId,
+                        'bustype': this.busType
+                    })
+                }).then(({
+                             data
+                         }) => {
+                    if (data && data.code === 0) {
+                        this.buttons = data.buttons
+                        this.permsList(this.buttons)
+                    } else {
+
+                    }
+                })
+            }
+        }
+    }
+</script>
+<style>
+.el_button_span+.el_button_span{
+    margin-left: 10px;
+}
+/* span+span {
+margin-left: 10px;
+display: inline-block;
+} */
+</style>

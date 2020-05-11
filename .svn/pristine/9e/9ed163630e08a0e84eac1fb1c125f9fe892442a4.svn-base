@@ -1,0 +1,153 @@
+<template>
+  <el-dialog
+    :title="!this.dataForm.cid ? '新增' : '修改'"
+    :close-on-click-modal="false" :fullscreen="true" :modal="false"
+    :visible.sync="visible">
+    <el-form :model="dataForm" :rules="dataRule" ref="dataForm" @keyup.enter.native="dataFormSubmit()" label-width="105px">
+    <el-form-item label="字典项代码" prop="entrycode">
+      <el-input v-model="dataForm.entrycode" placeholder="字典项代码" ></el-input>
+    </el-form-item>
+    <el-form-item label="字典项名称" prop="entryname">
+      <el-input v-model="dataForm.entryname" placeholder="字典项名称" ></el-input>
+    </el-form-item>
+    </el-form>
+    <span slot="footer" class="dialog-footer">
+    	<e-button ref="eproButton1"v-on:handleClick="handleClick":parentId="'61'":busType="'editsave'"></e-button>
+     <!-- <el-button @click="visible = false">取消</el-button>
+      <el-button type="primary" @click="dataFormSubmit()">确定</el-button>-->
+    </span>
+  </el-dialog>
+</template>
+
+<script>
+  import {isEmail,isMobile,isPhone,isIDCard } from '@/utils/validate'
+  export default {
+    data () {
+      var validatePassword = (rule, value, callback) => {
+        if (!this.dataForm.id && !/\S/.test(value)) {
+          callback(new Error('密码不能为空'))
+        } else {
+          callback()
+        }
+      }
+      var validateComfirmPassword = (rule, value, callback) => {
+        if (!this.dataForm.id && !/\S/.test(value)) {
+          callback(new Error('确认密码不能为空'))
+        } else if (this.dataForm.password !== value) {
+          callback(new Error('确认密码与密码输入不一致'))
+        } else {
+          callback()
+        }
+      }
+      var validateEmail = (rule, value, callback) => {
+        if (!isEmail(value)) {
+          callback(new Error('邮箱格式错误'))
+        } else {
+          callback()
+        }
+      }
+      var validateMobile = (rule, value, callback) => {
+        if (!isMobile(value)) {
+          callback(new Error('手机号格式错误'))
+        } else {
+          callback()
+        }
+      }
+      var validatePhone = (rule, value, callback) => {
+        if (!isPhone(value)) {
+          callback(new Error('固话格式错误'))
+        } else {
+          callback()
+        }
+      }  
+      var validateIDCard = (rule, value, callback) => {
+        if (!isIDCard(value)) {
+          callback(new Error('身份证格式错误'))
+        } else {
+          callback()
+        }
+      }
+      return {
+        visible: false,
+        dataForm: {
+        	cid: '', 
+        	typecode:'',
+          entrycode: '',          
+          entryname: ''        
+        },
+        dataRule: {
+          entrycode: [
+            { required: true, message: '字典项代码不能为空', trigger: 'blur' }
+          ],          entryname: [
+            { required: true, message: '字典项名称不能为空', trigger: 'blur' }
+          ]        }
+      }
+    },
+    methods: {
+      handleClick(method,param) {
+				if(param === 'undefined') {
+					this.$options.methods[method].bind(this)();
+				} else {
+					this.$options.methods[method].bind(this, param)();
+				}
+	  	},
+			cancel() {
+				this.visible = false;
+			},
+      init (id,typecid,typecode) {
+      	this.dataForm.typecode = typecode
+        this.dataForm.cid = id
+        this.dataForm.typecid = typecid
+        this.visible = true
+        this.$nextTick(() => {
+          this.$refs['dataForm'].resetFields()
+          if (this.dataForm.cid) {
+            this.$http({
+              url: this.$http.adornUrl(`/dict/dictentry/info/${this.dataForm.cid}`),
+              method: 'get',
+              params: this.$http.adornParams()
+            }).then(({data}) => {
+              if (data && data.code === 0) {
+                this.dataForm.entrycode = data.dictentry.entrycode
+                this.dataForm.entryname = data.dictentry.entryname
+              }
+            })
+          }
+        })
+      },
+      
+      // 表单提交
+      dataFormSubmit () {
+        this.$refs['dataForm'].validate((valid) => {
+          if (valid) {
+            this.$http({
+              url: this.$http.adornUrl(`/dict/dictentry/${!this.dataForm.cid ? 'save' : 'update'}`),
+              method: 'post',
+              data: this.$http.adornData({
+                //'entrycode':this.dataForm.typecode+'_'+this.dataForm.entrycode,
+                'entrycode':this.dataForm.entrycode,
+                'entryname': this.dataForm.entryname,
+                'typecid': this.dataForm.typecid,
+                'cid':this.dataForm.cid
+              })
+            }).then(({data}) => {
+              if (data && data.code === 0) {
+                this.$message({
+                  message: '操作成功',
+                  type: 'success',
+                  duration: 1500,
+                  onClose: () => {
+                    this.visible = false
+                    this.$emit('refreshDataList')
+                  }
+                })
+              } else {
+                this.$message.error(data.msg)
+              }
+            })
+          }
+        })
+      }
+    }
+  }
+</script>

@@ -1,0 +1,152 @@
+<template>
+  <div>
+    <div v-if="!showszjlTable">
+      <div class="form_wraper">
+        <div class="header">设置维保计划</div>
+        <el-form ref="form" :model="formData" :rules="rules" class="form" label-width="auto">
+          <el-row :gutter="30">
+            <el-col :span="8">
+              <el-form-item label="维保单位" prop="wbdw">
+                <el-input v-model="formData.wbdw"></el-input>
+              </el-form-item>
+            </el-col>
+            <el-col :span="7">
+              <el-form-item label="维护期限">
+                <el-input v-model="formData.wbqx"></el-input>
+              </el-form-item>
+            </el-col>
+            <el-col :span="8">
+              <el-form-item label="维保期数">
+                <el-input v-model="formData.wbqs"></el-input>
+              </el-form-item>
+            </el-col>
+          </el-row>
+          <el-row :gutter="20">
+            <el-col :span="8">
+              <el-form-item label="每期间隔">
+                <el-input v-model="formData.mqjg">
+                  <template slot="append">天</template>
+                </el-input>
+              </el-form-item>
+            </el-col>
+            <el-col :span="7">
+              <el-form-item label="首期维保开始时间">
+                <el-input v-model="formData.wbkssj"></el-input>
+              </el-form-item>
+            </el-col>
+            <el-col :span="7">
+              <el-form-item label="维保电梯">
+                <el-input v-model="formData.wbdt"></el-input>
+              </el-form-item>
+            </el-col>
+            <el-col :span="1">
+              <el-button @click="handleSelect">选择</el-button>
+              <el-dialog :visible.sync="showElevatorselectDialog" width="70%" top="5vh">
+                <div slot="title" class="dialog_title">选择电梯</div>
+                <select-elevator></select-elevator>
+              </el-dialog>
+            </el-col>
+          </el-row>
+          <el-row :gutter="30">
+            <el-col :span="8">
+              <el-form-item label="维保联系人">
+                <el-input v-model="formData.wblxr"></el-input>
+              </el-form-item>
+            </el-col>
+            <el-col :span="7">
+              <el-form-item label="联系人手机">
+                <el-input v-model="formData.lxrsj"></el-input>
+              </el-form-item>
+            </el-col>
+          </el-row>
+        </el-form>
+      </div>
+      <div class="button_wraper">
+        <el-button @click="handleEdit('form')">设置维保计划</el-button>
+        <el-button @click="handleSave()" style="margin-left:20px">生成维保计划</el-button>
+        <el-button @click="formReset('form')" style="margin-left:20px">重置</el-button>
+      </div>
+      <el-dialog :visible.sync="showFormconfirmDialog" width="40%" top="30vh">
+        <div slot="title" class="dialog_title">生成维保计划确认</div>
+        <div class="wbjh_content">
+          日立电梯（中国）有限公司广州分公司将于{{formData.wbkssj}}对维保电梯({{formData.wbdt}})
+          进行第一期维护保养,之后每隔{{formData.mqjg}}天进行一期维护保养，连续进行{{formData.wbqs}}期，维保期限为{{formData.wbqx}}个月。确认后
+          将在维保计划列表生成{{formData.wbqs}}条维保计划记录
+        </div>
+        <div class="button_wraper">
+          <el-button @click="formSubmit('form')" style="margin-right:20px">确认</el-button>
+          <el-button @click="handleCancel()" style="margin-left:20px">取消</el-button>
+        </div>
+      </el-dialog>
+    </div>
+
+    <div v-else>
+      <set-maintenance-item @back="goBack"></set-maintenance-item>
+    </div>
+  </div>
+</template>
+
+
+
+<script>
+import setMaintenanceItem from "@/components/setMaintenanceItem.vue";
+import selectElevator from "@/components/selectElevator.vue";
+export default {
+  components: {
+    setMaintenanceItem,
+    selectElevator
+  },
+  methods: {
+    handleEdit() {
+      console.log("设置维保计划");
+      this.showszjlTable = true;
+    },
+    handleSave() {
+      console.log("生成维保计划");
+      this.showFormconfirmDialog = true;
+    },
+    formSubmit() {
+      console.log("提交表单");
+      this.showFormconfirmDialog = false;
+      this.$refs[formName].validate(valid => {
+        if (valid) {
+          // alert("submit!");
+          console.log(this.formData);
+        } else {
+          console.log("error submit!!");
+          return false;
+        }
+      });
+    },
+    handleCancel() {
+      this.showFormconfirmDialog = false;
+    },
+    formReset(formName) {
+      this.$refs[formName].resetFields();
+    },
+    // 从维保记录表返回
+    goBack() {
+      this.showszjlTable = false;
+    },
+    // 选择电梯
+    handleSelect() {
+      this.showElevatorselectDialog = true;
+    }
+  },
+  data() {
+    return {
+      formData: {},
+      showszjlTable: false, //显示维保记录表
+      showElevatorselectDialog: false, //是否显示电梯选择dialog
+      showFormconfirmDialog: false, //是否显示表单确认dialog
+      rules: {}
+    };
+  }
+};
+</script>
+<style>
+.wbjh_content {
+  text-indent: 2em;
+  line-height: 25px;
+}
+</style>

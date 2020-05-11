@@ -1,0 +1,93 @@
+<!--  -->
+<template>
+  <div>
+     <el-form class="form"  style="margin-left:10px">
+      <el-row :gutter="40">
+        <el-col :span="8">
+          <el-form-item label="注册代码">
+            <el-input v-model="formData.regCode"></el-input>
+          </el-form-item>
+        </el-col>
+        <el-col :span="8">
+          <el-form-item label="区域">
+            <el-input v-model="formData.district"></el-input>
+          </el-form-item>
+        </el-col>
+        <el-col :span="8">
+          <el-button type="query" @click="getDataList('init')">查询</el-button>
+        </el-col>
+      </el-row>
+    </el-form>
+    <div class="chart_title">
+      {{month}}月份检修巡查情况统计
+    </div>
+    <el-table border :data="dataList" v-loading="loading">
+      <el-table-column prop="regCode" label="注册代码"></el-table-column>
+      <el-table-column prop="sumPatrolTime" label="检修时长"></el-table-column>
+      <el-table-column prop="frequencyOfMaintenance" label="检修次数"></el-table-column>
+      <el-table-column prop="avgPatrolTime" label="平均时长"></el-table-column>
+      <el-table-column prop="operationIntensity" label="故障停梯率"></el-table-column>
+    </el-table>
+    <el-pagination
+          @size-change="sizeChangeHandle"
+          @current-change="currentChangeHandle"
+          :current-page="pageIndex"
+          :page-sizes="[5, 10, 20, 50]"
+          :page-size="pageSize"
+          :total="totalCount"
+          layout="total, sizes, prev, pager, next, jumper"
+    ></el-pagination>
+  </div>
+</template>
+
+<script>
+export default {
+  data () {
+    return {
+      month:new Date().getMonth(),
+      formData:{
+
+      },
+      dataList:[],
+      loading:false,
+     
+    };
+  },
+  components: {},
+  activated(){
+    this.getDataList()
+  },
+  methods: {
+    getDataList(type){
+      if(type="init"){
+        this.pageIndex = 1;
+      }
+      this.loading = true;
+      this.$http({
+        url:this.$http.adornUrl('/statistics/statistics/inspectionAnalysis'),
+        method:'get',
+        params:this.$http.adornParams({})
+      }).then(({data})=>{
+        this.loading = false;
+        if(data&&data.code==0){
+          console.log('datalist',data.list)
+          this.dataList = data.list;
+        } 
+      }).catch(e=>{
+        this.loading = false;
+        console.log(e);
+      })
+    },
+   
+  }
+}
+
+</script>
+<style scoped>
+.chart_title{
+font-size: 18px;
+color: #666;
+text-align: center;
+margin-bottom:30px;
+}
+</style>

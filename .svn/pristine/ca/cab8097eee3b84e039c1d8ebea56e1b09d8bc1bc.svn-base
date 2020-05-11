@@ -1,0 +1,204 @@
+<template>
+  <div class="mod-home">
+    <div
+      class="chartContainer rightTop15"
+      :style="{'height': height, 'width': '60%'}"
+    >
+      <div id="J_chartPieBox" :style="{'height': height}"></div>
+    </div>
+  </div>
+</template>
+
+<script>
+import echarts from "echarts";
+import config from "@/utils/config";
+import { randomColor } from "@/utils/index";
+import { pieData, lineData, barData, radData } from "@/utils/homeData";
+// const {pieData} = require('@utils/home')
+export default {
+  activated() {
+    console.log("actie");
+    // 由于给echart添加了resize事件, 在组件激活时需要重新resize绘画一次, 否则出现空白bug
+
+    if (this.chartPie) {
+      this.chartPie.resize();
+    }
+  },
+  data() {
+    return {
+      mainClientHeight: null,
+      clientWidth: this.$store.state.common.mainClientWidth,
+      charWidth: this.$store.state.common.mainClientWidth + "px",
+      chartPie: null,
+      ceshiHeight: this.documentClientHeight - 50 - 30 - 2 - 20,
+      height: "",
+      barValue: [],
+      barName: [],
+      barColor: [],
+      pieDataName: [],
+      pieData: [],
+      chartPieOption: {
+        title: {
+          text: "故障梯统计",
+          x:'center'
+        },
+        tooltip: {
+          trigger: "item",
+          formatter: "{a} <br/>{b}: {c} ({d}%)"
+        },
+        legend: {
+          orient: "vertical",
+          x: "left",
+          data: [
+            "物联网",
+            "维修维保",
+            "维修",
+            "维保",
+          ]
+        },
+        series: [
+          {
+            name: "访问来源",
+            type: "pie",
+            selectedMode: "single",
+            radius: [0, "30%"],
+
+            label: {
+              normal: {
+                position: "inner"
+              }
+            },
+            labelLine: {
+              normal: {
+                show: false
+              }
+            },
+            data: [
+              { value: 5, name: "维修维保", selected: true },
+              { value: 5, name: "物联网" },
+            ]
+          },
+          {
+            name: "数量",
+            type: "pie",
+            radius: ["40%", "55%"],
+            label: {
+              normal: {
+                formatter: "{a|{a}}{abg|}\n{hr|}\n  {b|{b}：}{c}  ",
+                backgroundColor: "#eee",
+                borderColor: "#aaa",
+                borderWidth: 1,
+                borderRadius: 4,
+                rich: {
+                  a: {
+                    color: "#999",
+                    lineHeight: 22,
+                    align: "center"
+                  },
+                
+                  hr: {
+                    borderColor: "#aaa",
+                    width: "100%",
+                    borderWidth: 0.5,
+                    height: 0
+                  },
+                  b: {
+                    fontSize: 16,
+                    lineHeight: 33,
+                  },
+                  per: {
+                    color: "#eee",
+                    backgroundColor: "#334455",
+                    padding: [2, 4],
+                    borderRadius: 2
+                  }
+                }
+              }
+            },
+            data: [
+              { value: 5, name: "维修" },
+              { value: 5, name: "维保" },
+              { value: 5, name: "物联网" },
+            ]
+          }
+        ]
+      }
+    };
+  },
+  methods: {
+    open(type) {
+      if (type === 2) {
+        this.leftBottom = true;
+        this.chartPie = echarts.init(document.getElementById("J_chartPieBox"));
+        this.chartPie.setOption(this.chartPieOption);
+      }
+    },
+    close(type) {
+      if (type === 2) {
+        this.leftBottom = false;
+      }
+    },
+    getChartPie() {
+      // this.$http({
+      //     url: this.$http.adornUrl('/affairInfo/affairinfo/statOfAutoTotalNum'),
+      //     method: 'get',
+      //     params: this.$http.adornParams()
+      // }).then(({ data }) => {
+      //     if (data.data && data.code === 0) {
+      //         console.log('饼状图数据',data.data);
+      console.log("图数据", pieData);
+      this.pieDataName = [];
+      this.barValue = [];
+      this.pieData = [];
+      let arrColor = [];
+      pieData.forEach(item => {
+        // this.pieDataName.push(item.unitName)
+        // this.barValue.push(item.count)
+        arrColor.push(randomColor());
+        this.pieData.push({
+          value: item.count,
+          name: item.unitName
+        });
+      });
+      // 饼状图配置
+      console.log("user", this.$store.state.user);
+      // this.chartPieOption.series[0].data = this.pieData;
+      this.chartPie = echarts.init(
+        document.getElementById("J_chartPieBox")
+      );
+      this.chartPie.setOption(this.chartPieOption);
+      console.log(this.chartPieOption);
+      window.addEventListener("resize", () => {
+        this.chartPie.resize();
+      });
+    }
+  },
+  created() {},
+  computed: {},
+  mounted() {
+    console.log("mounted");
+    this.$nextTick(() => {
+      this.getChartPie();
+    });
+
+    this.mainClientHeight = document.documentElement.clientHeight - 80;
+    this.mainClientWidth = document.documentElement.clientWidth - 210;
+    this.height = this.mainClientHeight + "px";
+    this.charWidth = this.mainClientWidth * 0.33 + "px";
+    window.onresize = () => {
+      this.mainClientWidth = document.documentElement.clientWidth - 210;
+      console.log(this.mainClientWidth);
+      this.charWidth = this.mainClientWidth * 0.33 + "px";
+      this.mainClientHeight = document.documentElement.clientHeight - 80;
+      this.height = this.mainClientHeight + "px";
+      if (this.chartPie) {
+        this.chartPie.resize();
+      }
+    };
+  }
+};
+</script>
+
+<style scoped lang="scss">
+</style>
+

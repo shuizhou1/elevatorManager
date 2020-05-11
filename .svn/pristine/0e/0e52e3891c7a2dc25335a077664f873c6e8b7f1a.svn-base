@@ -1,0 +1,262 @@
+<!--  -->
+<template>
+  <div class="mod-home" v-loading="loading">
+    <div class="table_box">
+      <div class="table_left">
+        <div
+          type="text"
+          class="table_item"
+          v-for="(item,index) in items"
+          :key="index"
+          :class="[{'border_top':index!=0},{'active':index==currentIndex}]"
+          @click="handleClick(index)"
+        >{{item.name}}</div>
+      </div>
+      <div class="table_right">
+        <el-form class="form" style="margin-left:10px;text-align:center">
+          <!-- <el-row :gutter="40"> -->
+            <!-- <el-col :span="8">
+          <el-form-item label="注册代码">
+            <el-input v-model="formData.regcode"></el-input>
+          </el-form-item>
+            </el-col>-->
+            <!-- <el-col :span="6"> -->
+              <!-- <el-form-item label="区域"> -->
+              <el-cascader
+                placeholder="区域"
+                v-model="area"
+                :options="areaData"
+                @change="handleChange"
+              ></el-cascader>
+              <!-- </el-form-item> -->
+            <!-- </el-col> -->
+            <!-- <el-col :span="8"> -->
+              <el-button type="query" style="margin-left:40px">查询</el-button>
+            <!-- </el-col> -->
+          <!-- </el-row> -->
+        </el-form>
+        <div style="flex:1 1 auto">
+          <div
+            v-for="(value,index) in items"
+            :key="index"
+            :id="'chartBox'+index"
+            v-show="currentIndex==index"
+            :style="{'height':height,'width':width}"
+          ></div>
+          <!-- <div id="chart1Box" v-show="currentIndex==id"  style="height:500px;width:1000px"></div> -->
+          <!-- <div  id="chart2Box" v-show="value.id==id"  style="height:500px;width:1000px"></div> -->
+        </div>
+      </div>
+    </div>
+  </div>
+</template>
+
+<script>
+import { gzlfxData } from "@/utils/homeData";
+import echart from "echarts";
+export default {
+  data() {
+    return {
+      items: [
+        {
+          name: "不同投产时间故障率分析"
+        },
+        {
+          name: "不同品牌故障率分析"
+        }
+      ],
+      loading: false,
+      currentIndex: 0,
+      height: "",
+      width: "",
+      chart: "",
+      chart0Option: {
+        // title:{
+        //   text:'不同投产时间故障率分析',
+        //   x:'center'
+        // },
+        tooltip: {
+          formatter: "投产时间: {b} <br/>数量: {c}  ({d})%"
+        },
+        grid: {
+          left: "5%",
+          right: "4%",
+          bottom: "3%",
+          top: "0%",
+          containLabel: true
+        },
+        legend: {
+          // y: "bottom"
+          x:'60',
+          top:'50',
+          orient:'vertical',
+          itemGrap:100,
+          // selected:{
+          //   '1-5年':false
+          // }
+          // padding:''
+        },
+        series: [
+          {
+            name: "投产时间",
+            type: "pie",
+            radius: "70%",
+            center: ["50%", "50%"],
+            data: []
+          }
+        ]
+      },
+      chart1Option: {
+        // title:{
+        //   text:'不同品牌故障率分析',
+        //   x:'center'
+        // },
+         tooltip: {
+          formatter: "投产时间: {b} <br/>数量: {c}  ({d})%"
+        },
+        grid: {
+          left: "5%",
+          right: "4%",
+          bottom: "3%",
+          top: "0%",
+          containLabel: true
+        },
+        legend: {
+          // y: "bottom"
+          x:'60',
+          top:'50',
+          orient:'vertical',
+          itemGrap:100,
+          // selected:{
+          //   '1-5年':false
+          // }
+          // padding:''
+        },
+        series: [
+          {
+            name: "投产时间",
+            type: "pie",
+            radius: "70%",
+            center: ["50%", "50%"],
+            data: []
+          }
+        ]
+      }
+    };
+  },
+  components: {},
+  created() {},
+  mounted() {
+    this.width = document.documentElement.clientWidth - 450 + "px";
+    this.height = document.documentElement.clientHeight - 350 + "px";
+    console.log("documentheight", document.documentElement.clientHeight);
+    window.onresize = () => {
+      this.width = document.documentElement.clientWidth - 450 + "px";
+      this.height = document.documentElement.clientHeight - 350 + "px";
+    };
+    this.$nextTick(() => {
+      this.getData();
+    });
+    window.addEventListener("resize", () => {
+      this.chart.resize();
+    });
+  },
+  methods: {
+    getData() {
+      // this.loading = true;
+      // 投产时间
+      // this.$http({
+      //   url:this.$http.adornUrl(''),
+      //   method:'get',
+      //   params:this.$http.adornParams({
+
+      //   })
+      // }).then(({data})=>{
+      //   this.loading = false;
+      //   if(data&&data.code==0){
+      //     console.log(data);
+      //   }
+      // }).catch(e=>{
+      //   this.loading = false;
+      //   console.log(e);
+      // })
+      // // 品牌
+      // this.$http({
+      //   url:this.$http.adornUrl(''),
+      //   method:'get',
+      //   params:this.$http.adornParams({
+
+      //   })
+      // }).then(({data})=>{
+      //   this.loading = false;
+      //   if(data&&data.code==0){
+      //     console.log(data);
+      //   }
+      // }).catch(e=>{
+      //   this.loading = false;
+      //   console.log(e);
+      // })
+      this.chart0Option.series[0].data = gzlfxData.chart1;
+      this.chart1Option.series[0].data = gzlfxData.chart2;
+      console.log("option0", this.chart0Option);
+      console.log("option1", this.chart1Option);
+      this.chart = echart.init(
+        document.getElementById(`chartBox${this.currentIndex}`),
+        "light"
+      );
+      this.chart.setOption(this.chart0Option);
+    },
+    handleClick(index) {
+      // 切换
+      console.log("handleclick", index);
+      this.currentIndex = index;
+      this.chart = echart.init(
+        document.getElementById(`chartBox${this.currentIndex}`),
+        "light"
+      );
+      this.chart.setOption(this[`chart${this.currentIndex}Option`]);
+    }
+  }
+};
+</script>
+<style scoped>
+.border {
+  border: 1px solid #ebeef5;
+}
+.table_box {
+  height: 500px;
+  width: 100%;
+  border: 1px solid #eee;
+  display: flex;
+}
+.table_left {
+  width: 200px;
+  display: flex;
+  flex: 0 0 200px;
+  flex-direction: column;
+}
+.table_item {
+  justify-content: center;
+  border-right: 1px solid #eee;
+  display: flex;
+  align-items: center;
+  font-size: 14px;
+  flex: 1;
+}
+.table_item.active {
+  color: blue;
+}
+.table_item_top {
+  height: 250px;
+}
+.table_item_bottom {
+  height: 249px;
+  border-top: 1px solid #eee;
+}
+.border_top {
+  border-top: 1px solid #eee;
+}
+.table_right {
+  /* display: flex; */
+}
+</style>

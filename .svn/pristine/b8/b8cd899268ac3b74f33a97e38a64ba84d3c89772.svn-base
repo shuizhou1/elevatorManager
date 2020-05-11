@@ -1,0 +1,184 @@
+<!--  -->
+<template>
+  <div>
+    <!-- <div class="header">维修列表</div> -->
+    <el-form
+      ref="form"
+      class="form"
+      :model="formData"
+      label-width="auto"
+      @keyup.enter.native="getDataList(2,'init')"
+    >
+      <el-row :gutter="40">
+        <el-col :span="8">
+          <el-form-item class="none_margin_bottom" label="电梯地址" prop="local">
+            <el-input v-model="formData.local" clearable></el-input>
+          </el-form-item>
+        </el-col>
+        <el-col :span="8">
+          <el-form-item class="none_margin_bottom" label="维保单位" prop="unitName">
+						 <el-input v-model="formData.unitName" clearable></el-input>
+           <!-- <el-select v-model="formData.unitName" placeholder="请选择" clearable>
+              <el-option
+                v-for="item in options"
+                :key="item.value"
+                :label="item.label"
+                :value="item.value"
+              ></el-option>
+            </el-select> -->
+          </el-form-item>
+
+        </el-col>
+        <el-col :span="7" :offset="1">
+          <el-button type="query" @click="getDataList(2,'init')">查询</el-button>
+          <!-- <el-button type="warning" @click="handleSelect">选择</el-button> -->
+        </el-col>
+      </el-row>
+    </el-form>
+
+        <el-table
+          :data="dataList"
+          border
+          :show-close="false"
+          v-loading="dataListLoading"
+          highlight-current-row
+          @selection-change="selectChange"
+          style="width: 100%;margin-bottom:30px"
+           :row-class-name="tableRowClassName"
+        >
+          <!-- <el-table-column header-align="center" align="center" type="selection" width="50"></el-table-column> -->
+            <el-table-column
+            prop="regcode"
+            header-align="center"
+            align="center"
+            width="200"
+            label="注册代码"
+          ></el-table-column>
+          <el-table-column prop="unitname" show-overflow-tooltip header-align="center" align="center" label="维保单位"></el-table-column>
+          <el-table-column prop="local" show-overflow-tooltip header-align="center" align="center" label="电梯地址"></el-table-column>
+         <!-- <el-table-column
+            prop="elevatorstatus"
+            :formatter="formatElevatorstatus"
+            header-align="center"
+            align="center"
+            width="80"
+            label="电梯类型"
+          ></el-table-column>
+          <el-table-column prop="remarks" header-align="center" align="center" label="故障原因"></el-table-column> -->
+          <el-table-column
+            prop="createtime" :formatter="formatDate" header-align="center" align="center" width="100" label="申请日期" ></el-table-column>
+          <el-table-column
+            prop="repairstutas"
+            :formatter="formatStatus"
+            header-align="center"
+            align="center"
+            width="80"
+            label="状态"
+          ></el-table-column>
+          <!-- <el-table-column
+            prop="hasAudited"
+            header-align="center"
+            align="center"
+            min-width="80"
+            label="审核情况"
+          ></el-table-column> -->
+						 <el-table-column
+					  prop="totalSum"
+					  header-align="center"
+					  align="center"
+					  width="110"
+					  label="总费用（元）"
+					></el-table-column>
+           <el-table-column
+            prop="comeFrom"
+            header-align="center"
+            align="center"
+            :formatter="formatComeForm"
+            width="100"
+            label="来源"
+          ></el-table-column>
+         
+          <el-table-column label="操作" header-align="center" align="center" width="80px">
+            <template slot-scope="scope">
+              <el-button
+                size="mini"
+                style="padding:8px 10px;font-size:12px;height:36px"
+                type="primary"
+                @click="handleAddorUpdate(scope.row.repairid)"
+              >详情</el-button>
+              <!-- <el-button
+                size="mini"
+                style="padding:8px 10px;font-size:12px;height:36px"
+                type="add"
+                 v-if="unitType==1&&scope.row.repairstutas==0||unitType==2&&scope.row.repairstutas==0"
+                @click="handleAddorUpdate(scope.row.repairid)"
+              >审核</el-button> -->
+            </template>
+          </el-table-column>
+        </el-table>
+        <el-pagination
+          @size-change="sizeChangeHandle"
+          @current-change="currentChangeHandle"
+          :current-page="pageIndex"
+          :page-sizes="[10, 20, 50, 100]"
+          :page-size="pageSize"
+          :total="totalCount"
+          layout="total, sizes, prev, pager, next, jumper"
+        ></el-pagination>
+    <repair-add-or-update
+      v-if="addOrUpdateVisible"
+      ref="addOrUpdate"
+      @refreshDataList="getDataList('2')"
+    ></repair-add-or-update>
+  </div>
+</template>
+
+<script>
+import mixins from './mixins'
+export default {
+  mixins:[mixins],
+  data() {
+    return {
+      formData: {
+        local: "",
+        elevatorStatus: "",
+				unitName:""
+      },
+    };
+  },
+  activated() {
+    this.getDataList('2');
+  },
+  
+  methods: {
+    updateStatus(arr){
+      console.log('updateStatus',arr);
+      this.$http({
+            url: this.$http.adornUrl(
+              `/repairplan/repairplan/updateStutas`
+            ),
+            method: "post",
+            data: this.$http.adornData(arr)
+          }).then(({ data }) => {
+            if (data && data.code === 0) {
+              this.$message({
+                message: "保存成功",
+                type: "success",
+                duration: 1500,
+                onClose: () => {
+                  this.getDataList();
+                }
+              });
+            } 
+          });
+    },
+    
+  }
+};
+</script>
+<style lang='scss'>
+.el-table__body .warning-row {
+  background-color: #fff;
+  color:red;
+}
+</style>

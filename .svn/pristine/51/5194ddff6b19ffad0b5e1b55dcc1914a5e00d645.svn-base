@@ -1,0 +1,324 @@
+<template>
+    <div>
+        <div class="user-table">
+            <div class="table-item">
+                <div class="title noborderTop noborderLeft">用户名</div><div class="user-info noborderTop">{{userInfo.user.nickname}}</div>
+            </div><div class="table-item">
+                <div class="title noborderTop">手机号码</div><div class="user-info noborderTop">
+                    <div class="user-info noborderTop noborderLeft">{{userInfo.user.mobile}}</div><el-button type="primary" @click="modifie()">修改</el-button>
+                </div>
+            </div><div class="table-item">
+                <div class="title noborderLeft">性别</div><div class="user-info">{{sex[userInfo.user.sex]}}</div>
+            </div><div class="table-item">
+                <div class="title">所属区域</div><div class="user-info">{{userInfo.district.name}}</div>
+            </div><div class="table-item">
+                <div class="title noborderLeft">邮箱</div><div class="user-info">{{userInfo.user.email}}</div>
+            </div><div class="table-item">
+                <div class="title">所属社区</div><div class="user-info">{{userInfo.community.communityName}}</div>
+            </div><!--<div class="table-item block">-->
+                <!--<div class="title noborderLeft">单位名称</div><div class="user-info"></div>-->
+            <!--</div>-->
+        </div>
+        <el-dialog
+                title="修改手机号码"
+                :visible.sync="dialogVisible"
+                width="80%">
+            <el-row style="margin-bottom: ">
+                <el-col :span="24">
+                    旧手机号: {{userInfo.user.mobile}}
+                </el-col>
+            </el-row>
+            <el-row>
+                <el-col :span="16">
+                    <el-input v-model="codeOld" placeholder="旧手机号验证码" class="phone-input" @keyup.native="proving1"></el-input>
+                </el-col>
+                <el-col :span="8"><el-button @click="getMessageOld()"
+                                             :disabled="messageDisable"
+                                             class="getMessage">{{countdowm}}</el-button></el-col>
+            </el-row>
+            <el-row style="margin-bottom: ">
+                <el-col :span="24">
+                    <el-input
+                            v-model="phone"
+                            style="width: 66.6%;"
+                            placeholder="新手机号"
+                            class="phone-input"
+                            @keyup.native="proving1"></el-input>
+                </el-col>
+            </el-row>
+            <el-row>
+                <el-col :span="16">
+                    <el-input v-model="code" placeholder="新手机号验证码" class="phone-input" @keyup.native="proving1"></el-input>
+                </el-col>
+                <el-col :span="8"><el-button @click="getMessage()"
+                                     :disabled="messageDisable"
+                                     class="getMessage">{{countdowm}}</el-button></el-col>
+            </el-row>
+            <span slot="footer" class="dialog-footer">
+            <el-button @click="dialogVisible = false">取 消</el-button>
+            <el-button type="primary" @click="sumbit()">确 定</el-button>
+          </span>
+        </el-dialog>
+    </div>
+</template>
+
+<script>
+    import { isMobile } from '@/utils/validate'
+    import { getUUID } from '@/utils/index'
+    export default {
+        created () {
+            this.getUserInfo()
+        },
+        data () {
+            return {
+                dialogVisible: false,
+                countdowmTime: null,
+                messageDisable: false,
+                countdowm: '获取验证码',
+                num: 60,
+                code: '',
+                codeOld: '',
+                smsUuid: '',
+                smsUuidOld: '',
+                phone: '',
+                sex: {
+                    0: '女',
+                    1: '男'
+                },
+                userInfo: {
+                    district: {
+                        name: ''
+                    },
+                    community: {},
+                    street: {},
+                    user: {}
+                }
+            }
+        },
+        methods: {
+            sumbit () {
+                if (!this.smsUuid || !this.smsUuidOld) {
+                    this.$message.error('请获取验证码');
+                    return
+                }
+                if (!this.code || !this.codeOld) {
+                    this.$message.error('请输入验证码');
+                    return
+                }
+                if (!this.phone) {
+                    this.$message.error('请输入新手机号');
+                    return
+                }
+                this.$confirm('确认修改手机号码, 是否继续?', '提示', {
+                    confirmButtonText: '确定',
+                    cancelButtonText: '取消',
+                    type: 'warning'
+                }).then(() => {
+                    this.$http({
+                        url: this.$http.adornUrl(`/sys/user/updateMobile`),
+                        method: 'post',
+                        params: this.$http.adornParams({
+                            'mobile': this.phone,
+                            'uuid': this.smsUuid,
+                            'code': this.code,
+                            'uuidOld': this.smsUuidOld,
+                            'codeOld': this.codeOld
+                        })
+                    }).then(({
+                                 data
+                             }) => {
+                        if (data && data.code === 0) {
+                            this.$message({
+                                message: '操作成功',
+                                type: 'success',
+                                duration: 1500
+                            })
+                            this.userInfo.user.mobile = this.phone;
+                            this.dialogVisible = false;
+                            this.code = '';
+                            this.smsUuid = '';
+                            this.smsUuidOld = '';
+                            this.codeOld = '';
+                            this.phone = '';
+                        } else {
+                            this.$message.error(data.msg)
+                        }
+                    })
+                })
+            },
+            // 获取短信验证码
+            getMessage () {
+                if (isMobile(this.phone)) {
+                    this.code = ''
+                } else {
+                    this.$message.error('请输入正确手机号')
+                    return;
+                }
+                this.smsUuid = getUUID()
+                this.$http({
+                    url: this.$http.adornUrl('/sys/user/updateMobileCaptcha'),
+                    method: 'get',
+                    params: this.$http.adornParams({
+                        'uuid': this.smsUuid,
+                        'phone': this.phone
+                    })
+                }).then(({data}) => {
+                    if (data && data.code === 0) {
+                        this.messageDisable = true
+                        this.countdowmTime = setInterval(() => {
+                            this.num--
+                            this.countdowm = `获取验证码 (${this.num})`
+                            if (this.num <= 0) {
+                                this.countdowm = `获取验证码`
+                                this.num = 60
+                                clearInterval(this.countdowmTime)
+                                this.messageDisable = false
+                            }
+                        }, 1000)
+                        // this.code = data.msg
+                        this.$alert(data.msg, '获取验证码', {
+                            confirmButtonText: '确定',
+                            callback: action => {
+                            }
+                        })
+                    } else {
+                        this.$message.error(data.msg)
+                    }
+                })
+                // } else {
+                //     this.$message.error('请输入手机号码')
+                // }
+            },
+            getMessageOld () {
+                this.smsUuidOld = getUUID()
+                this.$http({
+                    url: this.$http.adornUrl('/sys/user/updateMobileCaptcha'),
+                    method: 'get',
+                    params: this.$http.adornParams({
+                        'uuid': this.smsUuidOld,
+                        'phone': ''
+                    })
+                }).then(({data}) => {
+                    if (data && data.code === 0) {
+                        this.messageDisable = true
+                        this.countdowmTime = setInterval(() => {
+                            this.num--
+                            this.countdowm = `获取验证码 (${this.num})`
+                            if (this.num <= 0) {
+                                this.countdowm = `获取验证码`
+                                this.num = 60
+                                clearInterval(this.countdowmTime)
+                                this.messageDisable = false
+                            }
+                        }, 1000)
+                        // this.code = data.msg
+                        this.$alert(data.msg, '获取验证码', {
+                            confirmButtonText: '确定',
+                            callback: action => {
+                            }
+                        })
+                    } else {
+                        this.$message.error(data.msg)
+                    }
+                })
+            },
+            modifie () {
+                this.code = '';
+                this.smsUuid = '';
+                this.smsUuidOld = '';
+                this.codeOld = '';
+                this.phone = '';
+                this.dialogVisible = true
+              /*  if (this.phone === this.userInfo.user.mobile) {
+                } else {
+                    if (isMobile(this.phone)) {
+                        this.code = '';
+
+                    } else {
+                        this.$message.error('请输入正确手机号')
+                        return;
+                    }
+                }*/
+            },
+            proving1 () {
+                this.phone = this.phone.replace(/[^\d]/g, '');
+                this.code = this.code.replace(/[^\d]/g, '');
+                this.codeOld = this.codeOld.replace(/[^\d]/g, '');
+            },
+            // 获取当前管理员信息
+            getUserInfo () {
+                this.$http({
+                    url: this.$http.adornUrl('/sys/user/info'),
+                    method: 'get',
+                    params: this.$http.adornParams()
+                }).then(({ data }) => {
+                    if (data && data.code === 0) {
+                        console.log(data)
+                        this.userInfo['community'] = !data.community ? {} : data.community
+                        this.userInfo['district'] = !data.district ? {} : data.district
+                        this.userInfo['street'] = !data.street ? {} : data.street
+                        this.userInfo['user'] = data.user
+                        // this.phone = this.userInfo.user.mobile
+                        console.log(this.userInfo)
+                    }
+                })
+            }
+        }
+    }
+</script>
+
+<style scoped lang="scss">
+    .user-table {
+        border: 1px solid #cacaca;
+        .table-item {
+            height: 80px;
+            line-height: 80px;
+            text-align: center;
+            display: inline-block;
+            width: 50%;
+            &.block {
+                display: table;
+                width: 100%;
+                .title {
+                    width: 20%;
+                }
+                .user-info {
+                    width: 80%;
+                }
+            }
+            .title {
+                background: #ebeef5;
+                width: 40%;
+            }
+            .user-info {
+                width: 60%;
+            }
+            .user-info, .title {
+                height: 80px;
+                line-height: 80px;
+                display: inline-block;
+                vertical-align: middle;
+                border: 1px solid #cacaca;
+                border-right: none;
+                border-bottom: none;
+                &.noborderTop {
+                    border-top: none;
+                }
+                &.noborderLeft {
+                    border-left: none;
+                }
+            }
+        }
+    }
+</style>
+<style lang="scss">
+    .phone-input {
+        input {
+            height: 44px;
+        }
+    }
+
+    .el-row {
+        padding: 5px;
+    }
+</style>

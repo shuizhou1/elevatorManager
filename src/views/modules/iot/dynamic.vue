@@ -1,0 +1,442 @@
+<template>
+  <el-dialog
+    :close-on-click-modal="false"
+    :show-close="false"
+    :fullscreen="true"
+    :modal="false"
+    :visible.sync="visible"
+    :v-loading="loading"
+  >
+    <div slot="title">
+      <el-row type="flex" justify="space-between" align="middle">
+        <el-col :span="12">电梯智能监控终端动态</el-col>
+        <el-col :span="12" style="display: flex;justify-content: flex-end;">
+          <el-button @click="visible = false">返回</el-button>
+        </el-col>
+      </el-row>
+    </div>
+    <el-row>
+      <el-col :span="11">
+        <video
+          id="my-player"
+          autoplay
+          loop
+          controls="false"
+          :src="videoSrc"
+          preload="auto"
+          style="width: 100%;height: 70vh; background-color: #000"
+        >
+          <p class="vjs-no-js">您的浏览器不支持HTML5视频播放，请升级浏览器。</p>
+        </video>
+        <!--<iframe id="videoSrc" ref="viodeRef" :src="videoSrc" frameborder="0" width="100%" height="500"></iframe>-->
+      </el-col>
+      <el-col :span="12" :offset="1">
+        <div class="repair_header">
+          <div>详细信息</div>
+        </div>
+        <div class="form-view-wraper">
+          <el-row>
+            <el-col :span="12">
+              <div class="form-view-item">
+                报警类型：
+                <span>{{gettype(dataForm.type)}}</span>
+              </div>
+            </el-col>
+            <el-col :span="12">
+              <div class="form-view-item">
+                电梯ID号：
+                <span>{{dataForm.colLiftId}}</span>
+              </div>
+            </el-col>
+          </el-row>
+          <el-row>
+            <el-col :span="12">
+              <div class="form-view-item">
+                注册代码：
+                <span>{{dataForm.regCode}}</span>
+              </div>
+            </el-col>
+            <el-col :span="12">
+              <div class="form-view-item">
+                事件类型：
+                <span>{{getcolAlarmCode(dataForm.colAlarmCode)}}</span>
+              </div>
+            </el-col>
+          </el-row>
+          <el-row>
+            <el-col :span="12">
+              <div class="form-view-item">
+                发生时间：
+                <span>{{dataForm.colDateTime}}</span>
+              </div>
+            </el-col>
+            <el-col :span="12">
+              <div class="form-view-item">
+                报警状态：
+                <span>{{getcolStatus(dataForm.colStatus)}}</span>
+              </div>
+            </el-col>
+          </el-row>
+          <el-row>
+            <el-col :span="24">
+              <div class="form-view-item">
+                维保单位：
+                <span>{{dataForm.maintenanceName}}</span>
+              </div>
+            </el-col>
+          </el-row>
+          <el-row>
+            <el-col :span="24">
+              <div class="form-view-item">
+                地址：
+                <span>{{dataForm.local}}</span>
+              </div>
+            </el-col>
+          </el-row>
+        </div>
+        <el-table
+          :data="dataList"
+          border
+          @header-dragend="handleDragend"
+          v-loading="dataListLoading"
+          @current-change="changeCurrent"
+          style="width: 100%;"
+        >
+          <el-table-column type="index" header-align="center" align="center" width="50"></el-table-column>
+          <el-table-column
+            prop="colAlarmCode"
+            :formatter="changeValue2"
+            header-align="center"
+            align="center"
+            label="事件类型"
+          ></el-table-column>
+          <el-table-column header-align="center" align="center" label="发生时间">
+            <template slot-scope="scope">{{scope.row.solveTime||scope.row.colDateTime}}</template>
+          </el-table-column>
+          <el-table-column
+            prop="type"
+            header-align="center"
+            :formatter="changeValue1"
+            align="center"
+            label="类型"
+          ></el-table-column>
+          <el-table-column
+            prop="colStatus"
+            header-align="center"
+            align="center"
+            label="状态"
+            :formatter="changeValue3"
+          ></el-table-column>
+        </el-table>
+        <el-pagination
+          @size-change="sizeChangeHandle"
+          @current-change="currentChangeHandle"
+          :current-page="pageIndex"
+          :page-sizes="[10, 20, 50, 100]"
+          :page-size="pageSize"
+          :total="totalPage"
+          layout="total, sizes, prev, pager, next, jumper"
+        ></el-pagination>
+      </el-col>
+    </el-row>
+  </el-dialog>
+</template>
+
+<script>
+import videojs from "video.js";
+import "videojs-flash";
+import "video.js/dist/video-js.min.css";
+import config from "@/utils/config.js";
+export default {
+  data() {
+    return {
+      videoSrc: "",
+      loading: false,
+      visible: false,
+      dataForm: {},
+      elevatorStatusArr: [
+        {
+          label: "在线",
+          value: 1
+        },
+        {
+          label: "离线",
+          value: 0
+        }
+      ],
+      dataList: [],
+      pageIndex: 1,
+      pageSize: 10,
+      totalPage: 0,
+      dataListLoading: false,
+      paixuoptions: [],
+      paixu: "",
+      zaixianoptions: [],
+      zaixian: ""
+    };
+  },
+  components: {},
+  beforeDestroy() {
+    const videoDom = this.$refs.viodeRef;
+    //videojs(videoDom).dispose();
+  },
+  activated() {
+    this.getDataList();
+  },
+  methods: {
+    gettype(type) {
+      if (type == "trap") {
+        return "困人";
+      } else if (type == "fault") {
+        return "故障";
+      } else if (type == "alarm") {
+        return "警报";
+      } else {
+        return "其他";
+      }
+    },
+    getcolAlarmCode(colAlarmCode) {
+      let key = colAlarmCode;
+      let value = "";
+      if (key === "LOB") {
+        value = "LMD由电池供电";
+      } else if (key === "LRF") {
+        value = "电梯主回路供电中断";
+      } else if (key === "MOF") {
+        value = "控制器（柜）供电中断";
+      } else if (key === "PTRAP") {
+        value = "困人";
+      } else if (key === "MRI") {
+        value = "人员进入机房";
+      } else if (key === "LDO") {
+        value = "门异常打开";
+      } else if (key === "CDO") {
+        value = "警报";
+      } else if (key === "LM") {
+        value = "检修";
+      } else if (key === "LBH") {
+        value = "LMD电池电压高";
+      } else if (key === "LBL") {
+        value = "LMD电池电压低";
+      } else if (key === "SPA14") {
+        value = "485通信故障";
+      } else if (key === "RESTR") {
+        value = "LMD冷重启";
+      } else if (key === "TOI") {
+        value = "运行1000次";
+      } else if (key === "LIOF") {
+        value = "通讯中断";
+      } else if (key === "EBF") {
+        value = "电梯状态预警";
+      } else if (key === "LF1") {
+        value = "采集板供电异常";
+      } else if (key === "LF4") {
+        value = "电梯供电故障";
+      } else if (key === "LF5") {
+        value = "安全回路断开";
+      } else if (key === "LF6") {
+        value = "辅助板故障";
+      } else if (key === "LF8") {
+        value = "外部按钮响应异常";
+      } else if (key === "LF11") {
+        value = "开门故障";
+      } else if (key === "LF12") {
+        value = "关门故障";
+      } else if (key === "LF15") {
+        value = "内部按钮响应异常";
+      } else if (key === "LF16") {
+        value = "电梯长时间无运行";
+      } else if (key === "LF18") {
+        value = "消防开关接通";
+      } else if (key === "LF19") {
+        value = "门锁短接";
+      } else if (key === "LF21") {
+        value = "光幕报警触发";
+      }
+      return value;
+    },
+    getcolStatus(colStatus) {
+      if (colStatus == "1") {
+        return "发生";
+      } else if (colStatus == "0") {
+        return "解除";
+      } else {
+        return "";
+      }
+    },
+    // init(id) {
+    //     this.visible = true;
+    //     this.$nextTick(() => {
+    //         this.getDataList(id)
+    //     });
+    // },
+
+    changeValue1(row, column, cellValue, index) {
+      if (row.type == "trap") {
+        return "困人";
+      } else if (row.type == "fault") {
+        return "故障";
+      } else if (row.type == "alarm") {
+        return "警报";
+      } else {
+        return "其他";
+      }
+    },
+    changeValue2(row, column, cellValue, index) {
+      let key = row.colAlarmCode ? row.colAlarmCode : row.colFaultCode;
+      let value = "";
+      if (key === "LOB") {
+        value = "LMD由电池供电";
+      } else if (key === "LRF") {
+        value = "电梯主回路供电中断";
+      } else if (key === "MOF") {
+        value = "控制器（柜）供电中断";
+      } else if (key === "PTRAP") {
+        value = "困人";
+      } else if (key === "MRI") {
+        value = "人员进入机房";
+      } else if (key === "LDO") {
+        value = "门异常打开";
+      } else if (key === "CDO") {
+        value = "警报";
+      } else if (key === "LM") {
+        value = "检修";
+      } else if (key === "LBH") {
+        value = "LMD电池电压高";
+      } else if (key === "LBL") {
+        value = "LMD电池电压低";
+      } else if (key === "SPA14") {
+        value = "485通信故障";
+      } else if (key === "RESTR") {
+        value = "LMD冷重启";
+      } else if (key === "TOI") {
+        value = "运行1000次";
+      } else if (key === "LIOF") {
+        value = "通讯中断";
+      } else if (key === "EBF") {
+        value = "电梯状态预警";
+      } else if (key === "LF1") {
+        value = "采集板供电异常";
+      } else if (key === "LF4") {
+        value = "电梯供电故障";
+      } else if (key === "LF5") {
+        value = "安全回路断开";
+      } else if (key === "LF6") {
+        value = "辅助板故障";
+      } else if (key === "LF8") {
+        value = "外部按钮响应异常";
+      } else if (key === "LF11") {
+        value = "开门故障";
+      } else if (key === "LF12") {
+        value = "关门故障";
+      } else if (key === "LF15") {
+        value = "内部按钮响应异常";
+      } else if (key === "LF16") {
+        value = "电梯长时间无运行";
+      } else if (key === "LF18") {
+        value = "消防开关接通";
+      } else if (key === "LF19") {
+        value = "门锁短接";
+      } else if (key === "LF21") {
+        value = "光幕报警触发";
+      }
+      return value;
+    },
+    changeValue3(row, column, cellValue, index) {
+      if (row.colStatus == "1") {
+        return "发生";
+      } else if (row.colStatus == "0") {
+        return "解除";
+      } else {
+        return "";
+      }
+    },
+    handleDragend(n, o, a, b) {
+      config.tableDragendHandle(n, o, a);
+    },
+    init(id, regCode) {
+      this.visible = true;
+      this.$http({
+        url: this.$http.adornUrl("/elevatorwarning/elevatorwarning/list"),
+        method: "get",
+        params: this.$http.adornParams({
+          page: this.pageIndex,
+          limit: this.pageSize,
+          regCode: regCode
+        })
+      }).then(({ data }) => {
+        if (data && data.code === 0) {
+          this.dataList = data.page.list;
+          this.totalPage = data.page.totalCount;
+          if (data.page.list.length > 0) {
+            this.changeCurrent(data.page.list[0]);
+          }
+        } else {
+          this.dataList = [];
+          this.totalPage = 0;
+        }
+        this.dataListLoading = false;
+      });
+    },
+    // 切换展示
+    changeCurrent(val) {
+      console.log(val);
+      this.dataForm = val;
+      this.videoSrc =
+        window.SITE_CONFIG["cdnUrl"] +
+        "/static/video/" +
+        (val.colAlarmCode ? val.colAlarmCode : val.colFaultCode) +
+        ".mp4";
+    },
+    // 获取数据列表 没用到
+    getDataList(type) {
+      if (type === "init") {
+        this.pageIndex = 1;
+      }
+      this.dataListLoading = true;
+      this.$http({
+        url: this.$http.adornUrl("/elevatorwarning/elevatorwarning/list"),
+        method: "get",
+        params: this.$http.adornParams({
+          page: this.pageIndex,
+          limit: this.pageSize
+        })
+      }).then(({ data }) => {
+        if (data && data.code === 0) {
+          this.dataList = data.page.list;
+          this.totalPage = data.page.totalCount;
+        } else {
+          this.dataList = [];
+          this.totalPage = 0;
+        }
+        this.dataListLoading = false;
+      });
+    },
+    // 每页数
+    sizeChangeHandle(val) {
+      this.pageSize = val;
+      this.pageIndex = 1;
+      this.getDataList();
+    },
+    // 当前页
+    currentChangeHandle(val) {
+      this.pageIndex = val;
+      this.getDataList();
+    }
+  }
+};
+</script>
+
+<style scoped>
+.repair_header {
+  font-size: 18px;
+  padding: 8px 10px;
+  margin-bottom: 1px solid #eee;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+.form-view-wraper {
+  margin-bottom: 10px;
+}
+</style>

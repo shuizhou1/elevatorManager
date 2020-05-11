@@ -1,0 +1,180 @@
+
+import repairAddOrUpdate from "@/views/modules/repairplan/repair-add-or-update";
+export default {
+   components: {
+       repairAddOrUpdate
+   },
+  computed: {
+      unitType() {
+          console.log(this.$store.getters["user/userInfo"].unitType)
+          return this.$store.getters["user/userInfo"].unitType;
+      },
+  },
+    data() {
+        return {
+            options: [{
+                    label: "客梯",
+                    value: "1"
+                },
+                {
+                    label: "货梯",
+                    value: "2"
+                }
+            ],
+            dataList: [],
+            pageSize: 10,
+            pageIndex: 1,
+            totalCount: 0,
+            dataListLoading: false,
+            addOrUpdateVisible: false, //新增、修改
+            dataListSelections: []
+
+        }
+    },
+    methods: {
+
+        getDataList(judge,type) {
+            if (type == 'init') {
+                this.pageIndex = 1;
+            }
+            this.dataListLoading = true;
+            let url = judge ? '/repairplan/repairplan/list' : "/repairplan/repairplan/allList"
+            this.$http({
+                url: this.$http.adornUrl(url),
+                method: "get",
+                params: this.$http.adornParams({
+                    page: this.pageIndex,
+                    limit: this.pageSize,
+                    unitName: this.formData.unitName,
+                    local: this.formData.local,
+                    repairStuta: this.formData.repairStutas ? this.formData.repairStutas : null,
+                    elevatorStatus: this.formData.elevatorStatus,
+                    judge: judge,
+                    startTime:this.formData.startTime,
+                    endTime:this.formData.endTime
+                })
+            }).then(({
+                data
+            }) => {
+                if (data && data.code === 0) {
+                    console.log(data);
+                    this.dataList = data.page.records;
+                    this.totalCount = data.page.total;
+                } else {
+                    this.dataList = [];
+                    this.totalCount = 0;
+                }
+                this.dataListLoading = false;
+            });
+        },
+        tableRowClassName({
+            row,
+        }) {
+            if (row.urgent == '1') {
+                return 'warning-row'
+            }
+        },
+        formatStatus(row, col, val) {
+            // console.log(row);
+            let str;
+            switch (val) {
+                case "0":
+                    str = "待确认";
+                    break;
+                case "1":
+                    str = "不通过";
+                    break;
+                case "2":
+                    str = "待维修";
+                    break;
+                case "3":
+                    str = "待审核";
+                    break;
+                case "4":
+                    str = "完成";
+                    break;
+                case "5":
+                    str = "不通过";
+                    break;
+            }
+            return str;
+        },
+        formatComeForm(row, col, val) {
+            // console.log(val)
+            let str;
+            switch (val) {
+                case "1":
+                    str = "物联网管理";
+                    break;
+                case "2":
+                    str = "维保管理";
+                    break;
+                case "3":
+                    str = "自主维保";
+                    break;
+                case "4":
+                    str = "自行申请";
+                    break;
+            }
+            return str;
+        },
+        // 格式化时间
+        formatDate(row, col, value) {
+            if (value && value.length) return value.substr(0, 10);
+        },
+         pickStimeEtime(e) {
+             console.log(e)
+             if (e) {
+                 this.formData.startTime = e[0];
+                 this.formData.endTime = e[1];
+             } else {
+                 this.formData.startTime = null
+                 this.formData.endTime = null
+             }
+         },
+        // 每页数
+        sizeChangeHandle(val) {
+            this.pageSize = val;
+            this.pageIndex = 1;
+            this.getDataList();
+        },
+        // 当前页
+        currentChangeHandle(val) {
+            this.pageIndex = val;
+            this.getDataList();
+        },
+        handleAddorUpdate(id) {
+
+            this.addOrUpdateVisible = true;
+            this.$nextTick(() => {
+                this.$refs.addOrUpdate.init(id);
+            });
+        },
+        // 删除
+        handleDelete() {
+            var ids = this.dataListSelections.map(item => {
+                return item.repairid;
+            });
+            this.$confirm(`确定删除?`, "提示", {
+                confirmButtonText: "确定",
+                cancelButtonText: "取消",
+                type: "warning"
+            }).then(() => {
+                this.$http({
+                    url: this.$http.adornUrl("/repairplan/repairplan/delete"),
+                    method: "post",
+                    data: this.$http.adornData(ids, false)
+                }).then(({
+                    data
+                }) => {
+                    if (data && data.code == 0) {} else {}
+                });
+            });
+        },
+
+        selectChange(e) {
+            console.log("选择改变", e);
+            this.dataListSelections = e;
+        },
+    }
+}

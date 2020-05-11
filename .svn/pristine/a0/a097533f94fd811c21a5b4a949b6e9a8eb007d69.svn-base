@@ -1,0 +1,566 @@
+<template>
+  <div class="mod-home" style="min-height:390px;min-width:450px">
+    <div
+      class="chartContainer rightBottom15"
+      :style="{'height': height, 'width': charWidth ,'min-height':'180px','min-width':'200px'}"
+    >
+      <div id="J_chartLineBox" :style="{'height': '100%','width': '100%'}"></div>
+    </div>
+    <div
+      class="chartContainer leftTop15"
+      :style="{'height': height, 'width': charWidth,'min-height':'180px','min-width':'200px'}"
+    >
+      <div id="J_chartBarBox" :style="{'height': '100%','width': '100%'}"></div>
+      <!--<el-button class="openButton leftBottom" @click="close(1)"><i class="el-icon-arrow-up"></i></el-button>-->
+    </div>
+    <div
+      class="chartContainer rightTop15"
+      :style="{'height': height, 'width': charWidth,'min-height':'180px','min-width':'200px'}"
+    >
+      <div id="J_chartPieBox" :style="{'height': '100%','width': '100%'}"></div>
+      <!--<el-button class="openButton rightTop" @click="close(2)"><i class="el-icon-arrow-down"></i></el-button>-->
+    </div>
+    <div
+      class="chartContainer leftBottom15"
+      :style="{'height': height, 'width': charWidth,'min-height':'180px','min-width':'200px'}"
+    >
+      <div id="J_chartRadarBox" :style="{'height': '100%','width': '100%'}"></div>
+      <!--<el-button class="openButton leftTop" @click="close(3)"><i class="el-icon-arrow-down"></i></el-button>-->
+    </div>
+    <!-- <div text-center :style="{'height': clientHeight - 42 + 'px'}">
+      <img src="~@/assets/img/gzMap.jpg" :style="{'width':charWidth} " class="vertical-middle" />
+      <em class="vertical-middle em-style"></em>
+    </div>-->
+    <!--<div class="chartContainer rightTop15" id="J_chartLineBox"></div>-->
+    <!--<div class="chartContainer rightBottom15" id="J_chartLineBox"></div>-->
+
+    <!--   <h3>公司介绍</h3>
+           <ul>
+             <li>易宝集团成立于1984年，是一家国际性具有综合研发能力的高科技公司。</li>
+             <li>广州易宝信息技术有限公司(原名:易宝电脑系统(广州)有限公司)脱胎于该集团,成立于1990年。是一家以信息技术为核心业务的IT服务公司。为各行业提供信息系统规划、咨询服务、行业应用系统、电子信息产品、计算机系统集成、运维保修等服务。公司基于领先的计算机信息处理、数据库与软件开发技术、网络及通信技术、内容管理技术，开发了一系列行业应用解决方案。是政府、文教、公众服务、国有大中型企业等行业解决方案和IT专业服务的领先者。</li>
+             <li>凭借数十年经验和技术的积累，公司得到了国家各级主管部门的认可和扶持。获得了中国软件百强企业、广州市100家最具成长性企业、最具潜力高新技术企业荣誉；通过中国软件企业信用等级A级认证、守合同重信用企业认认证；具有软件企业认证、国家信息产业部系统集成二级资质认证、ISO9001质量体系认证、计算机信息安全资质认证等。</li>
+             <li>易宝公司一直以来非常注重在大数据领域的投入，在研发上投入了大量的资金和资源，建立产品研发基地，研发出大数据LAVALAMP，THINKTREE等产品，深入大数据产品的应用模式研究，采用大数据技术建立了运营平台，在一些国家和地区得到应用推广。随着易宝在大数据解决方案逐渐成熟，公司加大对大数据应用渗透各行业的力度；在当今数据改变我们生活、驱动决策及信息社会智能化需求提高的背景下，我们正大力着手在智慧城市、环保大数据、食品药品安全大数据、公众安全应急监控以及互联网基准营销大数据应用、技术和方法在各个行业的实践。创建未来的智慧生活。</li>
+             <li>近年来，易宝公司凭借自身的实力，不断实现技术上与管理上的创新与飞跃，成为一家以行业解决方案为核心、以专业服务为基础、以软件开发为支撑、以产业研究为后盾的新型全方位高科技公司</li>
+           </ul>
+           <h3>有关我们</h3>
+           <ul>
+             <li>官方网站：<a href="http://www.gzepro.com.cn/" target="_blank">易宝官网</a></li>
+    </ul>-->
+  </div>
+</template>
+
+<script>
+import echarts from "echarts";
+import config from "@/utils/config";
+import { randomColor } from "@/utils/index";
+import { pieData, lineData, barData, radData } from "../../utils/homeData";
+// const {pieData} = require('@utils/home')
+export default {
+  data() {
+    return {
+      clientHeight: null,
+      clientWidth: null,
+      charWidth: "",
+      leftTop: true,
+      leftBottom: true,
+      rightTop: true,
+      rightBottom: true,
+      chartLine: null,
+      chartBar: null,
+      chartPie: null,
+      chartRadar: null,
+      ceshiHeight: this.documentClientHeight - 50 - 30 - 2 - 20,
+      height: "",
+      barValue: [],
+      barName: [],
+      chartBarOption: {
+        // color: config.color,
+        title: {
+          show: true,
+          text: "预警信息"
+          // x:'center'
+        },
+        legend: {
+          bottom: "5",
+          // top: "30",
+          formatter(value) {
+            let result;
+            if (value == "alarm") {
+              result = "警报";
+            } else if (value == "fault") {
+              result = "故障";
+            } else if (value == "trap") {
+              result = "困人";
+            }
+            return result;
+          }
+        },
+        xAxis: {
+          type: "category",
+          splitLine: { show: false },
+          data: [],
+          axisLine: {
+            lineStyle: {
+              type: "solid",
+              color: "eee", //坐标线的颜色
+              width: "2" //坐标线的宽度
+            }
+          },
+          axisLabel: {
+            textStyle: {}
+          }
+        },
+        yAxis: {
+          type: "value",
+          name:'次数',
+          nameTextStyle:{
+            padding:[0,0,0,10]
+          },
+          axisLine: {
+            lineStyle: {
+              type: "solid",
+              color: "eee", //左边线的颜色
+              width: "2" //坐标线的宽度
+            }
+          },
+          axisLabel: {
+            formatter(){
+              return ''
+            },
+            textStyle: {}
+          }
+        },
+        grid: {
+          left: "3%",
+          right: "4%",
+          bottom: "10%",
+          top:'18%',
+          containLabel: true
+        },
+        tooltip: {
+          trigger: "item",
+          formatter(item, a, b) {
+            let value = item.seriesName;
+            let result;
+            if (value == "alarm") {
+              result = "警报";
+            } else if (value == "fault") {
+              result = "故障";
+            } else if (value == "trap") {
+              result = "困人";
+            }
+            return `类型：${result}</br> 次数：${item.data}`;
+          },
+          axisPointer: {
+            type: "shadow"
+          }
+        },
+        series: []
+      },
+      barColor: [],
+      pieDataName: [],
+      pieData: [],
+      chartPieOption: {
+        title: {
+          text: "计划分析",
+          x: "left"
+        },
+        tooltip: {
+          trigger: "item"
+        },
+        legend: {
+          orient: "vertical",
+          left: "2px",
+          right: "2px",
+          data: []
+        },
+
+        series: [
+          {
+            name: "",
+            type: "pie",
+            radius: "80%",
+            center: ["50%", "55%"],
+            label: {
+              normal: {
+                formatter: "{d}%",
+                position: "inside"
+              },
+              emphasis: {
+                show: true
+              }
+            },
+            lableLine: {
+              normal: {
+                show: false
+              },
+              emphasis: {
+                show: true
+              }
+            },
+            data: []
+          }
+        ]
+      },
+      chartLineOption: {
+        color:['#34f023','#2F4554'],
+        title:{
+          text:'维修统计'
+        },
+        tooltip: {
+          trigger: "axis"
+        },
+        grid: {
+          left: "5%",
+          right: "4%",
+          bottom: "10%",
+          top: "18%",
+          containLabel: true
+        },
+        legend: {
+          bottom: 5,
+          data: [
+            {
+              name: "故障"
+            },
+            {
+              name: "正常"
+            }
+          ]
+        },
+        xAxis: {
+          type: "category",
+          boundaryGap: false,
+          data: []
+        },
+        yAxis: {
+          type: "value",
+          name:'次数',
+          nameTextStyle:{
+            // padding:[0,0,0,10]
+          }
+        },
+        series: [
+          {
+            name: "正常",
+            type: "line",
+            data: []
+          },
+          {
+            name: "故障",
+            type: "line",
+            data: []
+          }
+        ]
+      },
+      date: [],
+      data: [],
+      chartRadarOption: {
+        title:{
+          text:'维保统计'
+        },
+        color: config.color,
+        tooltip: {},
+        radar: {
+          name: {
+            textStyle: {
+              color: "#fff",
+              backgroundColor: "#999",
+              borderRadius: 3,
+              padding: [3, 5]
+            }
+          },
+          radius: 165,
+          center: ["50%", "65%"],
+          indicator: []
+        },
+        series: [
+          {
+            name: "状态",
+            type: "radar",
+            // areaStyle: {normal: {}},
+            data: [
+              {
+                value: []
+              }
+            ]
+          }
+        ]
+      }
+    };
+  },
+  created() {
+    this.getLine();
+    this.getChartPie();
+    this.getChartBar();
+    this.getChartRadar();
+  },
+  mounted() {
+    console.log("mounted");
+
+    this.clientHeight = document.documentElement.clientHeight;
+    this.clientWidth = document.documentElement.clientWidth;
+    this.height = (this.clientHeight - 90) * 0.5 + "px";
+    this.charWidth = (document.documentElement.clientWidth - 240) * 0.5 + "px";
+    window.addEventListener('resize', ()=> {
+      console.log('onresize------')
+      this.clientHeight = document.documentElement.clientHeight;
+      this.clientWidth = document.documentElement.clientWidth;
+      this.height = (this.clientHeight - 90) * 0.5 + "px";
+      this.charWidth = (document.documentElement.clientWidth - 240) * 0.5 + "px";
+    });
+  },
+  methods: {
+    getLine() {
+      this.$http({
+        url: this.$http.adornUrl("/statistics/statistics/repairStatistics"),
+        method: "get",
+        params: this.$http.adornParams({})
+      })
+        .then(({ data }) => {
+          console.log("折线数据", data);
+          let [xData, sData1, sData2] = [[], [], []];
+          data.list.forEach(item => {
+            xData.push(item.createTime);
+            sData1.push(item.zhengchang);
+            sData2.push(item.guzhang);
+          });
+          this.chartLineOption.xAxis.data = xData;
+          this.chartLineOption.series[0].data = sData1;
+          this.chartLineOption.series[1].data = sData2;
+          this.$nextTick(() => {
+            this.chartLine = echarts.init(
+              document.getElementById(`J_chartLineBox`),
+              // "light"
+            );
+            this.chartLine.setOption(this.chartLineOption);
+          });
+           window.addEventListener("resize", () => {
+                this.chartLine.resize();
+                 console.log('chartpine.resiz---')
+              });
+        })
+        .catch(e => {
+          console.log(e);
+        });
+    },
+    getChartPie() {
+      this.$http({
+        url: this.$http.adornUrl("/statistics/statistics/planningAnalysis"),
+        method: "get",
+        params: this.$http.adornParams()
+      })
+        .then(({ data }) => {
+          console.log("饼状图数据", data.list);
+          if (data && data.code === 0) {
+            this.pieDataName = [];
+            this.barValue = [];
+            this.pieData = [];
+            let arrColor = [];
+            data.list.forEach(item => {
+              this.pieData.push({
+                value: item.elevatornum,
+                name: item.unitName
+              });
+            });
+            this.chartPieOption.series[0].data = this.pieData;
+            this.$nextTick(() => {
+              this.chartPie = echarts.init(
+                document.getElementById("J_chartPieBox"),
+                // "light"
+              );
+              this.chartPie.setOption(this.chartPieOption);
+              window.addEventListener("resize", () => {
+                this.chartPie.resize();
+                 console.log('chartpine.resiz---')
+              });
+            });
+          }
+        })
+        .catch(e => {
+          console.log(e);
+        });
+    },
+    getChartBar() {
+      this.$http({
+        url: this.$http.adornUrl("/statistics/statistics/warningInformation"),
+        method: "get",
+        params: this.$http.adornParams()
+      }).then(({ data }) => {
+        console.log("条形图数据", data);
+        if (data && data.code === 0) {
+          this.barDataName = [];
+          this.barValue = [];
+          this.barData = [];
+        }
+        // 柱状图配置
+        let items = data.warningInformation[0];
+        for (let value in items) {
+          //  this.chartBarOption.legend.data.push(value);
+          this.chartBarOption.series.push({
+            type: "bar",
+            name: value,
+            barWidth:'100px',
+                label: {
+                  normal: {
+                    show: true,
+                    position: "top"
+                  }
+                },
+            data: [items[value]]
+          });
+          //  this.chartBarOption.xAxis.data.push(value);
+        }
+        console.log("baroption-------------------", this.chartBarOption);
+        this.$nextTick(() => {
+          this.chartBar = echarts.init(
+            document.getElementById("J_chartBarBox"),
+            // "light"
+          );
+          this.chartBar.setOption(this.chartBarOption);
+        });
+
+        window.addEventListener("resize", () => {
+          this.chartBar.resize();
+           console.log('chartbar.resiz---')
+        });
+      });
+    },
+    getChartRadar() {
+      this.$http({
+        url: this.$http.adornUrl(
+          "/statistics/statistics/maintenanceStatistics"
+        ),
+        method: "get",
+        params: this.$http.adornParams()
+      }).then(({ data }) => {
+        if (data && data.code === 0) {
+          console.log("雷达图数据", data);
+          let [indicator, counts] = [[], []];
+          for (let key in data.list[0]) {
+            indicator.push({
+              name: this.formatCode(key)
+            });
+            counts.push(data.list[0][key]);
+          }
+          console.log("counts", counts);
+          this.chartRadarOption.radar.indicator = indicator;
+          this.chartRadarOption.series[0].data[0].value = counts;
+          this.$nextTick(() => {
+            this.chartRadar = echarts.init(
+              document.getElementById("J_chartRadarBox"),
+              // "light"
+            );
+            this.chartRadar.setOption(this.chartRadarOption);
+            window.addEventListener("resize", () => {
+                this.chartRadar.resize();
+               console.log('chartradar.resiz---')
+
+              });
+          });
+        }
+      });
+    },
+    formatCode(code) {
+      let value;
+      if (code == "notstarted") {
+        value = "未开始";
+      } else if (code == "todotasks") {
+        value = "待处理";
+      } else if (code == "completed") {
+        value = "已完成";
+      }
+      return value;
+    }
+  }
+};
+</script>
+
+<style scoped lang="scss">
+.em-style {
+  height: 100%;
+  display: inline-block;
+}
+.vertical-middle {
+  vertical-align: middle;
+}
+.char-container {
+  position: relative;
+  margin: -20px;
+}
+.echarts {
+  width: 100%;
+  height: 100%;
+}
+.mod-home {
+  position: fixed;
+  left: 200px;
+  top: 50px;
+  right: 0;
+  bottom: 0;
+  background: #fff;
+}
+.leftTopChart {
+  width: 50%;
+  height: 274px;
+  border: $border-base;
+}
+.chartContainer {
+  position: absolute !important;
+  border: $border-base;
+  background: white;
+  box-sizing: border-box;
+}
+.openButton {
+  width: 16px;
+  height: 16px;
+  padding: 0;
+}
+.openButton,
+.chartContainer {
+  &.el-button {
+    margin: 0;
+    &:hover,
+    &:active,
+    &:focus {
+      color: $primary;
+      border-color: rgba(63, 98, 160, 0.3);
+      background-color: rgba(63, 98, 160, 0.2);
+    }
+  }
+  // position: absolute;
+  &.leftTop {
+    left: 0;
+    top: 0;
+    &15 {
+      left: 15px;
+      top: 15px;
+    }
+  }
+  &.rightTop {
+    right: 0;
+    top: 0;
+    &15 {
+      right: 15px;
+      top: 15px;
+    }
+  }
+  &.rightBottom {
+    right: 0;
+    bottom: 0;
+    &15 {
+      right: 15px;
+      bottom: 15px;
+    }
+  }
+  &.leftBottom {
+    left: 0;
+    bottom: 0;
+    &15 {
+      left: 15px;
+      bottom: 15px;
+    }
+  }
+}
+</style>
+

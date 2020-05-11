@@ -1,0 +1,145 @@
+<!--  -->
+<template>
+  <div>
+    <div :style="{'height':height,'margin-top':'30px'}" >
+      <div id="chartBox" :style="{'height':height,'width':width}"></div>
+    </div>
+  </div>
+</template>
+
+<script>
+import echart from 'echarts';
+import {krfxData} from '@/utils/homeData';
+export default {
+  activated() {
+    console.log("actie");
+    // 由于给echart添加了resize事件, 在组件激活时需要重新resize绘画一次, 否则出现空白bug
+
+    if (this.chart) {
+      this.chart.resize();
+    }
+  },
+  data () {
+    return {
+      height:'',
+      width:'',
+      option:{
+        title:{
+          text:'困人故障分析',
+          x:'center',
+          textStyle:{
+            fontWeight:'normal'
+          }
+
+        },
+        grid: {
+          left: "3%",
+          right: "5%",
+          bottom: "8%",
+          top:'5%',
+          containLabel: true
+        },
+        tooltip:{
+          trigger:'item',
+          formatter:"{a} <br/>{b}: {c} ({d}%)"
+        },
+        legend:{
+          orient:'vertical',
+          x:'60',
+          // y:'100'
+        },
+        series:[
+          {
+            name:'困人故障原因',
+            type:'pie',
+            radius:[0,'25%'],
+            label:{
+              normal:{
+                formatter:'{d}%',
+                position:'inside',//位置
+              },
+            },
+            labelLine:{
+              normal:{
+                show:false
+              },
+              emphasis:{
+                show:true
+              }
+            },
+            data:[{
+              value:'5',
+              name:'人为因素'
+            },{
+              value:'15',
+              name:'电梯因素'
+            }],
+           
+          },{
+            name:'困人故障原因',
+            type:'pie',
+            radius:['35%','55%'],
+            
+            data:[
+              {
+                name:'人为因素',
+                value:'5'
+              },
+              {
+              name:'关门故障',
+              value:'5'
+            },{
+              name:'开门故障',
+              value:'8'
+            },{
+              name:'停电',
+              value:'2'
+            }]
+          }
+
+        ]
+
+      }
+    };
+  },
+  mounted(){
+    this.$nextTick(()=>{
+      this.getData()
+    })
+    this.height = document.documentElement.clientHeight - 210 + 'px';
+    console.log(this.height);
+    this.width = document.documentElement.clientWidth - 250 + 'px';
+    window.onresize = ()=>{
+      this.height = document.documentElement.clientHeight - 210 + 'px';
+      this.width = document.documentElement.clientWidth - 250 + 'px';
+      //  this.chart.resize();
+    }
+    window.addEventListener("resize", () => {
+      this.chart.resize();
+    });
+  }, 
+  methods: {
+    getData(){
+      // this.$http({
+      //   url:this.$http.adornUrl(''),
+      //   methods:'get',
+      //   params:this.$http.adornParams({})
+
+      // }).then(({data})  =>{
+      //   console.log(data)
+      // }).catch(e=>{
+      //   console.log(e)
+      // })
+      this.chart  = echart.init(document.getElementById('chartBox'));
+      this.chart.setOption(this.option);
+      // window.addEventListener("resize", () => {
+      //   this.chart.resize();
+      // });
+    }
+  }
+}
+
+</script>
+<style  scoped>
+
+</style>

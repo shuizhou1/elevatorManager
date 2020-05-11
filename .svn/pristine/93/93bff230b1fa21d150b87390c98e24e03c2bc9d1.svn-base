@@ -1,0 +1,580 @@
+*,
+*:before,
+*:after {
+    box-sizing: border-box;
+}
+
+body {
+    font-family: "Helvetica Neue", Helvetica, "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", "微软雅黑", Arial, sans-serif;
+    font-size: 14px;
+    line-height: 1.15;
+    color: #303133;
+    background-color: #fff;
+}
+
+a {
+    color: mix(#fff, $--color-primary, 20%);
+    text-decoration: none;
+    &:focus,
+    &:hover {
+        color: $--color-primary;
+        text-decoration: underline;
+    }
+}
+
+img {
+    vertical-align: middle;
+}
+
+/* Utils
+------------------------------ */
+.clearfix:before,
+.clearfix:after {
+    content: " ";
+    display: table;
+}
+
+.clearfix:after {
+    clear: both;
+}
+
+/* Animation
+------------------------------ */
+.fade-enter-active,
+.fade-leave-active {
+    transition: opacity .5s;
+}
+
+.fade-enter,
+.fade-leave-to {
+    opacity: 0;
+}
+
+/* Reset element-ui
+------------------------------ */
+.site-wrapper {
+    .el-pagination {
+        margin-top: 15px;
+        text-align: right;
+    }
+}
+
+/* Layout
+------------------------------ */
+.site-wrapper {
+    position: relative;
+    min-width: 1004px;
+}
+
+/* Sidebar fold
+------------------------------ */
+.site-sidebar--fold {
+    .site-sidebar,
+    .site-sidebar__inner,
+    .el-menu.site-sidebar__menu {
+        width: 64px;
+    }
+    .site-navbar__brand {
+        width: auto;
+    }
+    .site-navbar__body,
+    .site-content__wrapper {
+        margin-left: 64px;
+    }
+    .site-content__wrapper {
+        padding-top: 100px;
+    }
+    .site-navbar__brand {
+        &-lg {
+            display: none;
+        }
+        &-mini {
+            display: inline-block;
+        }
+    }
+    .site-sidebar,
+    .site-sidebar__inner {
+        overflow: initial;
+    }
+    .site-sidebar__menu-icon {
+        margin-right: 0;
+        font-size: 20px;
+    }
+    .site-content--tabs > .el-tabs > .el-tabs__header {
+        left: 64px;
+    }
+}
+
+// animation
+.site-navbar__header,
+.site-navbar__brand,
+.site-navbar__body,
+.site-sidebar,
+.site-sidebar__inner,
+.site-sidebar__menu.el-menu,
+.site-sidebar__menu-icon,
+.site-content__wrapper,
+.site-content--tabs > .el-tabs .el-tabs__header {
+    transition: inline-block .3s, left .3s, width .3s, margin-left .3s, font-size .3s;
+}
+
+/* Navbar
+------------------------------ */
+.site-navbar {
+    position: fixed;
+    top: 0;
+    right: 0;
+    left: 0;
+    z-index: 1030;
+    height: 64px;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, .08);
+    background-color: $navbar--background-color;
+    .el-submenu .el-menu-item {
+        min-width: 180px;
+        padding-right: 0;
+    }
+    /* 经典样式Header样式 */
+    &--header--23262E {
+        background-color: #4080ff;
+    }
+    /* 经典样式Body样式 */
+    &--body--23262E {
+        background-color: #4080ff;
+        .el-menu {
+            > .el-menu-item,
+            > .el-submenu .el-submenu__title {
+                color: #fff;
+
+                &:focus,
+                &:hover {
+                    color: #4080FF;
+                    background-color: mix(#000, #23262E, 15%);
+                }
+            }
+
+            > .el-menu-item.is-active,
+            > .el-submenu.is-active .el-submenu__title {
+                border-bottom-color: mix(#fff, #23262E, 85%);
+            }
+
+            .el-menu-item i,
+            .el-submenu__title i,
+            .el-dropdown {
+                color: #fff;
+            }
+        }
+    }
+    /* 紫色精简样式Header样式 */
+    &--header--7F63F4 {
+        background-color: #7f63f4;
+    }
+    /* 紫色精简样式Body样式 */
+    &--body--7F63F4 {
+        background-color: #FFFFFF;
+        .el-menu {
+            > .el-menu-item,
+            > .el-submenu .el-submenu__title {
+                color: #000000;
+
+                &:focus,
+                &:hover {
+                    color: #FFFFFF;
+                    background-color: mix(#000, #7f63f4, 15%);
+                }
+            }
+
+            > .el-menu-item.is-active,
+            > .el-submenu.is-active .el-submenu__title {
+                border-bottom-color: mix(#fff, #7f63f4, 85%);
+            }
+
+            .el-menu-item i,
+            .el-submenu__title i,
+            .el-dropdown {
+                color: #000000;
+            }
+        }
+    }
+    /*绿色护眼主题Header样式 */
+    &--header--997B71 {
+        background-color: #997B71;
+    }
+    /* 绿色护眼主题Body样式 */
+    &--body--997B71 {
+        background-color: #997B71;
+        .el-menu {
+            > .el-menu-item,
+            > .el-submenu .el-submenu__title {
+                color: #fff;
+
+                &:focus,
+                &:hover {
+                    color: #fff;
+                    background-color: mix(#000, #997B71, 15%);
+                }
+            }
+
+            > .el-menu-item.is-active,
+            > .el-submenu.is-active .el-submenu__title {
+                border-bottom-color: mix(#fff, #997B71, 85%);
+            }
+
+            .el-menu-item i,
+            .el-submenu__title i,
+            .el-dropdown {
+                color: #fff;
+            }
+        }
+    }
+
+    &--inverse {
+        .site-navbar__body {
+            background-color: transparent;
+        }
+        .el-menu {
+            > .el-menu-item,
+            > .el-submenu .el-submenu__title {
+                color: #fff;
+                &:focus,
+                &:hover {
+                    color: #fff;
+                    background-color: mix(#000, $navbar--background-color, 15%);
+                }
+            }
+            > .el-menu-item.is-active,
+            > .el-submenu.is-active .el-submenu__title {
+                border-bottom-color: mix(#fff, $navbar--background-color, 85%);
+            }
+            .el-menu-item i,
+            .el-submenu__title i,
+            .el-dropdown {
+                color: #fff;
+            }
+        }
+        .el-menu--popup-bottom-start {
+            background-color: $navbar--background-color;
+        }
+    }
+
+    &__header {
+        position: relative;
+        float: left;
+        overflow: hidden;
+        margin: 0;
+    }
+    &__brand {
+        display: table-cell;
+        vertical-align: middle;
+        width: 230px;
+        height: 50px;
+        margin: 0;
+        line-height: 50px;
+        font-size: 20px;
+        text-align: center;
+        text-transform: uppercase;
+        white-space: nowrap;
+        color: #fff;
+
+        &-lg,
+        &-mini {
+            margin: 0 5px;
+            color: #fff;
+            &:focus,
+            &:hover {
+                color: #fff;
+                text-decoration: none;
+            }
+        }
+        &-mini {
+            display: none;
+        }
+    }
+    &__switch {
+        font-size: 18px;
+        border-bottom: none !important;
+    }
+    &__avatar {
+        border-bottom: none !important;
+        margin: 0 !important;
+        * {
+            vertical-align: inherit;
+        }
+        .el-dropdown-link {
+            > img {
+                height: auto;
+                margin-right: 5px;
+                border-radius: 100%;
+                vertical-align: middle;
+            }
+        }
+    }
+    &__body {
+        position: relative;
+        margin-left: 230px;
+        padding-right: 15px;
+        background-color: #fff;
+    }
+    &__menu {
+        float: left;
+        background-color: transparent !important;
+        border-bottom: 0;
+
+        &--right {
+            float: right;
+        }
+        a:focus,
+        a:hover {
+            text-decoration: none;
+        }
+        .el-menu-item,
+        .el-submenu .el-submenu__title {
+            height: 50px !important;
+            line-height: 50px !important;
+        }
+        .el-submenu > .el-menu {
+            top: 55px;
+        }
+        .el-badge {
+            display: inline;
+            z-index: 2;
+            &__content {
+                line-height: 16px;
+            }
+        }
+    }
+}
+
+/* Sidebar
+------------------------------ */
+.site-sidebar {
+    position: fixed;
+    top: 50px;
+    left: 0;
+    bottom: 0;
+    z-index: 1020;
+    width: 180px;
+    overflow: hidden;
+
+    &--dark, &--dark-popper {
+        background-color: $sidebar--background-color-dark;
+        .site-sidebar__menu.el-menu,
+        > .el-menu--popup {
+            background-color: $sidebar--background-color-dark;
+            .el-menu-item,
+            .el-submenu .el-submenu__title {
+                color: $sidebar--color-text-dark;
+                &:focus,
+                &:hover {
+                    color: mix(#fff, $sidebar--color-text-dark, 50%);
+                    background-color: mix(#fff, $sidebar--background-color-dark, 2.5%);
+                }
+            }
+            .el-menu,
+            .el-submenu.is-opened {
+                background-color: mix(#000, $sidebar--background-color-dark, 15%);
+            }
+            .el-menu-item.is-active,
+            .el-submenu.is-active .el-submenu__title {
+                color: mix(#fff, $sidebar--color-text-dark, 80%);
+            }
+        }
+    }
+    /* 经典样式侧边栏样式 */
+    &--menu--393D49, &--menu--393D49-popper {
+        /* 设置主目录背景颜色 */
+        background-color: #424242;
+        .site-sidebar__menu.el-menu,
+        > .el-menu--popup {
+            background-color: #424242;
+            .el-menu-item,
+            .el-submenu .el-submenu__title {
+                /* 设置字体颜色 */
+                color: #c2c2c2;
+                &:focus {
+                    /* 设置选中颜色 */
+                    color: #fff;
+                    background-color: #4080ff;
+                }
+                &:hover {
+                    color: #fff;
+                    /* 设置选中hover颜色 */
+                    background-color: #4080ff;
+                }
+            }
+            .el-menu,
+            .el-submenu.is-opened {
+                /* 设置子目录背景色 */
+                background-color: mix(#000, #333333, 30%);
+            }
+            .el-menu-item.is-active {
+                /* 设置选中字体颜色 */
+                color: #fff;
+                background: #4080FF;
+            }
+            .el-submenu.is-active .el-submenu__title{
+                 color: #fff;
+             }
+        }
+    }
+    /* 紫色精简样式侧边栏样式 */
+    &--menu--7F63F4, &--menu--7F63F4-popper {
+        /* 设置主目录背景颜色 */
+        background-color: #ffffff;
+        .site-sidebar__menu.el-menu,
+        > .el-menu--popup {
+            background-color: #FFFFFF;
+            .el-menu-item,
+            .el-submenu .el-submenu__title {
+                /* 设置字体颜色 */
+                color: #7F63F4;
+                &:focus {
+                    /* 设置选中颜色 */
+                    background-color: mix(#fff, #f3f1fa, 2.5%);
+                }
+                &:hover {
+                    color: #5b5188;
+                    /* 设置选中hover颜色 */
+                    background-color: mix(#fff, #f3f1fa, 2.5%);
+                }
+            }
+            .el-menu,
+            .el-submenu.is-opened {
+                /* 设置子目录背景色 */
+                background-color: mix(#000, #f3f1fa, 10%);
+            }
+            .el-menu-item.is-active,
+            .el-submenu.is-active .el-submenu__title {
+                /* 设置选中字体颜色 */
+                color: mix(#5b5188, #5b5188, 80%);
+            }
+        }
+    }
+    /* 绿色护眼样式侧边栏样式 */
+    &--menu--997B71, &--menu--997B71-popper {
+        /* 设置主目录背景颜色 */
+        background-color: #997B71;
+        .site-sidebar__menu.el-menu,
+        > .el-menu--popup {
+            background-color: #997B71;
+            .el-menu-item,
+            .el-submenu .el-submenu__title {
+                /* 设置字体颜色 */
+                color: #FFFFFF;
+                &:focus {
+                    /* 设置选中颜色 */
+                    background-color: mix(#fff, #C2D7A7, 2.5%);
+                }
+                &:hover {
+                    color: #000;
+                    /* 设置选中hover颜色 */
+                    background-color: mix(#fff, #C2D7A7, 2.5%);
+                }
+            }
+            .el-menu,
+            .el-submenu.is-opened {
+                /* 设置子目录背景色 */
+                background-color: mix(#000, #997B71, 25%);
+            }
+            .el-menu-item.is-active,
+            .el-submenu.is-active .el-submenu__title {
+                /* 设置选中字体颜色 */
+                color: mix(#000, #000, 80%);
+            }
+        }
+    }
+
+    &__inner {
+        position: relative;
+        z-index: 1;
+        width: 197px;
+        height: 100%;
+        padding-bottom: 15px;
+        overflow-y: scroll;
+    }
+    &__menu.el-menu {
+        width: 180px;
+        border-right: 0;
+    }
+    &__menu-icon {
+        width: 24px;
+        margin-right: 5px;
+        text-align: center;
+        font-size: 16px;
+        color: inherit !important;
+    }
+}
+
+/* Content
+------------------------------ */
+.el-menu--horizontal .el-menu-item:not(.is-disabled):focus, .el-menu--horizontal .el-menu-item:not(.is-disabled):hover {
+    background-color: #004271 !important;
+}
+.site-content {
+    position: relative;
+    padding: 15px 0;
+
+    &__wrapper {
+        position: relative;
+        padding-top: 50px;
+        margin-left: 180px;
+        min-height: 100%;
+        background: $content--background-color;
+    }
+    &--tabs {
+        padding: 55px 0 0;
+    }
+    > .el-tabs {
+        > .el-tabs__header {
+            position: fixed;
+            top: 50px;
+            left: 180px;
+            right: 0;
+            z-index: 930;
+            padding: 0 55px 0 15px;
+            box-shadow: 0 2px 4px 0 rgba(0, 0, 0, .12), 0 0 6px 0 rgba(0, 0, 0, .04);
+            background-color: #fff;
+            > .el-tabs__nav-wrap {
+                margin-bottom: 0;
+                &:after {
+                    display: none;
+                }
+            }
+        }
+        > .el-tabs__content {
+            padding: 0 15px 15px;
+            > .site-tabs__tools {
+                position: fixed;
+                top: 50px;
+                right: 0;
+                z-index: 931;
+                height: 40px;
+                padding: 0 12px;
+                font-size: 16px;
+                line-height: 40px;
+                background-color: $content--background-color;
+                cursor: pointer;
+                .el-icon--right {
+                    margin-left: 0;
+                }
+            }
+        }
+    }
+}
+
+/* el-card-bgc 背景样式
+---------------------------------*/
+.el-card-bgc {
+    /* 经典样式背景色 */
+    &--FFFFFF {
+        background-color: rgba(255, 255, 255, 1);
+    }
+    /* 紫色精简样式背景色 */
+    &--F3F6F9 {
+        background-color: rgba(243, 246, 249, 1);
+    }
+    /* 绿色护眼样式背景色 */
+    &--997B71 {
+        background-color: rgba(209, 230, 182, 0.65);
+    }
+
+}

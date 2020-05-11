@@ -1,0 +1,195 @@
+<!--  -->
+<template>
+  <div>
+    <!-- 维保各项情况表 -->
+    <div class="header clearfix">
+      <span>设置维保计划记录表</span>
+      <el-button class="fr" @click="handleBack">返回</el-button>
+    </div>
+    <el-table :data="wbgxqkData" border style="width: 100%">
+      <el-table-column prop="xh" label="序号" width="180"></el-table-column>
+      <el-table-column prop="xm" label="维护保养项目"></el-table-column>
+      <el-table-column prop="jbyq" label="维护保养基本要求"></el-table-column>
+      <el-table-column prop="wbqk" label="维保情况">
+        <template slot-scope="scope">
+          <el-radio-group v-model="formData[scope.row]">
+            <el-radio :label="1">确认正常</el-radio>
+            <el-radio :label="0">调整、更换</el-radio>
+            <el-radio :label="-1">需维修</el-radio>
+          </el-radio-group>
+          <!-- <el-button
+          size="mini"
+          @click="handleEdit(scope.$index, scope.row)">编辑</el-button>-->
+        </template>
+      </el-table-column>
+    </el-table>
+    <div class="button_wraper">
+      <el-button @click="handleAddItem" style="margin-right:20px">添加项目</el-button>
+      <el-button @click="handleDeleteItem" style="margin-left:20px">移除项目</el-button>
+    </div>
+  </div>
+</template>
+
+<script>
+export default {
+  data() {
+    return {
+      formData: [],
+      wbgxqkData: [
+        {
+          xh: "1",
+          xm: "机房、滑轮间环境",
+          jbyq: "清洁、门窗完好、照明正常",
+          wbqk: ""
+        },
+        {
+          xh: "1",
+          xm: "机房、滑轮间环境",
+          jbyq: "清洁、门窗完好、照明正常",
+          wbqk: ""
+        },
+        {
+          xh: "1",
+          xm: "机房、滑轮间环境",
+          jbyq: "清洁、门窗完好、照明正常",
+          wbqk: ""
+        },
+        {
+          xh: "1",
+          xm: "机房、滑轮间环境",
+          jbyq: "清洁、门窗完好、照明正常",
+          wbqk: ""
+        },
+        {
+          xh: "1",
+          xm: "机房、滑轮间环境",
+          jbyq: "清洁、门窗完好、照明正常",
+          wbqk: ""
+        },
+        {
+          xh: "1",
+          xm: "机房、滑轮间环境",
+          jbyq: "清洁、门窗完好、照明正常",
+          wbqk: ""
+        },
+        {
+          xh: "1",
+          xm: "机房、滑轮间环境",
+          jbyq: "清洁、门窗完好、照明正常",
+          wbqk: ""
+        },
+        {
+          xh: "1",
+          xm: "机房、滑轮间环境",
+          jbyq: "清洁、门窗完好、照明正常",
+          wbqk: ""
+        },
+        {
+          xh: "1",
+          xm: "机房、滑轮间环境",
+          jbyq: "清洁、门窗完好、照明正常",
+          wbqk: ""
+        },
+        {
+          xh: "1",
+          xm: "机房、滑轮间环境",
+          jbyq: "清洁、门窗完好、照明正常",
+          wbqk: ""
+        },
+        {
+          xh: "1",
+          xm: "机房、滑轮间环境",
+          jbyq: "清洁、门窗完好、照明正常",
+          wbqk: ""
+        },
+        {
+          xh: "1",
+          xm: "机房、滑轮间环境",
+          jbyq: "清洁、门窗完好、照明正常",
+          wbqk: ""
+        },
+        {
+          xh: "1",
+          xm: "机房、滑轮间环境",
+          jbyq: "清洁、门窗完好、照明正常",
+          wbqk: ""
+        },
+        {
+          xh: "1",
+          xm: "机房、滑轮间环境",
+          jbyq: "清洁、门窗完好、照明正常",
+          wbqk: ""
+        },
+        {
+          xh: "1",
+          xm: "机房、滑轮间环境",
+          jbyq: "清洁、门窗完好、照明正常",
+          wbqk: ""
+        },
+        {
+          xh: "1",
+          xm: "机房、滑轮间环境",
+          jbyq: "清洁、门窗完好、照明正常",
+          wbqk: ""
+        },
+        {
+          xh: "1",
+          xm: "机房、滑轮间环境",
+          jbyq: "清洁、门窗完好、照明正常",
+          wbqk: ""
+        },
+        {
+          xh: "1",
+          xm: "机房、滑轮间环境",
+          jbyq: "清洁、门窗完好、照明正常",
+          wbqk: ""
+        },
+        {
+          xh: "1",
+          xm: "机房、滑轮间环境",
+          jbyq: "清洁、门窗完好、照明正常",
+          wbqk: ""
+        },
+        {
+          xh: "1",
+          xm: "机房、滑轮间环境",
+          jbyq: "清洁、门窗完好、照明正常",
+          wbqk: ""
+        }
+      ]
+    };
+  },
+  components: {},
+  created() {},
+  methods: {
+    initData() {
+      console.log("获取数据");
+      this.$ajax
+        .post({
+          url: this.formatUrl("login")
+        })
+        .then(res => {
+          console.log("res", res);
+        })
+        .catch(e => {
+          console.log(e);
+        });
+    },
+    handleAddItem() {
+      console.log("添加项目");
+    },
+    handleDeleteItem() {
+      console.log("移除项目");
+    },
+    handleBack() {
+      this.$emit("back");
+    }
+  }
+};
+</script>
+<style lang='scss' scoped>
+.button_wraper {
+  margin: 20px 0;
+  text-align: center;
+}
+</style>

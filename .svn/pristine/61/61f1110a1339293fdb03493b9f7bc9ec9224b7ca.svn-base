@@ -1,0 +1,661 @@
+<template>
+    <div>
+        <el-form :model="dataForm"
+                 :rules="dataRule"
+                 ref="dataForm"
+                 @keyup.enter.native="dataFormSubmit()"
+                 label-width="95px"
+                 custom-class="noMargin"
+                 class="submit-container">
+            <!--<el-form-item label="权限验证" prop="authId">-->
+            <!--<el-input v-model="dataForm.authId" placeholder="权限验证" ></el-input>-->
+            <!--</el-form-item>-->
+            <div class="button-container">
+                <div class="input-container">
+                    <div class="item has-input require">
+                        <div class="flex-container">
+                            <span class="selectTitle">上报人名：</span>
+                            <el-input v-model="dataForm.complainantName" placeholder="上报人名" class="select-item"></el-input>
+                        </div>
+                    </div><div class="item has-input require">
+                        <div class="flex-container">
+                            <span class="selectTitle">上报人电话：</span>
+                            <el-input v-model="dataForm.complainantPhone" placeholder="上报人电话（固话或手机号码）" class="select-item"></el-input>
+                        </div>
+                    </div><div class="item has-input require">
+                        <div class="flex-container">
+                            <span class="selectTitle">上报类型：</span>
+                            <el-select
+                                    class="select-item"
+                                   v-model="dataForm.affairType"
+                                   placeholder="请选择类型">
+                                        <el-option
+                                                v-for="(item, index) in type" :key="index"
+                                                :label="item.label"
+                                                :value="item.id">
+                                        </el-option>
+                            </el-select>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="button-container">
+                <div class="input-container">
+                    <div class="item has-input width50 require">
+                        <div class="flex-container">
+                            <span class="selectTitle">上报时间：</span>
+                            <el-date-picker
+                                    v-model="submitTime"
+                                    class="select-item"
+                                    type="datetime"
+                                    placeholder="选择日期时间">
+                            </el-date-picker>
+                        </div>
+                    </div><div class="item has-input width50 require">
+                    <div class="flex-container">
+                        <span class="selectTitle">受理时间：</span>
+                        <el-input v-model="dataForm.createTime" placeholder="上报时间" :disabled="true" class="select-item"></el-input>
+                    </div>
+                </div>
+                </div>
+            </div>
+           
+            <div class="button-container">
+                <div class="input-container">
+                    <div class="item has-input widthx2 require">
+                        <div class="flex-container">
+                            <span class="selectTitle">电梯：</span>
+                            <el-input v-model="dataForm.regCode"  type="select" placeholder="电梯" class="select-item"></el-input>
+                            <el-button style="height:40px" type="primary" @click="handleElevatorSelect()">选择</el-button>
+                        </div>
+                    </div><div class="item has-input require">
+                    <div class="flex-container">
+                        <span class="selectTitle">受理人：</span>
+                        <el-input v-model="nickName" placeholder="上报人" :disabled="true" class="select-item"></el-input>
+                    </div>
+                </div>
+                </div>
+            </div>
+             <div class="button-container">
+                <div class="input-container">
+                    <div class="item has-input widthx3 require">
+                        <div class="flex-container">
+                            <span class="selectTitle">电梯地址：</span>
+                            <el-input v-model="dataForm.location"  placeholder="电梯地址"  class="select-item"></el-input>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="button-container">
+                <div class="input-container">
+                    <div class="item has-input widthx3 require">
+                        <div class="flex-container">
+                            <span class="selectTitle">上报内容：</span>
+                            <el-input
+                                    type="textarea"
+                                    class="select-item"
+                                    :rows="6"
+                                    placeholder="上报内容"
+                                    v-model="dataForm.affairInfo">
+                            </el-input>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </el-form>
+        <el-button @click="dataFormSubmit()" type="primary" class="submit-button">上报</el-button>
+        <el-dialog
+                title="请确认上报信息"
+                :visible.sync="dialogVisible"
+                top="0"
+                width="75%"
+                custom-class="noMargin smallDialog"
+                :before-close="handleClose">
+            <el-form :model="dataForm"
+                     :rules="dataRule"
+                     ref="dataForm"
+                     @keyup.enter.native="dataFormSubmit()"
+                     class="submit-container">
+                <!--<el-form-item label="权限验证" prop="authId">-->
+                <!--<el-input v-model="dataForm.authId" placeholder="权限验证" ></el-input>-->
+                <!--</el-form-item>-->
+                <div class="button-container">
+                    <div class="input-container">
+                        <div class="item has-input">
+                            <div class="flex-container">
+                                <span class="selectTitle">投诉人名：</span>
+                                <span style="color: #999" class="select-item span-content">{{ dataForm.complainantName }}</span>
+                            </div>
+                        </div><div class="item has-input">
+                        <div class="flex-container">
+                            <span class="selectTitle">投诉人电话：</span>
+                            <span style="color: #999" class="select-item span-content">{{ dataForm.complainantPhone }}</span>
+                        </div>
+                    </div><div class="item has-input">
+                        <div class="flex-container">
+                            <span class="selectTitle">投诉类型：</span>
+                            <span style="color: #999" class="select-item span-content">{{ typeName[dataForm.affairType] }}</span>
+                        </div>
+                    </div>
+                    </div>
+                </div>
+                <div class="button-container">
+                    <div class="input-container">
+                        <div class="item has-input widthx2">
+                            <div class="flex-container">
+                                <span class="selectTitle">电梯注册码：</span>
+                                <span style="color: #999" class="select-item span-content">{{ dataForm.regCode }}</span>
+                            </div>
+                        </div><div class="item has-input">
+                        <div class="flex-container">
+                            <span class="selectTitle">上报人：</span>
+                            <span style="color: #999" class="select-item span-content">{{ nickName }}</span>
+                        </div>
+                    </div>
+                    </div>
+                </div>
+                <div class="button-container">
+                    <div class="input-container">
+                        <div class="item width50 has-input">
+                            <div class="flex-container">
+                                <span class="selectTitle">投诉时间：</span>
+                                <span style="color: #999" class="select-item span-content">{{ dataForm.affairTime }}</span>
+                            </div>
+                        </div><div class="item width50 has-input">
+                            <div class="flex-container">
+                                <span class="selectTitle">上报时间：</span>
+                                <span style="color: #999" class="select-item span-content">{{ dataForm.createTime }}</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="button-container">
+                    <div class="input-container">
+                        <div class="item has-input widthx3">
+                            <div class="flex-container">
+                                <span class="selectTitle">电梯地址：</span>
+                                <span style="color: #999" class="select-item span-content">{{ dataForm.location }}</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="button-container">
+                    <div class="input-container">
+                        <div class="item has-input widthx3">
+                            <div class="flex-container">
+                                <span class="selectTitle">投诉内容：</span>
+                                <el-input
+                                        type="textarea"
+                                        class="select-item"
+                                        :disabled="true"
+                                        :rows="6"
+                                        placeholder="投诉内容"
+                                        v-model="dataForm.affairInfo">
+                                </el-input>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </el-form>
+            <span slot="footer" class="dialog-footer">
+                <el-button @click="dialogVisible = false">取 消</el-button>
+                <el-button type="primary" @click="submitAgain()" :disabled="submitContrl">确 定</el-button>
+            </span>
+        </el-dialog>
+        <!-- 电梯选择 -->
+        <el-dialog
+            title="选择电梯"
+            top='10px'
+            :lock-scroll="true"
+            :fullscreen="true"
+            :visible.sync="elevatorDialogVisible"
+            width="80%"
+            >
+            <el-form :inline="true" :model="queryElevatorForm" @keyup.enter.native="getDataList()">
+                <el-form-item label="电梯注册码">
+                    <el-input v-model="queryElevatorForm.regCode" placeholder="电梯注册码" clearable></el-input>
+                </el-form-item>
+                <el-form-item label="小区名">
+                    <el-input v-model="queryElevatorForm.xiaoqu" placeholder="小区名" clearable></el-input>
+                </el-form-item>
+                <el-form-item>
+                    <el-button
+                        @click="getDataList()">查询</el-button>
+                </el-form-item>
+            </el-form>
+            <el-table
+                  :data="elevatorDataList"
+                  @header-dragend="handleDragend"
+
+                  max-height="280"
+                  border
+                  :show-close="false"
+                  v-loading="dataListLoading"
+                    highlight-current-row
+                 @current-change="elevatorChange"
+                  style="width: 100%;margin-bottom:30px">
+            <el-table-column
+                    prop="regCode"
+                    header-align="center"
+                    align="center"
+                    width="190"
+                    label="设备注册码">
+            </el-table-column>
+            <el-table-column
+                    prop="districtName"
+                    header-align="center"
+                    align="center"
+                    width="80"
+                    label="所属区域">
+            </el-table-column>
+            <el-table-column
+                    prop="streetName"
+                    header-align="center"
+                    align="center"
+                    width="80"
+                    label="所属街道">
+            </el-table-column>
+            <el-table-column
+                    prop="communityName"
+                    header-align="center"
+                    align="center"
+                    width="80"
+                    label="所属社区">
+            </el-table-column>
+            <el-table-column
+                    prop="xiaoqu"
+                    header-align="center"
+                    align="center"
+                    label="小区名称">
+            </el-table-column>
+            <el-table-column
+                    prop="location"
+                    header-align="center"
+                    align="center"
+                    label="设备地址">
+            </el-table-column>
+        </el-table>
+            <el-pagination
+                @size-change="sizeChangeHandle"
+                @current-change="currentChangeHandle"
+                :current-page="pageIndex"
+                :page-sizes="[10, 20, 50, 100]"
+                :page-size="pageSize"
+                :total="totalCount"
+                layout="total, sizes, prev, pager, next, jumper">
+        </el-pagination>
+            <span slot="footer" class="dialog-footer">
+                <el-button @click="elevatorSelectCancel">取 消</el-button>
+                <el-button type="primary" @click="elevatorSelectConfirm()">确 定</el-button>
+            </span>
+        </el-dialog>
+    </div>
+</template>
+
+<script>
+    import { formatDate } from '../../../utils/index'
+    import config from '@/utils/config'
+    import { isMobile,isPhone } from '@/utils/validate'
+
+    export default {
+        name: 'submit',
+        data() {
+            return {
+                submitContrl: false,
+                dialogVisible: false,
+                type: config.typeList,
+                typeName: {
+                    '0': '故障',
+                    '1': '困人',
+                    '2': '投诉'
+                },
+                timeInter: null,
+                submitTime: '',
+                dataForm: {
+                    id: '',
+                    authId: '',
+                    createTime: '',
+                    updateTime: '',
+                    affairTime: '',
+                    affairStatus: '',
+                    affairCode: '',
+                    affairType: '',
+                    regCode: '',
+                    district: '',
+                    street: '',
+                    community: '',
+                    location: '',
+                    complainantName: '',
+                    complainantPhone: '',
+                    affairInfo: '',
+                    createUserId: '',
+                    transferTime: '',
+                    transferUser: '',
+                    transferInfo: '',
+                    processUser: '',
+                    transferSignTime: '',
+                    updatePerson: '',
+                    comeFrom: '',
+                    version: '',
+                    orgId: '',
+                    remarks: '',
+                    isdel: ''
+                },
+                dataRule: {
+                    authId: [],
+                    createTime: [],
+                    updateTime: [],
+                    affairTime: [],
+                    affairStatus: [],
+                    affairCode: [],
+                    affairType: [],
+                    regCode: [],
+                    district: [],
+                    street: [],
+                    community: [],
+                    location: [],
+                    complainantName: [],
+                    complainantPhone: [],
+                    affairInfo: [],
+                    createUserId: [],
+                    transferTime: [],
+                    transferUser: [],
+                    transferInfo: [],
+                    processUser: [],
+                    transferSignTime: [],
+                    updatePerson: [],
+                    comeFrom: [],
+                    version: [],
+                    orgId: [],
+                    remarks: [],
+                    isdel: []
+                },
+                elevatorDialogVisible:false,//电梯选择
+                dataListLoading:false,
+                tableHeight:this.$store.state.common.mainClientHeight - 40 - 156 - 45,
+                elevatorDataList:[],
+                queryElevatorForm:{
+                    regCode:'',//电梯注册码
+                    xiaoqu:''//小区
+
+                },//电梯查询
+                location:'',//电梯地址
+                totalCount:'',
+                pageIndex:1,
+                pageSize:10
+            }
+        },
+        computed: {
+            nickName: {
+                get() {
+                    return this.$store.state.user.nickName
+                }
+            }
+        },
+        mounted() {
+            this.dataForm.createTime = formatDate(new Date(), 'yyyy-MM-dd hh:mm:ss');
+            this.timeInter = setInterval(() => {
+                this.dataForm.createTime = formatDate(new Date(), 'yyyy-MM-dd hh:mm:ss');
+            }, 1000)
+            this.getDataList();
+        },
+        destroyed() {
+            clearInterval(this.timeInter)
+        },
+        methods: {
+             getDataList (type) {
+                // if (type === 'init') {
+                //     this.pageIndex = 1
+                // }
+                this.dataListLoading = true
+                this.$http({
+                    url: this.$http.adornUrl('/elevator/elevatorinfo/list'),
+                    method: 'get',
+                    params: this.$http.adornParams({
+                        'page': this.pageIndex,
+                        'limit': this.pageSize,
+                        'regCode': this.queryElevatorForm.regCode,
+                        // 'district': this.dataForm.district.value,
+                        // 'street': this.dataForm.street.value,
+                        // 'community': this.dataForm.community.value,
+                        'xiaoqu': this.queryElevatorForm.xiaoqu
+                    })
+                }).then(({ data }) => {
+                    if (data && data.code === 0) {
+                        this.elevatorDataList = data.page.list
+                        this.totalCount = data.page.totalCount
+                    } else {
+                        this.dataList = []
+                        this.totalCount = 0
+                    }
+                    this.dataListLoading = false
+                })
+            },
+            handleDragend (n, o, a, b) {
+                config.tableDragendHandle(n, o, a)
+            },
+            submitAgain () {
+                this.submitContrl = true
+                this.$refs['dataForm'].validate((valid) => {
+                    if (valid) {
+                        const loading = this.$loading({
+                            lock: true,
+                            text: '正在上报',
+                            spinner: 'el-icon-loading',
+                            background: 'rgba(0, 0, 0, 0.7)'
+                         });
+                        this.$http({
+                            url: this.$http.adornUrl(`/affairInfo/affairinfo/save`),
+                            method: 'post',
+                            data: this.$http.adornData({
+                                // 'comeFrom': 0,
+                                'authId': this.dataForm.authId,
+                                'createTime': this.dataForm.createTime,
+                                'updateTime': this.dataForm.updateTime,
+                                'affairTime': this.dataForm.affairTime,
+                                'affairStatus': this.dataForm.affairStatus,
+                                'affairCode': this.dataForm.affairCode,
+                                'affairType': this.dataForm.affairType,
+                                'regCode': this.dataForm.regCode,
+                                'district': this.dataForm.district,
+                                'street': this.dataForm.street,
+                                'community': this.dataForm.community,
+                                'location': this.dataForm.location,
+                                'complainantName': this.dataForm.complainantName,
+                                'complainantPhone': this.dataForm.complainantPhone,
+                                'affairInfo': this.dataForm.affairInfo,
+                                'createUserId': this.dataForm.createUserId,
+                                'transferTime': this.dataForm.transferTime,
+                                'transferUser': this.dataForm.transferUser,
+                                'transferInfo': this.dataForm.transferInfo,
+                                'processUser': this.dataForm.processUser,
+                                'transferSignTime': this.dataForm.transferSignTime,
+                                'updatePerson': this.dataForm.updatePerson,
+                                'version': this.dataForm.version,
+                                'orgId': this.dataForm.orgId,
+                                'remarks': this.dataForm.remarks,
+                                'isdel': this.dataForm.isdel
+                            })
+                        }).then(({ data }) => {
+                            loading.close();
+                            if (data && data.code === 0) {
+                                this.$message({
+                                    message: '操作成功',
+                                    type: 'success',
+                                    duration: 1500
+                                })
+                                this.handleClose()
+                                this.submitContrl = false
+                                this.dataForm = {
+                                    id: '',
+                                    authId: '',
+                                    createTime: '',
+                                    updateTime: '',
+                                    affairTime: '',
+                                    affairStatus: '',
+                                    affairCode: '',
+                                    affairType: '',
+                                    regCode: '',
+                                    district: '',
+                                    street: '',
+                                    community: '',
+                                    location: '',
+                                    complainantName: '',
+                                    complainantPhone: '',
+                                    affairInfo: '',
+                                    createUserId: '',
+                                    transferTime: '',
+                                    transferUser: '',
+                                    transferInfo: '',
+                                    processUser: '',
+                                    transferSignTime: '',
+                                    updatePerson: '',
+                                    comeFrom: '',
+                                    version: '',
+                                    orgId: '',
+                                    remarks: '',
+                                    isdel: ''
+                                }
+                                this.submitTime = ''
+                            } else {
+                                this.$message.error(data.msg);
+                                var _this = this;
+                                setTimeout(function () {
+                                    _this.submitContrl = false;
+                                }, 1000);
+                            }
+                        }).catch(e=>{
+                            loading.close();
+                        })
+                    }
+                })
+            },
+            handleClose() {
+                this.dialogVisible = false
+            },
+            // 表单提交
+            dataFormSubmit () {
+                if (!this.$store.state.user.communityId) {
+                    this.$alert('您无绑定社区,请联系管理员', '注意', {
+                        confirmButtonText: '确定',
+                        callback: action => {}
+                    })
+                    return
+                }
+                if (!this.dataForm.complainantName) {
+                    this.$message.error('请输入投诉人')
+                    return
+                }
+                if (!this.dataForm.complainantPhone) {
+                    this.$message.error('请输入投诉人电话')
+                    return
+                }
+                if (isMobile(this.dataForm.complainantPhone)==false&&isPhone(this.dataForm.complainantPhone)==false) {
+                    this.$message.error('请输入正确的电话')
+                    return
+                }
+                if (!this.dataForm.affairType && this.dataForm.affairType !== 0) {
+                    this.$message.error('请选择投诉类型')
+                    return
+                }
+                if (!this.dataForm.regCode) {
+                    this.$message.error('请输入电梯编号')
+                    return
+                } else {
+                    if (this.dataForm.regCode.replace(/-/g, '').length !== 20) {
+                        this.$message.error('请输入20或23位设备编码')
+                        return
+                    }
+                }
+                if (!this.submitTime) {
+                    this.$message.error('请选择投诉时间')
+                    return
+                }
+                if (!this.dataForm.location) {
+                    this.$message.error('请输入电梯地址')
+                    return
+                }
+                if (!this.dataForm.affairInfo) {
+                    this.$message.error('请输入投诉内容')
+                    return
+                }
+                this.dataForm.affairTime = formatDate(this.submitTime, 'yyyy-MM-dd hh:mm:ss')
+                this.dialogVisible = true
+            },
+            // 
+             handleElevatorSelect(){
+                this.elevatorDialogVisible = true;
+                // 选择电梯
+             },
+            elevatorSelectConfirm(){
+                console.log('确认选择');
+                this.dataForm.regCode =  this.queryElevatorForm.regCode;
+                this.dataForm.location=  this.location;
+                this.elevatorDialogVisible = false;
+            },
+            elevatorSelectCancel(){
+                console.log('取消选择');
+                this.elevatorDialogVisible = false;
+                this.queryElevatorForm.regCode = '';
+                this.queryElevatorForm.xiaoqu = '';
+            },
+            elevatorChange(e){
+                console.log(e);
+                console.log('电梯选择改变');
+                this.queryElevatorForm.regCode = e.regCode;
+                this.queryElevatorForm.xiaoqu = e.xiaoqu;
+                this.location = e.location;
+            },
+            //页条数改变
+            sizeChangeHandle (val) {
+                this.pageSize = val
+                this.pageIndex = 1
+                this.getDataList()
+            },
+            // 改变当前页
+            currentChangeHandle (val) {
+                this.pageIndex = val
+                this.getDataList()
+            },
+        },
+       
+    }
+</script>
+
+<style scoped lang="scss">
+    .submit-button {
+        width: 140px;
+        height: 40px;
+        display: block;
+        margin: 0 auto;
+    }
+
+    .submit-container {
+        .el-form-item {
+            vertical-align: middle;
+            width: 30%;
+            .el-date-editor {
+                width: 100%;
+            }
+            .el-input {
+                input {
+                    width: 100%;
+                }
+            }
+            display: inline-block;
+            &.location {
+                display: block;
+                width: 100%;
+            }
+        }
+    }
+</style>
+<style lang="scss">
+    .noMargin {
+        margin-bottom: 0;
+        .el-dialog__body {
+            padding: 30px 20px !important;
+        }
+    }
+</style>

@@ -1,0 +1,513 @@
+<template>
+    <el-dialog :modal="false" :title="!dataForm.id ? '新增' : '修改'" :close-on-click-modal="false" :visible.sync="visible"
+               :fullscreen="true">
+        <el-form :model="dataForm" :rules="dataRule" ref="dataForm" @keyup.enter.native="dataFormSubmit()"
+                 label-width="95px">
+            <!-- 使用eleUI布局 -->
+            <el-row>
+                <el-col :span="12">
+                    <el-form-item label="员工编号">
+                        <el-input v-if="this.dataForm.id" v-model="dataForm.id" placeholder="员工编号" readonly></el-input>
+                        <span v-else style="color: red;">编号由系统自动生成</span>
+                    </el-form-item>
+                    <!--<el-form-item label="所属社区(TODO)" prop="communityId" v-if="!!dataForm.id">-->
+                        <!--<el-input v-model="dataForm.communityId" class="input-with-select" placeholder="请选择部门" readonly-->
+                                  <!--clearable>-->
+                            <!--<el-button slot="append" icon="el-icon-search" @click="departmentQueryHandle()"></el-button>-->
+                        <!--</el-input>-->
+                    <!--</el-form-item>-->
+                </el-col>
+
+                <!--<el-col :span="12">-->
+                    <!--<el-form-item label="员工头像">-->
+                        <!--&lt;!&ndash; 使用eleUI图像组件 &ndash;&gt;-->
+                        <!--<el-upload class="avatar-uploader" action="https://jsonplaceholder.typicode.com/posts/"-->
+                                   <!--:show-file-list="true"-->
+                                   <!--:on-success="handleAvatarSuccess" :before-upload="beforeAvatarUpload"-->
+                                   <!--:auto-upload="false">-->
+                            <!--<img v-if="imageUrl" :src="imageUrl" class="avatar">-->
+                            <!--<i v-else class="el-icon-plus avatar-uploader-icon"></i>-->
+                        <!--</el-upload>-->
+                    <!--</el-form-item>-->
+                <!--</el-col>-->
+            </el-row>
+            <el-row>
+                <el-col :span="12">
+                    <el-form-item label="昵称" prop="nickName">
+                        <el-input v-model.trim="dataForm.nickName" placeholder="昵称" clearable></el-input>
+                    </el-form-item>
+                </el-col>
+                <el-col :span="12">
+                    <el-form-item label="用户名" prop="userName">
+                        <el-input v-model.trim="dataForm.userName" placeholder="登录名" clearable></el-input>
+                    </el-form-item>
+                </el-col>
+            </el-row>
+           <!-- <tree :option="treeOption" v-on:getTreeData="treeParams" style="width: 100%"></tree> -->
+		    <el-row>
+				
+		       <el-col :span="12">
+		         <el-form-item label="电子邮件" prop="email">
+		             <el-input v-model.trim="dataForm.email" placeholder="电子邮件"></el-input>
+		         </el-form-item>
+		     </el-col>
+		       <el-col :span="12">
+		           <el-form-item label="手机" prop="mobile">
+		               <el-input v-model.trim="dataForm.mobile" placeholder="手机"></el-input>
+		           </el-form-item>
+		       </el-col>
+		   </el-row>
+		   
+		   <el-row>
+			   	<el-col :span="12">
+			       <el-form-item label="单位类型" prop="unitType">
+			           <el-select v-model="dataForm.unitType" clearable placeholder="请选择">
+			               <el-option v-for="item in optionUnitType" :key="item.value" :label="item.label"
+			                          :value="item.value">
+			               </el-option>
+			           </el-select>
+			       </el-form-item>
+			   </el-col>
+		       
+		       <el-col :span="10">
+		           <el-form-item label="单位名称" prop="unitName">
+		               <el-input v-model.trim="dataForm.unitName" placeholder="单位名称"></el-input>
+		           </el-form-item>
+		       </el-col>
+			   <el-button 
+			    type="primary" @click="unitSelect()">选择</el-button>
+		   </el-row>
+           
+			<el-row>
+				<el-col :span="12">
+				    <el-form-item label="职务" prop="job">
+				        <el-input v-model.trim="dataForm.job" placeholder="职务"></el-input>
+				    </el-form-item>
+				</el-col>
+                <el-col :span="12">
+                    <el-form-item label="状态" prop="status">
+                        <el-select v-model="dataForm.status" clearable placeholder="请选择">
+                            <el-option v-for="item in optionStatus" :key="item.value" :label="item.label"
+                                       :value="item.value">
+                            </el-option>
+                        </el-select>
+                    </el-form-item>
+                </el-col>
+               
+			
+                <!--<el-col :span="12">-->
+                    <!--<el-form-item label="身份证" prop="idcard">-->
+                        <!--<el-input v-model="dataForm.idcard" placeholder="身份证"></el-input>-->
+                    <!--</el-form-item>-->
+                <!--</el-col>-->
+            </el-row>
+			
+			 
+<el-row>
+            <el-col :span="12">
+               <el-form-item label="性别" prop="sex">
+                   <el-select v-model="dataForm.sex" clearable placeholder="请选择">
+                       <el-option v-for="item in optionSex" :key="item.value" :label="item.label"
+                                  :value="item.value">
+                       </el-option>
+                   </el-select>
+               </el-form-item>
+           </el-col>
+		   
+		    <el-col :span="12" v-if="!dataForm.id">
+		       <el-form-item label="密码" prop="password">
+		           <el-input v-model.trim="dataForm.password" placeholder="密码" clearable></el-input>
+		       </el-form-item>
+		   </el-col>
+		</el-row>	
+        </el-form>
+        <span slot="footer" class="dialog-footer">
+			<e-button ref="eproButton1" v-on:handleClick="handleClick" :parentId="'2'" :busType="'edit'"></e-button>
+		</span>
+
+        <department-query-dailog v-if="departmentQueryDailogVisible" ref="departmentQuery"
+                                 @getDepartment="getDepartment">
+
+        </department-query-dailog>
+	<other-unit v-if="otherUintListVisible" ref="otherUnit" @refreshDataList="selectUnit"></other-unit> 
+	<!-- @refreshDataList="selectUnit" -->
+    </el-dialog>
+</template>
+
+<script>
+    import {
+        isEmail,
+        isMobile,
+        isPassword
+    } from '@/utils/validate'
+    import departmentQueryDailog from '@/views/modules/commons/department-query-dialog'
+    import tree from '@/components/tree-select/tree-select'
+	import otherUnit from '@/views/modules/sys/user/otherunitList'
+    const { md5 } = require("@/utils/md5.js");
+    export default {
+        components: {
+            departmentQueryDailog,
+            tree,
+			otherUnit
+        },
+        data() {
+            var validateEmail = (rule, value, callback) => {
+                if (!isEmail(value)) {
+                    callback(new Error('邮箱格式错误'))
+                } else {
+                    callback()
+                }
+            }
+            var validateMobile = (rule, value, callback) => {
+                if (!isMobile(value)) {
+                    callback(new Error('手机号格式错误'))
+                } else {
+                    callback()
+                }
+            }
+            return {
+                treeOption: {
+                    district: {},
+                    stree: {},
+                    community: {}
+                },
+                visible: false,
+				otherUintListVisible:false,
+                roleList: [],
+                departmentQueryDailogVisible: false,
+                dataForm: {
+                    id: '',
+					password: '',
+                    userName: '',
+                    nickName: '',
+                    sex: '',
+                    birth: null,
+                    jobtitle: '',
+                    homeaddr: '',
+                    hometel: '',
+                    bgdh: '',
+                    mobile: '',
+                    // password: '',
+                    // comfirmPassword: '',
+                    email: '',
+                    status: 1,
+					unitType:'',
+                    departmentId: '',
+                    departmentName: '',
+                    jsxxType: '',
+                    idcard: '',
+                    communityId: '',
+                    roleIdList: [],
+                    district: {
+                        value: '',
+                        label: ''
+                    },
+                    street: {
+                        value: '',
+                        label: ''
+                    },
+                    community: {
+                        value: '',
+                        label: ''
+                    }
+                },
+                optionReceiveType: [{
+                    value: '1',
+                    label: '催单短信'
+                }, {
+                    value: '2',
+                    label: '投诉短信'
+                }, {
+                    value: '3',
+                    label: '全部短信'
+                }, {
+                    value: '4',
+                    label: '不接收'
+                }],
+                optionStatus: [{
+                    value: 1,
+                    label: '有效'
+                }, {
+                    value: 0,
+                    label: '无效'
+                }],
+                optionSex: [{
+                    value: '1',
+                    label: '男'
+                }, {
+                    value: '0',
+                    label: '女'
+                }],
+				 optionUnitType: [{
+				    value: '1',
+				    label: '业主单位'
+				}, {
+				    value: '2',
+				    label: '物业单位'
+				},{
+				    value: '3',
+				    label: '维保单位'
+				},{
+				    value: '4',
+				    label: '仓库单位'
+				}],
+				unitId: '',
+				unitName: '发货费',
+                value: '',
+                dataRule: {
+                    nickName: [{
+                        required: true,
+                        message: '昵称不能为空',
+                        trigger: 'blur'
+                    }],
+                    userName: [{
+                        required: true,
+                        message: '用户名不能为空',
+                        trigger: 'blur'
+                    }],
+                    email: [{
+                        required: true,
+                        message: '邮箱不能为空',
+                        trigger: 'blur'
+                    },
+                        {
+                            validator: validateEmail,
+                            trigger: 'blur'
+                        }
+                    ],
+                    mobile: [{
+                        required: true,
+                        message: '手机号不能为空',
+                        trigger: 'blur'
+                    },
+                        {
+                            validator: validateMobile,
+                            trigger: 'blur'
+                        }
+                    ]
+                },
+                imageUrl: '',
+				//unitList: []
+            }
+        },
+        methods: {
+            treeParams (data) {
+                this.dataForm.district = data['district']
+                this.dataForm.street = data['street']
+                this.dataForm.community = data['community']
+                console.log(this.dataForm)
+            },
+            handleClick(method, param) {
+                if (param === 'undefined') {
+                    this.$options.methods[method].bind(this)();
+                } else {
+                    this.$options.methods[method].bind(this, param)();
+                }
+            },
+            //部门查询
+            departmentQueryHandle() {
+                this.departmentQueryDailogVisible = true;
+                this.$nextTick(() => {
+                    this.$refs.departmentQuery.init()
+                })
+            },
+            //部门数据回填
+            getDepartment(var1, var2) {
+                this.dataForm.departmentId = var1;
+                this.dataForm.departmentName = var2;
+            },
+            //图片上传
+            handleAvatarSuccess(res, file) {
+                this.imageUrl = URL.createObjectURL(file.raw);
+            },
+            beforeAvatarUpload(file) {
+                const isJPG = file.type === 'image/jpeg';
+                const isLt2M = file.size / 1024 / 1024 < 2;
+                if (!isJPG) {
+                    this.$message.error('上传头像图片只能是 JPG 格式!');
+                }
+                if (!isLt2M) {
+                    this.$message.error('上传头像图片大小不能超过 2MB!');
+                }
+                return isJPG && isLt2M;
+            },
+
+            init (id) {
+                this.dataForm.id = id || null
+                this.$http({
+                    url: this.$http.adornUrl('/sys/role/select'),
+                    method: 'get',
+                    params: this.$http.adornParams()
+                }).then(({
+                             data
+                         }) => {
+                    this.roleList = data && data.code === 0 ? data.list : []
+                }).then(() => {
+                    this.visible = true
+                    this.$nextTick(() => {
+                        this.$refs['dataForm'].resetFields()
+                    })
+                }).then(() => {
+                    if (this.dataForm.id) {
+                        this.$http({
+                            url: this.$http.adornUrl(`/sys/user/info/${this.dataForm.id}`),
+                            method: 'get',
+                            params: this.$http.adornParams()
+                        }).then(({
+                                     data
+                                 }) => {
+                            if (data && data.code === 0) {
+                                this.treeOption = {
+                                    district: {
+                                        label: '',
+                                        value: data.user.areacode ? data.user.areacode.length > 4 ? data.user.areacode.substring(4, 6) : '00' : '00'
+                                    },
+                                    street: {
+                                        label: '',
+                                        value: data.user.areacode ? data.user.areacode.length > 7 ? data.user.areacode.substring(6, 9) : '000' : '000'
+                                    },
+                                    community: {
+                                        label: '',
+                                        value: data.user.communityId
+                                    }
+                                }
+                                Object.assign(this.dataForm, this.treeOption)
+                                this.dataForm.nickName = data.user.nickname
+                                this.dataForm.userName = data.user.username
+                                this.dataForm.email = data.user.email
+								this.dataForm.unitId = data.user.unitId
+								this.dataForm.unitType = data.user.unitType
+								this.dataForm.job = data.user.job
+                                this.dataForm.mobile = data.user.mobile
+                                this.dataForm.roleIdList = data.user.roleIdList
+                                this.dataForm.status = data.user.status
+                                this.dataForm.sex = data.user.sex
+                                this.dataForm.birth = data.user.birth
+                                this.dataForm.jobtitle = data.user.jobtitle
+                                this.dataForm.homeaddr = data.user.homeaddr
+                                this.dataForm.bgdh = data.user.bgdh
+                                this.dataForm.mobile = data.user.mobile
+                                this.dataForm.departmentId = data.user.bmId
+                                this.dataForm.departmentName = data.user.bmName
+                                this.dataForm.jsxxType = data.user.jsxxType
+                                this.dataForm.idcard = data.user.idcard
+                                this.community = data.user.communityId
+                            }
+                        })
+                    } else {
+                        //表单信息重置
+                        this.$refs['dataForm'].resetFields()
+                    }
+                })
+            },
+            cancel() {
+                this.visible = false;
+            },
+            // 表单提交
+            dataFormSubmit() {
+                this.$refs['dataForm'].validate((valid) => {
+                    if (valid) {
+                        //区域代码
+                        var areacode = "4401";
+                        if (this.dataForm.district.value && this.dataForm.district.value !== '00' && this.dataForm.district.value.length === 2) {
+                            areacode +=  this.dataForm.district.value;
+                        }
+                        if (this.dataForm.street.value && this.dataForm.street.value !== '000' && this.dataForm.street.value.length === 3) {
+                            areacode += this.dataForm.street.value;
+                        }
+
+                        console.log(this.dataForm)
+						if(this.dataForm.id){
+							this.dataForm.password=null
+						}else{
+							this.dataForm.password=md5(this.dataForm.password)
+						}
+                        this.$http({
+                            url: this.$http.adornUrl(`/sys/user/${!this.dataForm.id ? 'save' : 'update'}`),
+                            method: 'post',
+                            data: this.$http.adornData({
+                                'userId': this.dataForm.id || undefined,
+                                'username': this.dataForm.userName,
+                                // 'username': this.dataForm.mobile,
+                                'nickname': this.dataForm.nickName,
+                                // 'password': this.dataForm.password,
+                                'email': this.dataForm.email,
+                                'mobile': this.dataForm.mobile,
+                                'status': this.dataForm.status,
+								'password':this.dataForm.password ,
+                                // 'roleIdList': this.dataForm.roleIdList
+                                'sex': this.dataForm.sex,
+                                'communityId': this.dataForm.community.value,
+                                'areacode': areacode,
+                                'idcard': this.dataForm.idcard,
+								'unitId': this.dataForm.unitId ,
+								'unitType': this.dataForm.unitType,
+								'job': this.dataForm.job 
+                            })
+                        }).then(({
+                                     data
+                                 }) => {
+                            if (data && data.code === 0) {
+                                this.$message({
+                                    message: '操作成功',
+                                    type: 'success',
+                                    duration: 1500,
+                                    onClose: () => {
+                                        this.visible = false
+                                        this.$emit('refreshDataList')
+                                    }
+                                })
+                            } else {
+                                this.$message.error(data.msg)
+                            }
+                        })
+                    }
+                })
+            },
+			selectUnit(data){
+				alert(data.id)
+				this.dataForm.unitId=data.id;
+				this.dataForm.unitName=data.unitName;
+				console.log(this.dataForm)
+				
+			},
+			 unitSelect() {
+			    this.otherUintListVisible = true
+				/* alert(this.dataForm.unitType) */
+				let type=this.dataForm.unitType
+			    this.$nextTick(() => {
+			      this.$refs.otherUnit.init(type)
+			    })
+			},
+        }
+    }
+</script>
+
+<style>
+    .avatar-uploader .el-upload {
+        border: 1px dashed #d9d9d9;
+        border-radius: 6px;
+        cursor: pointer;
+        position: relative;
+        overflow: hidden;
+    }
+
+    .avatar-uploader .el-upload:hover {
+        border-color: #409EFF;
+    }
+
+    .avatar-uploader-icon {
+        font-size: 28px;
+        color: #8c939d;
+        width: 178px;
+        height: 178px;
+        line-height: 178px;
+        text-align: center;
+    }
+
+    .avatar {
+        width: 178px;
+        height: 178px;
+        display: block;
+    }
+</style>

@@ -1,0 +1,127 @@
+<template>
+	<!-- 部门列表的查询组件 -->
+	<el-dialog title="部门选择" :modal="false" :visible.sync="dialogVisible" width="70%">
+		<el-form :inline="true" :model="dataForm" @keyup.enter.native="getDataList()">
+			<el-form-item>
+				<el-input v-model="dataForm.keyword" placeholder="部门ID/部门名称" clearable></el-input>
+			</el-form-item>
+			<el-form-item>
+				<el-button icon="el-icon-search" type="primary" @click="query">查询</el-button>
+			</el-form-item>
+		</el-form>
+		<el-table @header-dragend="handleDragend" :data="dataList" border v-loading="dataListLoading" style="width: 100%;">
+			<el-table-column prop="depId" header-align="center" align="center" width="80" label="ID">
+			</el-table-column>
+			<el-table-column prop="name" header-align="center" align="center" label="部门名称">
+			</el-table-column>
+			<el-table-column fixed="right" header-align="center" align="center" width="150" label="操作">
+				<template slot-scope="scope">
+					<el-button size="mini" @click="handleChoose(scope.$index, scope.row)">选择</el-button>
+				</template>
+			</el-table-column>
+		</el-table>
+		<el-pagination @size-change="sizeChangeHandle" @current-change="currentChangeHandle" :current-page="pageIndex"
+		 :page-sizes="[10, 20, 50, 100]" :page-size="pageSize" :total="totalPage" layout="total, sizes, prev, pager, next, jumper">
+		</el-pagination>
+	</el-dialog>
+</template>
+
+<script>
+    import config from '@/utils/config.js'
+	export default {
+		props: {
+			//全查询
+			isALL: {
+				type: String,
+			},
+			//父级部门
+			bossDepartmentId: {
+				type: String
+			}
+		},
+		data() {
+			return {
+				dataForm: {
+					keyword: ''
+				},
+				dialogVisible: false,
+				dataList: [],
+				pageIndex: 1,
+				pageSize: 10,
+				totalPage: 0,
+				dataListLoading: false,
+				dataListSelections: [],
+				addOrUpdateVisible: false
+			}
+		},
+		activated() {
+			this.getDataList()
+		},
+		components: {},
+		methods: {
+            handleDragend (n, o, a, b) {
+                config.tableDragendHandle(n, o, a)
+            },
+			//初始化
+			init() {
+				this.dialogVisible = true;
+				var url = '/sys/department/queryList';
+				var param = {
+					'page': this.pageIndex,
+					'limit': this.pageSize
+				};
+				this.getDataList(url,param);
+			},
+			//查询
+			query() {
+				var url = '/sys/department/queryList';
+				var param = {
+					'page': this.pageIndex,
+					'limit': this.pageSize,
+					'keyword': this.dataForm.keyword
+				};
+				this.getDataList(url,param);
+			},
+			//部门选择
+			handleChoose(index, row){
+				this.$emit('getDepartment',row.depId,row.name);
+				this.dialogVisible = false;
+				// this.$emit('refreshDataList')
+			},
+			// 获取数据列表
+			getDataList(url,param) {
+				this.dataListLoading = true
+				this.$http({
+					url: this.$http.adornUrl(url),
+					method: 'get',
+					params: this.$http.adornParams(param)
+				}).then(({
+					data
+				}) => {
+					if (data && data.code === 0) {
+						this.dataList = data.page.list
+						this.totalPage = data.page.totalCount
+					} else {
+						this.dataList = []
+						this.totalPage = 0
+					}
+					this.dataListLoading = false
+				})
+			},
+			// 每页数
+			sizeChangeHandle(val) {
+				this.pageSize = val
+				this.pageIndex = 1
+				this.getDataList()
+			},
+			// 当前页
+			currentChangeHandle(val) {
+				this.pageIndex = val
+				this.getDataList()
+			},
+		}
+	}
+</script>
+
+<style>
+</style>

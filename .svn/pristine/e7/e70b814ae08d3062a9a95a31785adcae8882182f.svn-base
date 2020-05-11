@@ -1,0 +1,188 @@
+.el-button {
+    font-size: 14px;
+    height: 44px;
+    &.is-disabled {
+        opacity: .6 !important;
+    }
+    .icon-edit, .icon-back {
+        width: 16px;
+        height: 16px;
+        vertical-align: sub;
+    }
+    .icon-edit {
+        background: url("~@/assets/img/icon-edit.png");
+    }
+    .icon-back {
+        width: 17px;
+        height: 17px;
+        background: url("~@/assets/img/icon-back.png");
+    }
+    .icon-query {
+        width: 13px;
+        height: 14px;
+        background: url("~@/assets/img/icon-query.png");
+    }
+    .icon-new {
+        width: 14px;
+        height: 15px;
+        background: url("~@/assets/img/icon-new.png");
+    }
+    .icon-dele {
+        width: 15px;
+        height: 15px;
+        background: url("~@/assets/img/icon-dele.png");
+    }
+    .icon-import {
+        width: 16px;
+        height: 16px;
+        background: url("~@/assets/img/icon-import.png");
+    }
+    .icon-sign {
+        width: 21px;
+        height: 17px;
+        background: url("~@/assets/img/icon-sign.png");
+    }
+}
+ .icon-back {
+     width: 17px;
+     height: 17px;
+     background: url("~@/assets/img/icon-back.png");
+ }
+.el-button--primary {
+    background-color: $primary !important;
+    border-color: $primary !important;
+    &:focus, &:hover {
+        background: map_get($light-colors, blue) !important;
+        border-color: rgba(30, 30, 160, .9) !important;
+    }
+}
+.el-button--primary[disabled] {
+    background-color: $primary !important;
+    border-color: $primary !important;
+}
+
+.el-button--danger {
+    background-color: $danger !important;
+    border-color: $danger !important;
+    // color: $white !important;
+    &:focus,
+    &:hover {
+        background: rgba(255, 50, 50, 1) !important;
+        border-color: rgba(255, 50, 50, 1) !important;
+        // color: $white !important;
+    }
+}
+.el-button--danger[disabled] {
+    background-color: $danger !important;
+    border-color: $danger !important;
+}
+
+.el-button--add {
+    background-color: $add !important;
+    border-color: $add !important;
+    color: $white !important;
+    &:focus,
+    &:hover{
+         background-color: map_get($light-colors, add) !important;
+         border-color: map_get($light-colors, add) !important;
+    }
+}
+
+.el-button--add[disabled] {
+    background-color: $add !important;
+    border-color: $add !important;
+}
+
+.el-button--query {
+    background-color: $query !important;
+    border-color: $query !important;
+    color: $white !important;
+    &:focus,
+    &:hover {
+        background:map_get($light-colors, warning) !important;
+        border-color: map_get($light-colors, warning) !important;
+        // color: $white !important;
+    }
+}
+
+.el-button--query[disabled] {
+    background-color: $query !important;
+    border-color: $query !important;
+}
+
+
+
+.el-button--delete {
+    background-color: $delete !important;
+    border-color: $delete !important;
+    color: $white !important;
+    &:focus,
+    &:hover {
+        background: map_get($light-colors, danger)!important;
+        border-color: map_get($light-colors, danger) !important;    
+        // color: $white !important;
+    }
+}
+
+.el-button--delete[disabled] {
+    background-color: $delete !important;
+    border-color: $delete !important;
+}
+.el-button--save {
+    background-color: $save !important;
+    border-color: $save !important;
+    color: $white !important;
+    &:focus,
+    &:hover {
+        background: map_get($light-colors, blue) !important;
+        border-color: map_get($light-colors, blue) !important;
+        color: $white !important;
+    }
+}
+.el-button--save[disabled] {
+    background-color: $save !important;
+    border-color: $save !important;
+    color: $white !important;
+}
+
+
+.el-button--edit {
+    background-color: $edit!important;
+    border-color: $danger !important;
+
+    // color: $white !important;
+    &:focus,
+    &:hover {
+        background: rgba(255, 50, 50, 1) !important;
+        border-color: rgba(255, 50, 50, 1) !important;
+        // color: $white !important;
+    }
+}
+
+.el-button--edit[disabled] {
+    background-color: $edit !important;
+    border-color: $edit !important;
+}
+
+.el-button--back {
+    background-color: $success !important;
+    border-color: $success !important;
+    color: $white !important;
+
+    &:focus,
+    &:hover {
+        background: rgba(67, 178, 54, .9) !important;
+        border-color: rgba(67, 178, 54, .9) !important;
+        color: $white !important;
+    }
+}
+ .el-button--import {
+     background-color: #d26f83 !important;
+     border-color: #d26f83 !important;
+     color: $white !important;
+     &:focus, &:hover {
+         background: rgba(210,111,131, .9) !important;
+         border-color: rgba(210,111,131, .9) !important;
+         color: $white !important;
+     }
+ }

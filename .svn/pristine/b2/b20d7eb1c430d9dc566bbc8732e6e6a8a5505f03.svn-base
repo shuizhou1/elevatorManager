@@ -1,0 +1,57 @@
+export default {
+    data(){
+      return {
+        areaData:[]
+      }
+    },
+    created(){
+      this.getAreaData();
+    },
+    methods: {
+        getAreaData() {
+            this.$http({
+                    url: this.$http.adornUrl("/district/district/alllist"),
+                    method: "get",
+                    params: this.$http.adornParams(this.formData)
+                })
+                .then(({
+                    data
+                }) => {
+                    if (data && data.code == 0) {
+                        console.log("地区数据", data.list);
+                        let areaData = [];
+                        data.list.forEach(item => {
+                            let city = [];
+                            item.sonLevel.forEach(value => {
+                                let area = [];
+                                value.sonLevel.forEach(lump => {
+                                    area.push({
+                                        value: lump.id,
+                                        label: lump.districtName
+                                    });
+                                });
+                                city.push({
+                                    value: value.id,
+                                    label: value.districtName,
+                                    children: area
+                                });
+                            });
+                            areaData.push({
+                                value: item.id,
+                                label: item.districtName,
+                                children: city
+                            });
+                        });
+                        this.areaData = areaData;
+                        console.log("地区data", areaData);
+                    }
+                })
+                .catch(e => {
+                    console.log(e);
+                });
+        },
+        handleAreaChange(e){
+          console.log('地区改变',e);
+        }
+    }
+}

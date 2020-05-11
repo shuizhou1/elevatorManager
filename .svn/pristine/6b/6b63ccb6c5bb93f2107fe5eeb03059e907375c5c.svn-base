@@ -1,0 +1,146 @@
+<!--  -->
+<template>
+    <el-dialog
+      :modal="false"
+      :visible.sync="visible"
+      v-loading="loading"
+      title="请选择困人原因"
+      width="35%"
+      center
+    >
+      <!-- <div slot="title" class="dialog_headslot">
+        困人详情
+        <el-button @click="visible=false" style="margin-left:20px">返回</el-button>
+      </div> -->
+      <el-form class="dialog_head_form" :rules="rules" :model="formData" label-width="auto">
+        <el-row :gutter="40">
+          <el-col :span="18">
+            <el-form-item prop="reason" label="">
+              <el-cascader
+                v-model="reason"
+                :options="dataList"
+                @change="handleChange"
+                clearable
+              ></el-cascader>
+            </el-form-item>
+          </el-col>
+          <el-col :span="6"><el-button type="primary" @click="handleConfirm">确定</el-button></el-col>
+        </el-row>
+        <!-- <div class="button_wraper"></div> -->
+      </el-form>
+    </el-dialog>
+</template>
+
+<script>
+export default {
+  data() {
+    return {
+      visible: false,
+      loading: false,
+      reason:[],
+
+      dataList: [
+      ],
+      formData: {
+        reason: "",
+
+      },
+      rules: {},
+      id:''
+    };
+  },
+  components: {},
+  methods: {
+    init(id) {
+      this.visible = true;
+      this.id = id;
+      this.reason = [];
+      this.getDataList();
+    },
+    getDataList() {
+      this.$http({
+        url: this.$http.adornUrl("/elevFaulttype/elevfaulttype/twoLevel"),
+        method: "get",
+        params: this.$http.adornParams({})
+      })
+        .then(({ data }) => {
+          if (data && data.code == 0) {
+            console.log("data", data);
+            let arr = [];
+            data.list.forEach(item=>{
+              let arr1 = []
+              item.list.forEach(reson=>{
+                arr1.push({
+                  value:reson.fatid,
+                  label:reson.fatname
+                })
+              })
+              arr.push({
+                value:item.fatid,
+                label:item.fatname,
+                children:arr1
+              })
+            })
+            console.log('arr',arr)
+            this.dataList = arr;
+          }
+        })
+        .catch(e => {
+          console.log(e);
+        });
+    },
+    handleChange(e){
+      console.log('change',e);
+      
+    },
+    handleConfirm(e){
+      console.log('confirm',e);
+      console.log('reson',this.reason)
+      if(!this.reason.length){
+        this.$message({
+          type:'warning',
+          message:'请选择困人原因',
+          duration:1000
+        })
+      }else {
+        // this.$emit('confirm',this.reson)
+        // this.visible = false;
+        this.formSubmit();
+      }
+    },
+    formSubmit() {
+      this.loading = true;
+      this.$http({
+        url: this.$http.adornUrl("/elevatorwarning/elevatorwarning/update"),
+        method: "post",
+        data: this.$http.adornData({
+          id:this.id,
+          faultOneLevelId:this.reason[0],
+          faultTwoLevelId:this.reason[1]
+        })
+      })
+        .then(({ data }) => {
+          this.loading = false;
+          if (data && data.code == 0) {
+            console.log('保存成功')
+            this.$message({
+              type:'success',
+              message:'保存成功',
+              duration:1500,
+              onClose:()=>{
+                this.visible = false;
+                this.$emit('refreshData');
+              }
+            })
+          }
+        })
+        .catch(e => {
+          console.log(e);
+          this.loading = false;
+        });
+    }
+  }
+};
+</script>
+<style scoped>
+</style>

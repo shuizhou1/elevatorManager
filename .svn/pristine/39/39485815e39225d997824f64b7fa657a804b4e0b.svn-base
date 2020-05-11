@@ -1,0 +1,361 @@
+<template>
+  <el-dialog
+    :close-on-click-modal="false"
+    :show-close="false"
+    :fullscreen="true"
+    :modal="false"
+    :visible.sync="visible"
+    :v-loading="loading"
+  >
+    <div slot="title">{{!this.formData.id ? '新增' : '修改'}}</div>
+    <div class="repair_header">
+      <div>设备信息</div>
+      <el-button @click="showElevatorList" style="height:36px" v-if="!formData.id">选择</el-button>
+    </div>
+    <div class="form-view-wraper">
+      <el-row>
+        <el-col :span="8">
+          <div class="form-view-item">
+            电梯注册码：
+            <span>{{formData.regCode}}</span>
+          </div>
+        </el-col>
+        <el-col :span="8">
+          <div class="form-view-item">
+            维保单位：
+            <span>{{formData.maintenanceName}}</span>
+          </div>
+        </el-col>
+      </el-row>
+      <el-row>
+        <el-col :span="8">
+          <div class="form-view-item">
+            电梯类型：
+            <span>{{type}}</span>
+          </div>
+        </el-col>
+        <el-col :span="16">
+          <div class="form-view-item">
+            电梯地址：
+            <span>{{formData.local}}</span>
+          </div>
+        </el-col>
+      </el-row>
+    </div>
+    <el-form
+      :model="formData"
+      :rules="rules"
+      ref="form"
+      :disabled="formData.repairStutas!=0"
+      @keyup.enter.native="dataFormSubmit()"
+      class="form"
+      label-width="auto"
+    >
+      <el-row :gutter="30">
+        <el-col :span="8">
+          <el-form-item label="是否应急维修" prop="urgent">
+            <el-select placeholder="请选择" :disabled="unitType!=3" v-model="formData.urgent" clearable>
+              <el-option
+                v-for="item in options"
+                :key="item.value"
+                :label="item.label"
+                :value="item.value"
+              ></el-option>
+            </el-select>
+          </el-form-item>
+        </el-col>
+        <el-col :span="8">
+          <el-form-item label="申请人" prop="applicant">
+            <el-input v-model="formData.applicant" :disabled="unitType!=3" clearable></el-input>
+          </el-form-item>
+        </el-col>
+        <el-col :span="8">
+          <el-form-item label="联系电话" prop="applicantPhone">
+            <el-input v-model="formData.applicantPhone" :disabled="unitType!=3" clearable></el-input>
+          </el-form-item>
+        </el-col>
+      </el-row>
+      <!-- <el-row :gutter="30">
+          
+      </el-row>-->
+      <el-row :gutter="30">
+        <el-col :span="24">
+          <el-form-item label="故障原因" prop="remarks">
+            <el-input type="textarea" v-model="formData.remarks" :disabled="unitType!=3" clearable></el-input>
+          </el-form-item>
+        </el-col>
+      </el-row>
+      <el-row :gutter="30">
+        <el-col :span="24">
+          <el-form-item label="损害情况" prop="component">
+            <el-input type="textarea" v-model="formData.component" :disabled="unitType!=3" clearable></el-input>
+          </el-form-item>
+        </el-col>
+      </el-row>
+       <el-row :gutter="30" v-if="canExam&&formData.repairStutas==0||canExam&&formData.repairStutas==3">
+        <el-col :span="24">
+          <el-form-item label="审核不通过原因" prop="auditReason">
+            <el-input type="textarea" v-model="formData.auditReason" clearable></el-input>
+          </el-form-item>
+        </el-col>
+      </el-row>
+      
+    </el-form>
+    <div class="dialog_footer">
+      <el-button type="success" v-if="formData.repairStutas==='0'&&isAuth('repairplan:pass')&&isunExamin||formData.repairStutas==3&&isAuth('repairplan:pass')&&isunExamin"  @click="handlePass(formData.repairStutas)">审核通过</el-button>
+      <el-button type="danger"  v-if="formData.repairStutas==='0'&&isAuth('repairplan:dispass')&&isunExamin||formData.repairStutas==3&&isAuth('repairplan:dispass')&&isunExamin" @click="handleDispass(formData.repairStutas)">审核不通过</el-button>
+      <el-button type="primary"  v-if="formData.repairStutas==0&&isAuth('repairplan:repairplan:qr')"  @click="dataFormSubmit()">确定</el-button>
+      <el-button @click="visible = false">返回</el-button>
+    </div>
+    <select-elevator
+      v-if="showElevatorDialog"
+      @confirm="elevatorSelectConfirm"
+      ref="elevatorSelect"
+    ></select-elevator>
+  </el-dialog>
+</template>
+
+<script>
+import { isMobile, isPhone } from "@/utils/validate";
+import selectElevator from "@/components/select-single-elevator.vue";
+export default {
+  components: {
+    selectElevator
+  },
+  created(){
+    console.log('created');
+  },
+  computed:{
+    isunExamin(){
+      // 物业单位/业主单位是否未审核
+      let unitType = this.$store.state.user.userInfo.unitType;
+      console.log(unitType);
+      if(unitType==2&&!this.formData.propertyId){
+        // 物业单位
+        return true;
+      }else if(unitType==1&&!this.formData.ownerId){
+        //业主单位
+        return true
+      }else {
+        return false;
+      }
+    },
+    unitType(){
+      return this.$store.getters['user/userInfo'].unitType;
+    },
+    canExam(){
+      return this.unitType == 1||this.unitType == 2;
+    }
+  },
+
+  data() {
+    var validateMobile = (rule, value, callback) => {
+      if (isMobile(value) || isPhone(value)) {
+        callback();
+      } else {
+        callback("申请人联系电话格式有误");
+      }
+    };
+
+    return {
+      loading:false,
+      visible: false,
+      showElevatorDialog: false,
+      type: "", //电梯类型
+      options: [
+        {
+          label: "是",
+          value: "1"
+        },
+        {
+          label: "否",
+          value: "2"
+        }
+      ],
+      formData: {
+        applicant: "", //申请人
+        applicantPhone: "", //申请人电话
+        urgent: "", //是否应急维修1应急维修2普通维修
+        regCode: "", //注册码
+        component: "", //损坏情况
+        remarks: "", //故障原因
+        maintenanceId: "", //维保单位id
+        maintenanceUnitName: "", //维保单位
+        elevatorStatus:'',//电梯类型
+        repairStutas:'',
+        propertyId: "", //物业单位id
+        depotId: "", //仓库id
+        ownerId: "", //业主id
+        propertyCheckTime: "", //物业申请确认时间
+        depotCheckTime: "", //仓库申请确认时间
+        ownerCheckTime: "", //业主申请确认时间
+        propertyRepairTime: "", //物业维修确认时间
+        depotRepairTime1: "", //
+        ownerRepairTime1: "", //
+        createUserId: "", //创建者ID
+        updatePerson: "" //修改人
+      },
+      rules: {},
+      addRules: {
+        component: [
+          {
+            required: true,
+            message: "损害情况不能为空"
+          }
+        ],
+        remarks: [
+          {
+            required: true,
+            message: "故障原因不能为空"
+          }
+        ],
+        urgent: [
+          {
+            required: true,
+            message: "请选择是否应急维修"
+          }
+        ],
+        applicant: [
+          {
+            required: true,
+            message: "申请人不能为空"
+          }
+        ],
+        applicantPhone: [
+          {
+            required: true,
+            message: "申请人联系电话不能为空"
+          },
+          {
+            validator: validateMobile
+          },{
+            trigger:'blur'
+          }
+        ],
+        regCode: [
+          {
+            required: true,
+            message: "注册码不能为空"
+          }
+        ]
+      }
+    };
+  },
+  watch: {
+    "formData.elevatorStatus"(val) {
+      console.log("watch200");
+      if (val == 1) {
+        this.type = "客梯";
+      } else if(val == 2){
+        this.type = "货梯";
+      }else {
+        this.type = ''
+      }
+    }
+  },
+  methods: {
+    init(id) {
+      console.log("id", id);
+      console.log("formData", this.formData);
+      this.formData.id = id;
+      this.visible = true;
+      this.$nextTick(() => {
+         this.$refs['form'].resetFields();
+         this.formData.regCode =  ''
+         this.formData.maintenanceName =  ''
+         this.formData.elevatorStatus =  ''
+         this.formData.local =  ''
+         this.formData.repairStutas =  ''//清空维修状态
+        if (this.formData.id) {
+          this.loading = true;
+          this.$http({
+            url: this.$http.adornUrl(
+              `/repairplan/repairplan/info/${this.formData.id}`
+            ),
+            method: "get",
+            params: this.$http.adornParams()
+          }).then(({ data }) => {
+            console.log(data);
+            if (data && data.code == 0) {
+              this.loading = false;
+              console.log(data);
+              let repairPlan = data.repairPlan;
+              this.formData = repairPlan;
+              // this.getElevatorInfo(data.repairPlan.regCode)
+            }
+          });
+        } 
+      });
+    },
+    showElevatorList() {
+      this.showElevatorDialog = true;
+      this.$nextTick(() => {
+        this.$refs.elevatorSelect.init(this.formData.regCode);
+      });
+    },
+    elevatorSelectConfirm(val) {
+      console.log("val232", val);
+      this.formData.regCode = val.regcode;
+      this.formData.maintenanceId = val.maintenanceid;
+      this.formData.local = val.locals;
+      this.formData.maintenanceName = val.unitname;
+      this.formData.elevatorStatus = val.elevatorstatus;
+    },
+    // 表单提交
+    dataFormSubmit() {
+      this.$refs["form"].validate(valid => {
+        if (valid) {
+          this.$http({
+            url: this.$http.adornUrl(
+              `/repairplan/repairplan/${!this.formData.id ? "save" : "update"}`
+            ),
+            method: "post",
+            data: this.$http.adornData(this.formData)
+          }).then(({ data }) => {
+            if (data && data.code === 0) {
+              this.$message({
+                message: "操作成功",
+                type: "success",
+                duration: 1500,
+                onClose: () => {
+                  this.visible = false;
+                  this.$emit("refreshDataList");
+                }
+              });
+            } else {
+              this.$message.error(data.error);
+            }
+          }).catch((e)=>{})
+        }
+      });
+    },
+    handlePass(status){
+     if(status==0){
+       this.formData.repairStutas = '2';
+     }else if(status==3) {
+       this.formData.repairStutas = '4';
+     }
+     this.dataFormSubmit()
+    },
+    handleDispass(status){
+     if(status==0){
+       this.formData.repairStutas = '1';
+     }else if(status==3) {
+       this.formData.repairStutas = '5';
+     }
+     this.dataFormSubmit()
+    } 
+  }
+};
+</script>
+<style scoped>
+.repair_header {
+  font-size: 18px;
+  padding: 8px 10px;
+  margin-bottom: 1px solid #eee;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+</style>

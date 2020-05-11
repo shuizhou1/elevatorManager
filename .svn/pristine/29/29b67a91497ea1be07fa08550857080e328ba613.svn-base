@@ -1,0 +1,21 @@
+{
+  "presets": [
+    ["env", { // 根据浏览器不支持的特性选择器的转译，作用类似pbabel-preset-latest
+      "modules": false,//将es6模块编译成其他模块（AMD、UMD、commonJS）设置为false将不会转换
+      "useBuiltIns": "entry" //根据浏览器版本的支持，将 polyfill 需求拆分引入，仅引入有浏览器不支持的polyfill
+    }],
+    "stage-2" //preset的阶段有0、1、2、3数字越小阶段越靠后
+  ],
+  "plugins": ["transform-runtime", ["component", [ //babel-plugin-transform-runtime、babel-plugin-component的简写
+    {
+      "libraryName": "element-ui"
+    }
+  ]]],
+  "env": {
+    "test": {
+      "presets": ["env", "stage-2"],
+      "plugins": ["transform-es2015-modules-commonjs", "dynamic-import-node"]
+    }
+  }
+}
+// polyfill： 默认值为true， 表示是否把内置的东西(Promise, Set, Map) 等转换成非全局污染的。

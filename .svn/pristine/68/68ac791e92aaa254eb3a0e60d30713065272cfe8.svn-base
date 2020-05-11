@@ -1,0 +1,113 @@
+<!--  -->
+<template>
+  <div>
+    <!-- <div class="title">添加</div> -->
+    <el-form
+        ref="form"
+        :model="formData"
+        class="form"
+        style="margin-left:10px"
+        label-width="auto"
+        :rules="rules"
+      >
+        <el-row :gutter="30">
+          <el-col :span="12">
+            <el-form-item label="物业名称" prop="dwmc">
+              <el-input v-model="formData.dwmc"></el-input>
+            </el-form-item>
+          </el-col>
+          <el-col :span="12">
+            <el-form-item label="单位地址" prop="dwdz">
+              <el-input v-model="formData.dwdz"></el-input>
+            </el-form-item>
+          </el-col>
+        </el-row>
+        <el-row :gutter="30">
+          <el-col :span="12">
+            <el-form-item label="联系人" prop="lxr">
+              <el-input v-model="formData.lxr"></el-input>
+            </el-form-item>
+          </el-col>
+          <el-col :span="12">
+            <el-form-item label="联系人电话" prop="lxrdh">
+              <el-input v-model="formData.lxrdh"></el-input>
+            </el-form-item>
+          </el-col>
+        </el-row>
+      </el-form>
+      <div class="button_wraper">
+        <el-button @click="handleConfirm" style="margin-right:20px">确认</el-button>
+        <el-button @click="handleCancel" style="margin-left:20px">取消</el-button>
+    </div>
+  </div>
+</template>
+
+<script>
+export default {
+  prop:['show'],
+  data () {
+    return {
+      formData:{
+
+      },
+      rules:{
+        dwmc:[{
+          required:true,
+          message:'单位名称不能为空'
+        }],
+        dwmc:[{
+          required:true,
+          message:'单位地址不能为空'
+        }],
+        dwmc:[{
+          required:true,
+          message:'联系人不能为空'
+        }],
+        dwmc:[{
+          required:true,
+          message:'联系人电话不能为空'
+        }]
+      }
+    };
+  },
+  components: {},
+  created(){
+
+  },
+  methods: {
+    addUnit(){
+      console.log('添加维保单位');
+      this.$ajax({
+        url:this.formatUrl('login'),
+        method:'post',
+        data:''
+      }).then(res=>{
+        console.log('res',res);
+      }).catch(e=>{
+        console.log(e);
+      })
+    },
+    handleConfirm(){
+      this.$refs['form'].validate(valid=>{
+        if(valid){
+          this.$emit('confirm');
+        }else{
+          console.log('error submit!!');
+          return false;
+        }
+      })
+      this.$emit('confirm',this)
+    },
+    handleCancel(){
+      this.$emit('update:show',false);
+    }
+  }
+}
+
+</script>
+<style lang='scss' scoped>
+.title {
+  font-size: 22px;
+  padding-bottom: 10px;
+}
+</style>

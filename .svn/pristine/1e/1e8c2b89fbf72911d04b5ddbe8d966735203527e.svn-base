@@ -1,0 +1,134 @@
+<!--  -->
+<template>
+  <div>
+    <el-form class="form"  style="margin-left:10px">
+      <el-row :gutter="40">
+        <el-col :span="8">
+          <el-form-item label="注册代码">
+            <el-input v-model="formData.regcode"></el-input>
+          </el-form-item>
+        </el-col>
+        <el-col :span="8">
+          <el-form-item label="区域">
+            <el-input v-model="formData.area"></el-input>
+          </el-form-item>
+        </el-col>
+        <el-col :span="8">
+          <el-button type="query">查询</el-button>
+        </el-col>
+      </el-row>
+    </el-form>
+    <div class="chartContainer" :style="{'height': height, 'width': '100%'}">
+      <div id="chartBox" :style="{'width':width,'height':height}"></div>
+    </div>
+  </div>
+</template>
+
+<script>
+import echart from "echarts";
+import {rkrgzlData} from '@/utils/homeData'
+export default {
+  data() {
+    return {
+      formData: {},
+      height: "",
+      width: "",
+      chart: "",
+      option: {
+        title:{
+          text:'日困人故障率统计',
+          x:'center',
+          textStyle: {
+            fontWeight: "normal" //标题颜色
+          }
+        },
+        tooltip: {
+          trigger: "axis",
+          // formatter: "{a} <br/>{b}: {c} ({d}%)"
+        },
+         grid: {
+          left: "3%",
+          right: "5%",
+          bottom: "8%",
+          containLabel: true
+        },
+        legend: {
+         
+        },
+        xAxis: {
+          type: "category",
+          show:true,
+          // splitLine: { show: false },
+          data: [],
+          axisLine: {
+            lineStyle: {
+              type: "solid",
+              color: "eee", //坐标线的颜色
+              width: "2" //坐标线的宽度
+            }
+          },
+          axisLabel: {
+            show:true,
+            textStyle: {
+            }
+          },
+         
+          splitArea:{
+            // show:true
+          }
+        },
+        axisTick:{
+          interval:4
+        },
+        yAxis: {
+          type: "value",
+          axisLine: {
+            lineStyle: {
+              type: "solid",
+              color: "eee", //左边线的颜色
+              width: "2" //坐标线的宽度
+            }
+          },
+          axisLabel: {
+            textStyle: {}
+          }
+        },
+        series: [{
+          data:[],
+          type:'line',
+          // smooth:true
+        }]
+         
+            
+      }
+    };
+  },
+  components: {},
+  created() {},
+  mounted() {
+    this.width = document.documentElement.clientWidth - 250 + "px";
+    this.height = document.documentElement.clientHeight  -250 +"px";
+    console.log("documentheight", document.documentElement.clientHeight);
+    window.onresize = () => {
+      this.width = document.documentElement.clientWidth - 250 + "px";
+      this.height = document.documentElement.clientHeight -250 + "px";
+    };
+    this.$nextTick(() => {
+      this.getData();
+    });
+    window.addEventListener("resize", () => {
+      this.chart.resize();
+    });
+  },
+  methods: {
+    getData() {
+      this.option.series[0].data = rkrgzlData.value;
+      this.option.xAxis.data = rkrgzlData.label;
+      this.chart = echart.init(document.getElementById("chartBox"),'light');
+      this.chart.setOption(this.option);
+    }
+  }
+};
+</script>
+<style  scoped>
+</style>

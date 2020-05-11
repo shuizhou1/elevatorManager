@@ -1,0 +1,632 @@
+<!--  -->
+<template>
+  <div>
+    <!-- <div  :style="{'height': height, 'width': '100%'}">
+      <div id="chartBox" :style="{'width':width,'height':height}"></div>
+    </div>-->
+    <!-- <div class="chart_title">报警类型统计</div> -->
+    <el-form class="dialog_head_form">
+      <el-row :gutter="40">
+        <el-col :span="7">
+          <!-- <el-form-item prop="setime"> -->
+          <!-- <el-date-picker
+            v-model="value"
+            type="monthrange"
+            align="right"
+            range-separator="至"
+            start-placeholder="开始月份"
+            end-placeholder="结束月份"
+            :picker-options="pickerOptions"
+          ></el-date-picker> -->
+
+          <!-- </el-form-item> -->
+          <select-month></select-month>
+        </el-col>
+        <el-col :span="7">
+          <el-form-item label="注册代码" prop="regCode">
+            <el-input v-model="formData.regCode" clearable>
+              <template slot="append">
+                <el-button @click="selectElevator">选择</el-button>
+              </template>
+            </el-input>
+          </el-form-item>
+        </el-col>
+        <el-col :span="6">
+          <el-form-item prop label="区域">
+            <el-cascader v-model="value" :options="areaData" @change="handleAreaChange"></el-cascader>
+          </el-form-item>
+        </el-col>
+        <el-col :span="2">
+          <el-button @click="getData" type="query">查询</el-button>
+        </el-col>
+      </el-row>
+    </el-form>
+    <el-tabs type="card" value="first" @tab-click="handleChange">
+      <el-tab-pane label="图表" name="first">
+        <div class="chartContainer" :style="{'height':containerHeight-61+'px'}">
+          <div class="left">
+            <div id="totalChartBox" :style="{'height':containerHeight-101+'px','width':'100%'}"></div>
+          </div>
+          <div class="right">
+            <div class="right_item border_bottom">
+              <div id="firChartBox" :style="{'height':'100%'}"></div>
+            </div>
+            <div class="right_item border_bottom">
+              <div id="secChartBox" :style="{'height':'100%'}"></div>
+            </div>
+            <!-- <div class="right_item border_bottom"></div> -->
+            <div class="right_item">
+              <div id="thiChartBox" :style="{'height':'100%'}"></div>
+            </div>
+          </div>
+        </div>
+      </el-tab-pane>
+      <el-tab-pane label="列表" name="second">
+        <el-table border :data="dataList" v-loading="loading">
+          <el-table-column label="注册代码" prop="regCode" align="center"></el-table-column>
+          <el-table-column label="电梯地址" prop="local" align="center"></el-table-column>
+          <el-table-column label="预警数" prop="alarm" align="center"></el-table-column>
+          <el-table-column label="故障数" prop="fault" align="center"></el-table-column>
+          <el-table-column label="困人数" prop="trap" align="center"></el-table-column>
+        </el-table>
+      </el-tab-pane>
+    </el-tabs>
+
+    <select-elevator
+      v-if="showElevatorselectDialog"
+      ref="elevatorSelector"
+      @confirm="selectElevatorConfirm"
+    ></select-elevator>
+  </div>
+</template>
+
+<script>
+import echart from "echarts";
+import selectMonth from '@/components/selectMonth.vue';
+import selectElevator from "@/components/select-single-elevator.vue";
+export default {
+  activated() {
+    console.log("actie");
+    // 由于给echart添加了resize事件, 在组件激活时需要重新resize绘画一次, 否则出现空白bug
+
+    if (this.totalChart) {
+      this.totalChart.resize();
+    }
+  },
+  data() {
+    return {
+      showElevatorselectDialog: false,
+      loading: false,
+      pickerOptions: {
+        disabledDate: time => {
+          return (
+            time.getTime() < new Date("2018-01").getTime() ||
+            time.getTime() > new Date("2020-12").getTime()
+          );
+        }
+      },
+      value: "",
+      area: [],
+      dataList: [
+        {
+          regCode: "12345678901234567890",
+          local: "广州市海珠区天源路11号",
+          alarm: "89",
+          fault: "40",
+          trap: "30"
+        },
+        {
+          regCode: "12345678901234567890",
+          local: "广州市海珠区天源路11号",
+          alarm: "89",
+          fault: "40",
+          trap: "30"
+        }
+      ],
+      formData: {
+        regCode: "",
+        date: "",
+        stime: "",
+        etime: ""
+      },
+      height: "",
+      containerHeight: "",
+      width: "",
+      totalChart: null,
+      firChart: null,
+      secChart: null,
+      thiChart: null,
+      areaData: [],
+      totalOption: {
+        // title:{
+        //   text:'报警类统计',
+        //   x:'center',
+        //   textStyle: {
+        //     fontWeight: "normal" //标题颜色
+        //   }
+        // },
+        tooltip: {
+          trigger: "axis"
+          // formatter:'报警类型：{a}</br> 数量：{c}'
+        },
+        grid: {
+          left: "5%",
+          right: "8%",
+          bottom: "3%",
+          containLabel: true
+        },
+        xAxis: {
+          type: "category",
+          boundaryGap: false,
+          // splitLine: { show: false },
+          data: [],
+          axisLine: {
+            lineStyle: {
+              type: "solid",
+              color: "eee", //坐标线的颜色
+              width: "2" //坐标线的宽度
+            }
+          },
+          axisLabel: {
+            textStyle: {}
+          }
+        },
+        yAxis: {
+          type: "value",
+          name: "困人故障率",
+          nameRotate: "90",
+          nameLocation: "middle",
+          nameTextStyle: {
+            // fontStyle:{
+            //   fontSize:'22px'
+            // }
+          },
+          axisLine: {
+            lineStyle: {
+              type: "solid",
+              color: "eee", //左边线的颜色
+              width: "2" //坐标线的宽度
+            }
+          },
+          axisLabel: {
+            textStyle: {}
+          }
+        },
+        series: [
+          {
+            name: "故障率",
+            type: "line",
+            label: {},
+            data: []
+          }
+        ]
+      },
+      firOption: {
+        title: {
+          text: "",
+          x: "center",
+          textStyle: {
+            fontWeight: "normal", //标题颜色
+            fontSize: 10
+          }
+        },
+        tooltip: {
+          trigger: "axis"
+          // formatter:'报警类型：{a}</br> 数量：{c}'
+        },
+        grid: {
+          left: "5%",
+          right: "10%",
+          bottom: "8%",
+          top: "15%",
+          containLabel: true
+        },
+        xAxis: {
+          type: "category",
+          boundaryGap: false,
+          // splitLine: { show: false },
+          data: [],
+          axisLine: {
+            lineStyle: {
+              type: "solid",
+              color: "eee", //坐标线的颜色
+              width: "2" //坐标线的宽度
+            }
+          },
+          axisLabel: {
+            textStyle: {}
+          }
+        },
+        yAxis: {
+          type: "value",
+          // name:'困人故障率',
+          nameRotate: "90",
+          nameLocation: "middle",
+          nameTextStyle: {
+            // fontStyle:{
+            //   fontSize:'22px'
+            // }
+          },
+          axisLine: {
+            lineStyle: {
+              type: "solid",
+              color: "eee", //左边线的颜色
+              width: "2" //坐标线的宽度
+            }
+          },
+          axisLabel: {
+            textStyle: {}
+          }
+        },
+        series: [
+          {
+            name: "故障率",
+            type: "line",
+            label: {},
+            data: []
+          }
+        ]
+      },
+      secOption: {
+        title: {
+          text: "",
+          x: "center",
+          textStyle: {
+            fontWeight: "normal",
+            fontSize: 10
+          }
+        },
+        tooltip: {
+          trigger: "axis"
+          // formatter:'报警类型：{a}</br> 数量：{c}'
+        },
+        grid: {
+          left: "5%",
+          right: "10%",
+          bottom: "8%",
+          top: "15%",
+          containLabel: true
+        },
+        xAxis: {
+          type: "category",
+          boundaryGap: false,
+          // splitLine: { show: false },
+          data: [],
+          axisLine: {
+            lineStyle: {
+              type: "solid",
+              color: "eee", //坐标线的颜色
+              width: "2" //坐标线的宽度
+            }
+          },
+          axisLabel: {
+            textStyle: {}
+          }
+        },
+        yAxis: {
+          type: "value",
+          // name:'困人故障率',
+          nameRotate: "90",
+          nameLocation: "middle",
+          nameTextStyle: {
+            // fontStyle:{
+            //   fontSize:'22px'
+            // }
+          },
+          axisLine: {
+            lineStyle: {
+              type: "solid",
+              color: "eee", //左边线的颜色
+              width: "2" //坐标线的宽度
+            }
+          },
+          axisLabel: {
+            textStyle: {}
+          }
+        },
+        series: [
+          {
+            name: "故障率",
+            type: "line",
+            label: {},
+            data: []
+          }
+        ]
+      },
+      thiOption: {
+        title: {
+          text: "",
+          x: "center",
+          textStyle: {
+            fontWeight: "normal",
+            fontSize: 10
+          }
+        },
+        tooltip: {
+          trigger: "axis"
+          // formatter:'报警类型：{a}</br> 数量：{c}'
+        },
+        grid: {
+          left: "5%",
+          right: "10%",
+          bottom: "8%",
+          top: "15%",
+          containLabel: true
+        },
+        xAxis: {
+          type: "category",
+          boundaryGap: false,
+          // splitLine: { show: false },
+          data: [],
+          axisLine: {
+            lineStyle: {
+              type: "solid",
+              color: "eee", //坐标线的颜色
+              width: "2" //坐标线的宽度
+            }
+          },
+          axisLabel: {
+            textStyle: {}
+          }
+        },
+        yAxis: {
+          type: "value",
+          // name:'困人故障率',
+          nameRotate: "90",
+          nameLocation: "middle",
+          nameTextStyle: {
+            // fontStyle:{
+            //   fontSize:'22px'
+            // }
+          },
+          axisLine: {
+            lineStyle: {
+              type: "solid",
+              color: "eee", //左边线的颜色
+              width: "2" //坐标线的宽度
+            }
+          },
+          axisLabel: {
+            textStyle: {}
+          }
+        },
+        series: [
+          {
+            name: "故障率",
+            type: "line",
+            label: {},
+            data: []
+          }
+        ]
+      }
+    };
+  },
+  components: {
+    selectElevator,
+    selectMonth
+  },
+  created() {
+    this.getAreaData();
+  },
+  mounted() {
+    this.containerHeight = document.documentElement.clientHeight - 180;
+    this.width = document.documentElement.clientWidth - 250 + "px";
+    this.height = document.documentElement.clientHeight - 280 + "px";
+    console.log("documentheight", document.documentElement.clientHeight);
+    window.onresize = () => {
+      this.width = document.documentElement.clientWidth - 250 + "px";
+      this.height = document.documentElement.clientHeight - 280 + "px";
+    };
+    this.$nextTick(() => {
+      this.getData();
+      this.getTopThreeData();
+    });
+  },
+  methods: {
+    getData() {
+      this.$http({
+        url: this.$http.adornUrl("/statistics/statistics/troubleRate"),
+        method: "get",
+        params: this.$http.adornParams({
+          years: this.formData.years,
+          months: this.formData.months,
+          regCode: this.formData.regCode,
+          province: this.formData.province,
+          city: this.formData.city,
+          district: this.formData.district
+        })
+      })
+        .then(({ data }) => {
+          console.log("全部数据", data);
+          let keys = [];
+          let values = [];
+          data.list.forEach(item => {
+            keys.push(item.date);
+            values.push(item.faultRatio);
+          });
+          console.log("全部数据------");
+          console.log("totaloption", this.totalOption);
+          this.totalOption.xAxis.data = keys;
+          this.totalOption.series[0].data = values;
+          this.totalChart = echart.init(
+            document.getElementById("totalChartBox"),
+            "light"
+          );
+          this.totalChart.setOption(this.totalOption);
+        })
+        .catch(e => {
+          console.log(e);
+        });
+
+      window.addEventListener("resize", () => {
+        this.totalChart.resize();
+      });
+    },
+    getTopThreeData() {
+      this.$http({
+        url: this.$http.adornUrl("/statistics/statistics/threeTroubleRate"),
+        method: "get",
+        params: this.$http.adornParams({
+          years: this.formData.years,
+          months: this.formData.months,
+          regCode: this.formData.regCode,
+          province: this.formData.province,
+          city: this.formData.city,
+          district: this.formData.district
+        })
+      })
+        .then(({ data }) => {
+          console.log("前三数据", data);
+          let list = data.list;
+          this.firOption.title.text = list[0].local;
+          this.secOption.title.text = list[1].local;
+          this.thiOption.title.text = list[2].local;
+          list[0].troubleRate.forEach(value => {
+            this.firOption.xAxis.data.push(value.date);
+            this.firOption.series[0].data.push(value.faultRatio);
+          });
+          list[1].troubleRate.forEach(value => {
+            this.secOption.xAxis.data.push(value.date);
+            this.secOption.series[0].data.push(value.faultRatio);
+          });
+          list[2].troubleRate.forEach(value => {
+            this.thiOption.xAxis.data.push(value.date);
+            this.thiOption.series[0].data.push(value.faultRatio);
+          });
+
+          this.firChart = echart.init(
+            document.getElementById("firChartBox"),
+            "light"
+          );
+          this.secChart = echart.init(
+            document.getElementById("secChartBox"),
+            "light"
+          );
+          this.thiChart = echart.init(
+            document.getElementById("thiChartBox"),
+            "light"
+          );
+          this.firChart.setOption(this.firOption);
+          this.secChart.setOption(this.secOption);
+          this.thiChart.setOption(this.thiOption);
+        })
+        .catch(e => {
+          console.log(e);
+        });
+    },
+    getAreaData() {
+      this.$http({
+        url: this.$http.adornUrl("/district/district/alllist"),
+        method: "get",
+        params: this.$http.adornParams({})
+      })
+        .then(({ data }) => {
+          if (data && data.code == 0) {
+            console.log("地区数据", data.list);
+            let areaData = [];
+            data.list.forEach(item => {
+              let city = [];
+              item.sonLevel.forEach(value => {
+                let area = [];
+                value.sonLevel.forEach(lump => {
+                  area.push({
+                    value: lump.id,
+                    label: lump.districtName
+                  });
+                });
+                city.push({
+                  value: value.id,
+                  label: value.districtName,
+                  children: area
+                });
+              });
+              areaData.push({
+                value: item.id,
+                label: item.districtName,
+                children: city
+              });
+            });
+            this.areaData = areaData;
+            console.log("处理后的data", areaData);
+          }
+        })
+        .catch(e => {
+          console.log(e);
+        });
+    },
+    getDataList() {
+      this.$http({
+        url: this.$http.adornUrl(""),
+        method: "get",
+        params: this.$http.adornParams({})
+      })
+        .then(({ data }) => {
+          if (data && data.code == 0) {
+            console.log("datalist", data);
+          }
+        })
+        .catch(e => {
+          console.log(e);
+        });
+    },
+    handleChange(e) {
+      console.log("change", e);
+    },
+    pickStimeEtime(t) {
+      console.log("282", t);
+      if (t) {
+        this.formData.stime = t[0];
+        this.formData.etime = t[1];
+      } else {
+        this.formData.stime = "";
+        this.formData.etime = "";
+      }
+    }, // 选择电梯
+    selectElevator() {
+      this.showElevatorselectDialog = true;
+      this.$nextTick(() => {
+        this.$refs.elevatorSelector.init();
+      });
+    },
+    selectElevatorConfirm(val) {
+      console.log("确认选择", val);
+      this.formData.regCode = val.regcode;
+      console.log(this.formData);
+    }
+  }
+};
+</script>
+<style scoped lang="scss">
+.chart_title {
+  font-size: 18px;
+  height: 60px;
+  line-height: 60px;
+  color: #666;
+  text-align: center;
+  /* margin-bottom:30px; */
+}
+.chartContainer {
+  // background: rgba(0,0,0,.2);
+  width: 100%;
+  display: flex;
+  border: 1px solid #ddd;
+  & > .left {
+    // width:50%;
+    flex: 0 0 65%;
+  }
+  & > .right {
+    // width: 50%;
+    flex: 0 0 35%;
+    border-left: 1px solid #ddd;
+    box-sizing: border-box;
+    display: flex;
+    flex-direction: column;
+    & > .right_item {
+      flex: 1;
+    }
+    & > .right_item.border_bottom {
+      border-bottom: 1px solid #ddd;
+    }
+  }
+}
+</style>

@@ -1,0 +1,332 @@
+<!--  -->
+<template>
+  <div>
+    <!-- 维保记录表 -->
+    <div class="repair_header">
+      <div class>电梯设备</div>
+      <el-button @click="showElevatorList" style="height:36px">选择</el-button>
+    </div>
+    <div class="form-view-wraper">
+      <el-row>
+        <el-col :span="8">
+          <div class="form-view-item">
+            注册代码：
+            <span>{{formData.regCodes}}</span>
+          </div>
+        </el-col>
+        <el-col :span="8">
+          <div class="form-view-item">
+            维保单位：
+            <span>{{formData.maintenanceName}}</span>
+          </div>
+        </el-col>
+      </el-row>
+      <el-row>
+        <el-col :span="8">
+          <div class="form-view-item">
+            电梯类型：
+            <span>{{type}}</span>
+          </div>
+        </el-col>
+        <el-col :span="16">
+          <div class="form-view-item">
+            电梯地址：
+            <span>{{formData.local}}</span>
+          </div>
+        </el-col>
+      </el-row>
+    </div>
+    <div class="form_wraper">
+      <div class="repair_header">
+        <div class>检查项目</div>
+        <el-button @click="showsetContent" style="height:36px">内容编制</el-button>
+      </div>
+      <el-form ref="form" :model="formData" :rules="rules" class="form">
+        <el-row :gutter="30">
+          <el-col :span="8">
+            <el-form-item label="岗位人员" prop="processUserName">
+              <el-input v-model="formData.processUserName" clearable></el-input>
+            </el-form-item>
+          </el-col>
+          <el-col :span="9">
+            <el-form-item label="编制人员" prop="planUserName">
+              <el-input v-model="formData.planUserName" clearable></el-input>
+            </el-form-item>
+          </el-col>
+          <el-col :span="7">
+            <el-form-item label="内容审核人" prop="planTime" clearable>
+              <el-input v-model="formData.checkUserName" clearable></el-input>
+            </el-form-item>
+          </el-col>
+        </el-row>
+      </el-form>
+    </div>
+
+    <!-- 维保各项情况表 -->
+    <el-table :data="tableData" border style="width: 100%">
+      <el-table-column type="index" width="30"></el-table-column>
+      <el-table-column prop="deviceName" label="设备名称"></el-table-column>
+      <el-table-column prop="device" label="定点"></el-table-column>
+      <el-table-column prop="deviceStandard" label="定标"></el-table-column>
+      <el-table-column prop="deviceStatus" label="状态" width="50"></el-table-column>
+      <el-table-column prop="deviceMethod" label="定法"></el-table-column>
+      <el-table-column prop="technologyStandard" label="技术指导标准"></el-table-column>
+      <el-table-column prop="acceptanceStandard" label="验收指导标准"></el-table-column>
+      <el-table-column prop="cycle" label="周期" width="50"></el-table-column>
+      <el-table-column prop="squad" label="班别" width="50"></el-table-column>
+      <el-table-column prop="wbqk" label="操作" width="250">
+        <template slot-scope="scope">
+          <el-radio-group
+            @change="handleRadioChange(scope.row,scope.$index)"
+            v-model="formData.list[scope.$index].maintenancestatus"
+          >
+            <el-radio label="1">正常</el-radio>
+            <el-radio label="2">已填写维修工单</el-radio>
+            <el-radio label="3">自主修复</el-radio>
+            <el-radio label="4">停产</el-radio>
+          </el-radio-group>
+        </template>
+      </el-table-column>
+    </el-table>
+    <div class="button_wraper">
+      <el-button type="add" @click="handleSave()" style="margin-right:20px">保存</el-button>
+      <el-button type="primary" @click="handleSubmit()" style="margin-right:20px">提交</el-button>
+      <!-- <el-button type="primary" v-if="formData.propertyId" @click="handleExport()" style="margin-left:20px">导出保养记录</el-button> -->
+    </div>
+    <set-item v-if="setitemDialogVisible" ref="setItem" @back="setItemConfirm"></set-item>
+    <elevator-selector
+      v-if="elevatorDalogvisible"
+      ref="elevatorSelector"
+      @confirm="elevatorselectConfirm"
+    ></elevator-selector>
+  </div>
+</template>
+
+<script>
+import setItem from "./selfmaintenance-setitem";
+import elevatorSelector from "@/components/select-single-elevator.vue";
+export default {
+  components: {
+    setItem,
+    elevatorSelector
+  },
+  data() {
+    return {
+      loading: false,
+      setitemDialogVisible: false,
+      elevatorDalogvisible: false,
+      currentIndex: 1,
+      tableData: [],
+      type:'',
+      formData: {
+        processUserId: "", //自主维护人员
+        processUserName: "", //自主维护人员
+        planUserId: "", //自主维护编制人员
+        planUserName: "", //自主维护编制人员
+        checkUserId: "", //编制确认人
+        checkUserName: "", //编制确认人
+        regCodes: "", //电梯注册码
+        local: "",
+        maintenanceName: "",
+        elevatorStatus: "",
+        remarks: "" //备注
+      },
+      contentIdWithStatus:'',//维护内容
+      rules: {
+        processUserName: [
+          {
+            required: true,
+            message: "自主维护人员不能为空",
+            trigger: "blur"
+          }
+        ], //自主维护人员
+        planUserName: [
+          {
+            required: true,
+            message: "内容编制人员不能为空",
+            trigger: "blur"
+          }
+        ], //自主维护编制人员
+        checkUserName: [
+          {
+            required: true,
+            message: "内容审核人员不能为空",
+            trigger: "blur"
+          }
+        ], //自主维护编制人员
+        regCodes: [
+          {
+            required: true,
+            message: "请选择电梯",
+            trigger: "blur"
+          }
+        ] //电梯注册码
+      }
+    };
+  },
+  activated() {},
+  computed: {},
+  watch: {
+    "formData.elevatorStatus"(val) {
+      console.log("watch200");
+      if (val == 1) {
+        this.type = "客梯";
+      } else if (val == 2) {
+        this.type = "货梯";
+      } else {
+        this.type = "";
+      }
+    }
+  },
+  methods: {
+    // 维保记录
+    getDataList(id) {
+      console.log("维保记录");
+      this.loading = true;
+      this.$http({
+        url: this.$http.adornUrl(
+          `/selfmaintenanceplan/selfmaintenanceplan/infos/${this.planId}`
+        ),
+        method: "get"
+      })
+        .then(({ data }) => {
+          if (data && data.code == 0) {
+            console.log(data);
+            this.loading = false;
+          }
+        })
+        .catch(e => {
+          this.$message.error(e);
+        });
+    },
+    tableRowClassName({ row, rowIndex }) {
+      row.index = rowIndex;
+      // return "";
+    },
+    // 格式化时间
+    formatDate(row, column, cellValue) {
+      if (cellValue && cellValue.length) return cellValue.substr(0, 10);
+    },
+    handleRadioChange(row, index) {
+      console.log(row);
+      console.log("formData", this.formData);
+    },
+    // 点击改变当前行
+    handlerowClick(row) {
+      console.log(row);
+      this.planId = row.planId;
+      this.currentIndex = row.index;
+      this.loading = true;
+      this.getwbjlData();
+    },
+    showsetContent() {
+      this.setitemDialogVisible = true;
+      this.$nextTick(() => {
+        this.$refs.setItem.init();
+      });
+    },
+    setItemConfirm(value) {
+      console.log("自主维护内容", value);
+      this.contentIdWithStatus = value;
+    },
+    // 选择电梯
+    showElevatorList() {
+      this.elevatorDalogvisible = true;
+      this.$nextTick(() => {
+        this.$refs.elevatorSelector.init();
+      });
+    },
+    handleSubmit(){
+      
+    },
+    elevatorselectConfirm(value) {
+      console.log(value);
+      this.formData.regCodes = value.regcode;
+      this.formData.maintenanceName = value.unitname;
+      this.formData.local = value.locals;
+      this.formData.elevatorStatus = value.elevatorstatus;
+    },
+    handleSave() {
+      console.log("formsubmit", this.formData);
+      if (!this.regCodes) {
+        this.$message({
+          type: "info",
+          message: "请选择维护电梯",
+          duration: 1500
+        });
+        return false;
+      }
+      this.$refs["form"].validate(valid => {
+        if (valid) {
+          this.$http({
+            url: this.$http.adornUrl(
+              "/selfmaintenanceplan/selfmaintenanceplan/save"
+            ),
+            method: "post",
+            data: this.formData
+          })
+            .then(res => {
+              console.log("formsubmitssucsss", res);
+              if (res.data.code == 0) {
+                console.log();
+                this.$message({
+                  type: "success",
+                  message: "保存成功",
+                  duration: 1500,
+                  onClose: () => {
+                    this.getlastthreeData();
+                    this.getwbjlData(this.planId);
+                  }
+                });
+              }
+            })
+            .catch(e => {
+              console.log(e);
+            });
+        }
+      });
+    },
+    updateContent(id) {
+      console.log("UpdateContent", id);
+      this.$http({
+        url: this.$http.adornUrl(
+          "/selfmaintenanceplancontent/selfmaintenanceplancontent/saveOrUpdateUsePlanId"
+        ),
+        method: "post",
+        data: this.$http.addornData({
+          planId:id,
+          contentIdWithStatus:this.contentIdWithStatus
+        })
+      })
+        .then(res => {
+          console.log("formsubmitssucsss", res);
+          if (res.data.code == 0) {
+            console.log();
+            this.$message({
+              type: "success",
+              message: "保存成功",
+              duration: 1500,
+              onClose: () => {
+                this.getlastthreeData();
+                this.getwbjlData(this.planId);
+              }
+            });
+          }
+        })
+        .catch(e => {
+          console.log(e);
+        });
+    }
+  }
+};
+</script>
+<style scoped>
+.repair_header {
+  font-size: 18px;
+  padding: 8px 10px;
+  margin-bottom: 1px solid #eee;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+</style>

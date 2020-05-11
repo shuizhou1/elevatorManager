@@ -1,0 +1,246 @@
+<template>
+  <div class="form_wraper">
+    <div class="header">电梯信息</div>
+    <el-form
+      :model="dataForm"
+      @keyup.enter.native="getDataList()"
+      class="form"
+      style="margin-left:10px"
+    >
+      <el-row :gutter="40">
+        <el-col :span="8">
+          <el-form-item label="电梯地址" prop="local">
+            <el-input v-model="dataForm.local"></el-input>
+          </el-form-item>
+        </el-col>
+        <el-col :span="8">
+          <el-form-item label="注册码" prop="regCodes">
+            <el-input v-model="dataForm.regCodes"></el-input>
+          </el-form-item>
+        </el-col>
+        <!--<el-col :span="8">-->
+          <!--<el-form-item label="在线状态" prop="elevatorStatus">-->
+            <!--<el-select v-model="dataForm.elevatorStatus" placeholder="请选择">-->
+              <!--<el-option-->
+                <!--v-for="(item,i) in elevatorStatusArr"-->
+                <!--:key="i"-->
+                <!--:label="item.label"-->
+                <!--:value="item.value"-->
+              <!--&gt;</el-option>-->
+            <!--</el-select>-->
+          <!--</el-form-item>-->
+        <!--</el-col>-->
+          <el-col :span="8">
+              <el-form-item label="维保单位名称" prop="unitName">
+                  <el-input v-model="dataForm.unitName"></el-input>
+              </el-form-item>
+          </el-col>
+      </el-row>
+      <el-row :gutter="40">
+
+        <!-- <el-col :span="8">
+          <el-form-item label="LMDID" prop="colLmdId">
+            <el-input v-model="dataForm.colLmdId"></el-input>
+          </el-form-item>
+        </el-col> -->
+        <el-col :span="8">
+          <el-form-item>
+            <el-button @click="getDataList('init')" type="primary">查询</el-button>
+          </el-form-item>
+        </el-col>
+      </el-row>
+
+      <!-- <el-form-item label="电梯id" prop="colLiftId">
+                <el-input v-model="dataForm.colLiftId"></el-input>
+      </el-form-item>-->
+    </el-form>
+    <el-table
+      :data="dataList"
+      border
+      @header-dragend="handleDragend"
+      v-loading="dataListLoading"
+      style="width: 100%;"
+    >
+      <el-table-column type="index" header-align="center" align="center" width="50"></el-table-column>
+      <el-table-column prop="regCode" header-align="center" align="center" label="注册代码"></el-table-column>
+      <el-table-column prop="ownerName" header-align="center" align="center" label="使用单位"></el-table-column>
+      <el-table-column prop="local" header-align="center" align="center" label="地址"></el-table-column>
+      <el-table-column prop="maintenanceName" header-align="center" align="center" label="维保单位名称"></el-table-column>
+      <el-table-column
+        prop="elevatorStatus"
+        :formatter="changeValue1"
+        header-align="center"
+        align="center"
+        label="设备名称"
+      ></el-table-column>
+      <el-table-column
+        prop="onlineStatus"
+        :formatter="changeValue"
+        header-align="center"
+        align="center"
+        label="状态"
+      ></el-table-column>
+      <el-table-column prop="onlineTime" header-align="center" align="center" label="最后在线"></el-table-column>
+      <el-table-column prop="colLiftId" header-align="center" align="center" label="电梯ID"></el-table-column>
+      <el-table-column prop="colLmdId" header-align="center" align="center" label="LMD ID"></el-table-column>
+      <el-table-column label="操作" header-align="center" align="center">
+        <template slot-scope="scope">
+          <el-button
+            size="mini"
+            type="primary"
+            @click="tobaojing(scope.row.id, scope.row.regCode)"
+            style="padding:8px 10px;font-size:12px;height:36px"
+          >报警信息</el-button>
+          <el-button
+            class="lastbtn"
+            size="mini"
+            type="primary"
+            style="padding:8px 10px;font-size:12px;height:36px"
+            @click="todongtai(scope.row.id,scope.row.regCode)"
+          >查看动态</el-button>
+        </template>
+      </el-table-column>
+    </el-table>
+    <el-pagination
+      @size-change="sizeChangeHandle"
+      @current-change="currentChangeHandle"
+      :current-page="pageIndex"
+      :page-sizes="[10, 20, 50, 100]"
+      :page-size="pageSize"
+      :total="totalPage"
+      layout="total, sizes, prev, pager, next, jumper"
+    ></el-pagination>
+    <call-police v-if="callPoliceVisible" ref="callPolice"></call-police>
+    <dynamic v-if="dynamicVisible" ref="dynamic"></dynamic>
+  </div>
+</template>
+
+<script>
+import config from "@/utils/config.js";
+import callPolice from "./callPolice.vue";
+import dynamic from "./dynamic.vue";
+export default {
+  data() {
+    return {
+      dataForm: {
+        elevatorStatus: "",
+        local: "",
+        unitName: "",
+        regCodes: "",
+        colLiftId: "",
+        colLmdId: ""
+      },
+      elevatorStatusArr: [
+        {
+          label: "在线",
+          value: 1
+        },
+        {
+          label: "离线",
+          value: 0
+        }
+      ],
+      dataList: [],
+      pageIndex: 1,
+      pageSize: 10,
+      totalPage: 0,
+      dataListLoading: false,
+      paixuoptions: [],
+      paixu: "",
+      zaixianoptions: [],
+      zaixian: "",
+      //
+      callPoliceVisible: false,
+      dynamicVisible: false
+    };
+  },
+  components: {
+    callPolice,
+    dynamic
+  },
+  activated() {
+    this.getDataList();
+  },
+  methods: {
+    tobaojing(id, regCode) {
+      this.callPoliceVisible = true;
+      this.$nextTick(() => {
+        this.$refs.callPolice.init(id, regCode);
+      });
+    },
+    todongtai(id,regCode) {
+      this.dynamicVisible = true;
+      this.$nextTick(() => {
+        this.$refs.dynamic.init(id,regCode);
+      });
+    },
+    changeValue(row, column, cellValue, index) {
+      if (row.onlineStatus == "OK") {
+        return "在线";
+      } else {
+        return "离线";
+      }
+    },
+    changeValue1(row, column, cellValue, index) {
+      if (row.elevatorStatus == "1") {
+        return "客梯";
+      } else if (row.elevatorStatus == "2") {
+        return "货梯";
+      }
+    },
+    handleDragend(n, o, a, b) {
+      config.tableDragendHandle(n, o, a);
+    },
+    // 获取数据列表
+    getDataList(type) {
+      if (type === "init") {
+        this.pageIndex = 1;
+      }
+      this.dataListLoading = true;
+      this.$http({
+        url: this.$http.adornUrl(
+          "/elevatorinformation/elevatorinformation/mainlist"
+        ),
+        method: "get",
+        params: this.$http.adornParams({
+          page: this.pageIndex,
+          limit: this.pageSize,
+          elevatorStatus: this.dataForm.elevatorStatus,
+          local: this.dataForm.local,
+          unitName: this.dataForm.unitName,
+          regCode: this.dataForm.regCodes,
+          colLiftId: this.dataForm.colLiftId,
+          colLmdId: this.dataForm.colLmdId
+        })
+      }).then(({ data }) => {
+        if (data && data.code === 0) {
+          this.dataList = data.page.list;
+          this.totalPage = data.page.totalCount;
+        } else {
+          this.dataList = [];
+          this.totalPage = 0;
+        }
+        this.dataListLoading = false;
+      });
+    },
+    // 每页数
+    sizeChangeHandle(val) {
+      this.pageSize = val;
+      this.pageIndex = 1;
+      this.getDataList();
+    },
+    // 当前页
+    currentChangeHandle(val) {
+      this.pageIndex = val;
+      this.getDataList();
+    }
+  }
+};
+</script>
+
+<style scoped>
+.el-button + .lastbtn.el-button {
+  margin-left: 0px;
+  margin-top: 5px;
+}
+</style>

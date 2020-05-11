@@ -1,0 +1,268 @@
+<!--  -->
+<template>
+  <div>
+    <div class="header">上次自主维护</div>
+    <el-table
+      ref="singleTable"
+      :data="threeTableData"
+      :row-class-name="tableRowClassName"
+      highlight-current-row
+      @row-click="handlerowClick"
+    >
+      <el-table-column type="index" width="50"></el-table-column>
+      <el-table-column prop="processTime" :formatter="formatDate" label="检查时间" width="150"></el-table-column>
+      <el-table-column prop="processUserName" width="150" label="检察员"></el-table-column>
+      <el-table-column prop="checkDirectorTime" :formatter="formatDate" label="确认时间" width="150"></el-table-column>
+      <el-table-column prop="maintenanceName" label="维保单位"></el-table-column>
+      <el-table-column prop="local" label="设备地址"></el-table-column>
+      <el-table-column prop="elevatorStatus" :formatter="formatElevator" width="80" label="设备类型"></el-table-column>
+      <el-table-column prop="planStatus" :formatter="formatStatus" width="80" label="状态"></el-table-column>
+    </el-table>
+    <div class="form_wraper">
+      <div class="header">设备自主维护记录表</div>
+      <!-- </div> -->
+      <el-form ref="form" :model="formData" class="form">
+        <el-row :gutter="30">
+          <el-col :span="8">
+            <el-form-item label="本岗位自主维护人员" prop="processUserName">
+              <el-input v-model.trim="formData.processUserName" clearable></el-input>
+            </el-form-item>
+          </el-col>
+          <el-col :span="9">
+            <el-form-item label="本月自主维护内容编制人员" prop="planUserName">
+              <el-input v-model.trim="formData.planUserName" clearable></el-input>
+            </el-form-item>
+          </el-col>
+          <el-col :span="7">
+            <el-form-item label="本月自主维护内容审核人" prop="planTime" clearable>
+              <el-input v-model.trim="formData.checkUserName" clearable></el-input>
+            </el-form-item>
+          </el-col>
+        </el-row>
+        <el-row :gutter="30">
+          <el-col :span="10">
+            <el-form-item label="本月自主维护内容完成情况确认" prop="regCode">
+              <el-input v-model.trim="formData.regCode"></el-input>
+            </el-form-item>
+          </el-col>
+          <el-col :span="7">
+            <el-form-item label="备注" prop="remarks">
+              <el-input v-model.trim="formData.remarks" clearable></el-input>
+            </el-form-item>
+          </el-col>
+        </el-row>
+      </el-form>
+    </div>
+
+    <!-- 维保各项情况表 -->
+    <el-table :data="tableData" border style="width: 100%">
+      <el-table-column type="index" width="30"></el-table-column>
+      <el-table-column prop="deviceName" label="设备名称"></el-table-column>
+      <el-table-column prop="deviceArea" label="定点"></el-table-column>
+      <el-table-column prop="deviceStandard" label="定标"></el-table-column>
+      <el-table-column prop="deviceStatus" label="状态" width="50"></el-table-column>
+      <el-table-column prop="deviceMethod" label="定法"></el-table-column>
+      <el-table-column prop="technologyStandard" label="技术指导标准"></el-table-column>
+      <el-table-column prop="acceptanceStandard" label="验收指导标准"></el-table-column>
+      <el-table-column prop="cycle" label="周期" width="50"></el-table-column>
+      <el-table-column prop="squad" label="班别" width="50"></el-table-column>
+      <el-table-column prop="wbqk" label="操作" width="250">
+        <template slot-scope="scope">
+          <el-radio-group
+            @change="handleRadioChange(scope.row,scope.$index)"
+            v-model.trim="formData.list[scope.$index].maintenancestatus"
+          >
+            <el-radio label="1">正常</el-radio>
+            <el-radio label="2">已填写维修工单</el-radio>
+            <el-radio label="3">自主修复</el-radio>
+            <el-radio label="4">停产</el-radio>
+          </el-radio-group>
+        </template>
+      </el-table-column>
+    </el-table>
+    <div class="button_wraper">
+      <el-button type="warning" @click="reApply" style="margin-right:20px">重新维护</el-button>
+      <el-button type="primary" @click="handleConfirm" style="margin-left:20px">确认</el-button>
+    </div>
+  </div>
+</template>
+
+<script>
+export default {
+  data() {
+    return {
+      loading: false,
+      currentIndex: 1,
+      id: "",
+      threeTableData: [],//列表
+      tableData: [],//内容
+      formData: {},
+      type: ""
+    };
+  },
+  activated() {
+    this.getDataList();
+  },
+  computed: {
+    unitType() {
+      return this.$store.getters["user/userInfo"].unitType;
+    }
+  },
+  methods: {
+    // 维保记录
+    getDataList() {
+      console.log("维保记录");
+      this.loading = true;
+      this.$http({
+        url: this.$http.adornUrl(
+          `/selfmaintenanceplan/selfmaintenanceplan/list`
+        ),
+        method: "get",
+        params: this.$http.adornParams({
+          page: 1,
+          limit: 3
+        })
+      })
+        .then(({ data }) => {
+          if (data && data.code == 0) {
+            console.log("sucess", data.page.list);
+            var page = data.page.list;
+
+            if (page && page.length) {
+              if (page.length >= 1) {
+                if(page.length>=3){
+                  page = page.slice(0,3);
+                }
+                this.currentIndex = 1;
+                this.id = page[1].id;
+                this.getInfo();
+                this.$nextTick(() => {
+                  this.$refs.singleTable.setCurrentRow(page[1]);
+                });
+              } else {
+                this.currentIndex = 0;
+                this.id = page[0].id;
+                this.$nextTick(() => {
+                  this.$refs.singleTable.setCurrentRow(page[0]);
+                });
+                this.getInfo();
+              }
+              this.threeTableData = page;
+
+            } else {
+              this.loading = false;
+            }
+          }
+        })
+        .catch(e => {
+          // this.$message.error(e);
+        });
+    },
+    getInfo(id) {
+      this.$http({
+        url: this.$http.adornUrl(
+          `/selfmaintenanceplan/selfmaintenanceplan/info/${this.id}`
+        ),
+        method: "get"
+      })
+        .then(({ data }) => {
+          if (data && data.code == 0) {
+            console.log("info", data);
+            this.loading = false;
+          }
+        })
+        .catch(e => {
+          this.$message.error(e);
+        });
+    },
+    tableRowClassName({ row, rowIndex }) {
+      row.index = rowIndex;
+      return "";
+    },
+    // 格式化时间
+    formatDate(row, col, value) {
+      if (value && value.length) return value.substr(0, 10);
+    },
+    formatElevator(row,col,value){
+      if(value==1){
+        return '客梯'
+      }else if(value==2){
+        return '货梯'
+      }
+    },
+    formatStatus(row,col,value){
+      if(value==1){
+        return '待确认'
+      }
+       if(value==2){
+        return '待维护'
+      }
+       if(value==3){
+        return '待审核'
+      }
+       if(value==4){
+        return '审核成功'
+      }
+      if(value==5){
+        return '审核失败'
+      }
+    },
+
+
+    handleRadioChange(row, index) {
+      console.log(row);
+      console.log("formData", this.formData);
+    },
+    // 点击改变当前行
+    handlerowClick(row) {
+      console.log(row);
+      this.id = row.planId;
+      this.currentIndex = row.index;
+      this.loading = true;
+      this.getInfo();
+    },
+    reApply() {},
+    handleConfirm() {},
+    handleSave(formName) {
+      console.log("formsubmit", this.formData);
+      this.$refs["form"].validate(valid => {
+        if (valid) {
+          this.$http({
+            url: this.$http.adornUrl("/maintenanceplan/maintenanceplan/update"),
+            method: "post",
+            data: this.formData
+          })
+            .then(res => {
+              console.log("formsubmitssucsss", res);
+              if (res.data.code == 0) {
+                console.log();
+                this.$message({
+                  type: "success",
+                  message: "保存成功",
+                  duration: 1500,
+                  onClose: () => {
+                    this.getlastthreeData();
+                    this.getwbjlData(this.planId);
+                  }
+                });
+              }
+            })
+            .catch(e => {
+              console.log(e);
+            });
+        }
+      });
+    }
+  }
+};
+</script>
+<style scoped>
+.repair_header {
+  font-size: 18px;
+  padding: 8px 10px;
+  margin-bottom: 1px solid #eee;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+</style>

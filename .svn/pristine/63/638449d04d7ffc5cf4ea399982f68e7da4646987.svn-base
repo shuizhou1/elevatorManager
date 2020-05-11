@@ -1,0 +1,50 @@
+<template>
+  <transition name="fade">
+    <router-view></router-view>
+  </transition>
+</template>
+
+<script>
+  export default {
+      mounted () {
+          // window.onresize = function () {
+          //     console.log(document.body.clientWidth)
+          // }
+          this.restDocumentFontSize()
+      },
+      watch: {
+        '$route' (to, from) {
+            console.log('路由改变')
+            // if (isIE) {
+                // window.location.reload()
+            // }
+        }
+    },
+      methods: {
+          restDocumentFontSize () {
+              let docEl = document.documentElement
+              this.documentClientWidth = docEl['clientWidth']
+              let scaling
+              if (this.documentClientWidth < 1180 && this.documentClientWidth >= 1024) {
+                  scaling = (this.documentClientWidth / 1180).toFixed(4)
+                  docEl.style.fontSize = (100 * scaling) + 'px'
+                  console.log(docEl.style.fontSize)
+              }
+              if (this.documentClientWidth < 1024) {
+                  scaling = (1024 / 1180).toFixed(4)
+                  docEl.style.fontSize = (100 * scaling) + 'px'
+              }
+              if (this.documentClientWidth > 1180) {
+                  docEl.style.fontSize = 100 + 'px'
+              }
+              // window.onresize = () => {
+              //     if (this.documentClientWidth < 1180 && this.documentClientWidth >= 1024) {
+              //         scaling = (this.documentClientWidth / 1180).toFixed(4)
+              //         docEl.style.fontSize = (100 * scaling) + 'px'
+              //         console.log(docEl.style.fontSize)
+              //     }
+              // }
+          }
+      }
+  }
+</script>

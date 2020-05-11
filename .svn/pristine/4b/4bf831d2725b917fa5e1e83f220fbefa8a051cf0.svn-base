@@ -1,0 +1,83 @@
+<!--  -->
+<template>
+  <div>
+     <el-form class="form"  style="margin-left:10px">
+      <el-row :gutter="40">
+        <el-col :span="8">
+          <el-form-item label="注册代码">
+            <el-input v-model="formData.regCode"></el-input>
+          </el-form-item>
+        </el-col>
+        <el-col :span="8">
+          <el-form-item label="区域">
+            <el-input v-model="formData.district"></el-input>
+          </el-form-item>
+        </el-col>
+        <el-col :span="8">
+          <el-button type="query">查询</el-button>
+        </el-col>
+      </el-row>
+    </el-form>
+    <div class="chart_title">
+      {{month}}月份检修巡查情况统计
+    </div>
+    <el-table border :data="dataList" v-loading="loading">
+      <el-column prop="regCode" label="注册代码"></el-column>
+      <el-column prop="onLine" label="故障次数"></el-column>
+      <el-column prop="offLine" label="处置时长"></el-column>
+      <el-column prop="operationNum" label="检修时长"></el-column>
+      <el-column prop="operationIntensity" label="故障停梯率"></el-column>
+    </el-table>
+  </div>
+</template>
+
+<script>
+export default {
+  data () {
+    return {
+      month:new Date().getMonth(),
+      formData:{
+
+      },
+      dataList:[],
+      pageIndex:1,
+      pageSize:10,
+      totalCount:''
+    };
+  },
+  components: {},
+  activated(){
+    this.getDataList()
+  },
+  methods: {
+    getDatalist(type){
+      if(type="init"){
+        this.pageIndex = 1;
+      }
+      this.loading = true;
+      this.$http({
+        url:this.$http.adornUrl(''),
+        method:'get',
+        params:this.$http.adornParams({})
+      }).then(({data})=>{
+        this.loading = false;
+        if(data&&data==0){
+          console.log(data)
+        }
+      }).catch(e=>{
+        this.loading = false;
+        console.log(e);
+      })
+    }
+  }
+}
+
+</script>
+<style scoped>
+.chart_title{
+font-size: 18px;
+color: #666;
+text-align: center;
+margin-bottom:30px;
+}
+</style>

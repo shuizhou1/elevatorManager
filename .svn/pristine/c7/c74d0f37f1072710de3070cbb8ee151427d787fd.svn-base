@@ -1,0 +1,224 @@
+<!--  -->
+<template>
+  <div>
+    <!-- form_wraper -->
+    <div class="form_wraper">
+      <div class="header">设置维保计划</div>
+      <el-form
+        ref="form"
+        :model="formData"
+        class="form"
+        style="margin-left:10px"
+        label-width="auto"
+        :rules="rules"
+      >
+        <el-row :gutter="20">
+          <el-col :span="8">
+            <el-form-item label="维保单位" prop="wbdw">
+              <el-input v-model="formData.wbdw"></el-input>
+            </el-form-item>
+          </el-col>
+          <el-col :span="8">
+            <el-form-item label="处置状态" prop="czzt">
+              <el-select v-model="formData.czzt" placeholder="请选择">
+                <el-option
+                  v-for="item in options"
+                  :key="item.value"
+                  :label="item.label"
+                  :value="item.value"
+                ></el-option>
+              </el-select>
+            </el-form-item>
+          </el-col>
+          <el-col :span="2" :offset="0">
+            <el-button @click="submitForm('form')">查询</el-button>
+          </el-col>
+        </el-row>
+      </el-form>
+    </div>
+    <!-- 维保计划表 -->
+    <!-- <div></div> -->
+    <el-table :data="wbjlTableData" border>
+      <el-table-column prop="time" label="维保计划时间" width="150"></el-table-column>
+      <el-table-column prop="danwei" label="维保单位"></el-table-column>
+      <el-table-column prop="dtdz" label="电梯地址"></el-table-column>
+      <el-table-column prop="statusName" label="处置情况" width="200"></el-table-column>
+      <el-table-column prop="status" label="处置状态" width="150"></el-table-column>
+      <el-table-column prop="sjtime" label="实际完成时间" width="150"></el-table-column>
+    </el-table>
+    <div class="pagination_wraper">
+      <el-pagination
+        layout="slot, prev, pager, next, sizes,total"
+        :total="totalNum"
+        @current-change="handlePageChange"
+      >
+      </el-pagination>
+    </div>
+  </div>
+</template>
+
+<script>
+export default {
+  data() {
+    return {
+      formData: {},
+      options: [{
+          value: '-1',
+          label: '未开始'
+        }, {
+          value: '0',
+          label: '待完成'
+        }, {
+          value: '1',
+          label: '已完成'
+        }],
+      rules: {
+        wbdw: [
+          {
+            required: true,
+            message: "维保单位不能为空"
+          }
+        ],
+        czzt: [
+          {
+            required: true,
+            message: "处置状态不能为空"
+          }
+        ]
+      },
+      // 维保计划数据
+      wbjlTableData: [
+        {
+          time: "2018-10-10",
+          danwei: "日立电梯（中国）有限公司广州分公司",
+          dtdz: "佳都智慧大厦",
+          statusName: "已完成第一次维护保养工作",
+          status: "已完成",
+          sjtime: "2018-10-10"
+        },
+        {
+          time: "2018-10-10",
+          danwei: "日立电梯（中国）有限公司广州分公司",
+          dtdz: "佳都智慧大厦",
+          statusName: "已完成第一次维护保养工作",
+          status: "已完成",
+          sjtime: "2018-10-10"
+        },
+        {
+          time: "2018-10-10",
+          danwei: "日立电梯（中国）有限公司广州分公司",
+          dtdz: "佳都智慧大厦",
+          statusName: "已完成第一次维护保养工作",
+          status: "已完成",
+          sjtime: "2018-10-10"
+        },
+        {
+          time: "2018-10-10",
+          danwei: "日立电梯（中国）有限公司广州分公司",
+          dtdz: "佳都智慧大厦",
+          statusName: "已完成第一次维护保养工作",
+          status: "已完成",
+          sjtime: "2018-10-10"
+        },
+        {
+          time: "2018-10-10",
+          danwei: "日立电梯（中国）有限公司广州分公司",
+          dtdz: "佳都智慧大厦",
+          statusName: "已完成第一次维护保养工作",
+          status: "已完成",
+          sjtime: "2018-10-10"
+        },
+        {
+          time: "2018-10-10",
+          danwei: "日立电梯（中国）有限公司广州分公司",
+          dtdz: "佳都智慧大厦",
+          statusName: "已完成第一次维护保养工作",
+          status: "已完成",
+          sjtime: "2018-10-10"
+        },
+        {
+          time: "2018-10-10",
+          danwei: "日立电梯（中国）有限公司广州分公司",
+          dtdz: "佳都智慧大厦",
+          statusName: "已完成第一次维护保养工作",
+          status: "已完成",
+          sjtime: "2018-10-10"
+        },
+        {
+          time: "2019-09-11",
+          danwei: "日立电梯（中国）有限公司广州分公司",
+          dtdz: "佳都智慧大厦",
+          statusName: "",
+          status: "未开始",
+          sjtime: ""
+        },
+        {
+          time: "2019-11-21",
+          danwei: "日立电梯（中国）有限公司广州分公司",
+          dtdz: "佳都智慧大厦",
+          statusName: "",
+          status: "未开始",
+          sjtime: ""
+        },
+         {
+          time: "2019-11-21",
+          danwei: "日立电梯（中国）有限公司广州分公司",
+          dtdz: "佳都智慧大厦",
+          statusName: "",
+          status: "未开始",
+          sjtime: ""
+        },
+         {
+          time: "2017-08-22",
+          danwei: "日立电梯（中国）有限公司广州分公司",
+          dtdz: "佳都智慧大厦",
+          statusName: "",
+          status: "未开始",
+          sjtime: ""
+        }
+      ],
+      totalNum: 50 //数据总数
+    };
+  },
+  components: {},
+  created() {},
+  methods: {
+     dataInit(){
+      console.log('获取数据');
+      this.$http({
+        url:this.$http.adornUrl('/login'),
+        method:'post',
+        data:''
+      }).then(res=>{
+        console.log('res',res);
+      }).catch(e=>{
+        console.log(e);
+      })
+    },
+    submitForm(formName) {
+      console.log('formsubmit');
+
+      //  this.$refs[formName].resetFields();
+      this.$refs[formName].validate(valid => {
+        console.log("表单验证", valid);
+        if (valid) {
+          // alert("submit!");
+          console.log(this.formData);
+        } else {
+          console.log("error submit!!");
+          return false;
+        }
+      });
+    },
+    handlePageChange(e) {
+      console.log("页面改变", e);
+    }
+  }
+};
+</script>
+<style  scoped>
+.pagination_wraper {
+  margin: 20px 0;
+  text-align: center;
+}
+</style>

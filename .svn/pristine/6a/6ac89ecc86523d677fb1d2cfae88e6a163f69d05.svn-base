@@ -1,0 +1,317 @@
+<template>
+  <div>
+    <div>
+      <div class="form_wraper">
+        <div class="header">设置维保计划</div>
+        <el-form ref="form" :model="formData" :rules="rules" class="form" label-width="auto">
+          <el-row :gutter="40">
+             <el-col :span="8">
+              <el-form-item label="维保电梯" prop="regCode">
+                <el-input v-model="formData.regCode">
+                  <template slot="append">
+                    <el-button @click="selectElevator">选择</el-button>
+                  </template>
+                </el-input>
+              </el-form-item>
+            </el-col>
+            <el-col :span="8">
+              <el-form-item label="维保单位" prop="maintenanceUnit">
+                <el-input v-model="formData.maintenanceUnit">
+                  <template slot="append">
+                    <el-button @click="selectMaintenanceUnit">选择</el-button>
+                  </template>
+                </el-input>
+              
+              </el-form-item>
+            </el-col>
+             <el-col :span="8" >
+              <el-form-item label="维保期数" prop="maintenanceCount">
+                <el-input v-model="formData.maintenanceCount"></el-input>
+              </el-form-item>
+            </el-col>
+            
+            <!-- <el-col :span="7" :offset="1">
+              <el-form-item label="维护期限" prop="maintenanceDate">
+                <el-input v-model="formData.maintenanceDate"></el-input>
+              </el-form-item>
+            </el-col>-->
+          </el-row>
+          <el-row :gutter="40">
+            <el-col :span="8">
+              <el-form-item label="每期间隔" prop="maintenanceSize">
+                <el-input v-model="formData.maintenanceSize">
+                  <template slot="append">天</template>
+                </el-input>
+              </el-form-item>
+            </el-col>
+              <el-col :span="8">
+                  <el-form-item label="维保联系人" prop="processUser">
+                    <el-input v-model="formData.processUser"></el-input>
+                  </el-form-item>
+                </el-col>
+                <el-col :span="8">
+                  <el-form-item label="联系人手机" prop="phone">
+                    <el-input v-model="formData.phone"></el-input>
+                  </el-form-item>
+                </el-col>
+           
+            <!-- <el-col :span="1">
+              <el-button @click="selectElevator">选择</el-button>
+            </el-col>-->
+          </el-row>
+          <el-row :gutter="40">
+             <el-col :span="8">
+              <el-form-item label="首期维保开始时间" prop="maintenanceStartTime">
+                <el-date-picker
+                  v-model="formData.maintenanceStartTime"
+                  format="yyyy 年 MM 月 dd 日"
+                  value-format="yyyy-MM-dd HH:mm:ss"
+                  type="datetime"
+                ></el-date-picker>
+              </el-form-item>
+            </el-col>
+          </el-row>
+        </el-form>
+      </div>
+      <div class="button_wraper" v-loading="loading">
+        <el-button @click="handleEdit('form')" type="primary">设置维保内容</el-button>
+        <el-button @click="handleSave('form')" style="margin-left:20px" type="warning">生成维保计划</el-button>
+        <el-button @click="formReset('form')" style="margin-left:20px" type="danger">重置</el-button>
+      </div>
+      <el-dialog :visible.sync="showFormconfirmDialog" width="40%" top="30vh">
+        <div slot="title" class="dialog_title">生成维保计划确认</div>
+        <div class="wbjh_content">
+          <div>维保单位：{{formData.maintenanceUnit}}</div>
+          <div>维保期数：{{formData.maintenanceCount}}</div>
+          <!-- <div>维保周期：{{formData.maintenanceUnit}}</div> -->
+          <div>维保开始时间：{{formData.maintenanceStartTime}}</div>
+          <!-- 日立电梯（中国）有限公司广州分公司将于{{formData.maintenanceStartTime}}对维保电梯({{formData.regCode}})
+          进行第一期维护保养,之后每隔{{formData.maintenanceSize}}天进行一期维护保养，连续进行{{formData.maintenanceCount}}期，维保期限为{{formData.maintenanceDate}}个月。确认后
+          将在维保计划列表生成{{formData.maintenanceCount}}条维保计划记录-->
+        </div>
+        <div class="button_wraper">
+          <el-button @click="formSubmit('form')" type="primary" style="margin-right:20px">确认</el-button>
+          <el-button @click="handleCancel()" style="margin-left:20px">取消</el-button>
+        </div>
+      </el-dialog>
+    </div>
+
+    <set-maintenance-item v-if="showszjlTable" ref="setItem" @back="goBack"></set-maintenance-item>
+    <select-elevator
+      v-if="showElevatorselectDialog"
+      ref="elevatorSelector"
+      @confirm="selectElevatorConfirm"
+    ></select-elevator>
+    <select-maintenance-unit
+      v-if="showMaintenanceunitselctDialog"
+      ref="maintenanceunitSelector"
+      @confirm="selectMaintenanceuniConfirm"
+    ></select-maintenance-unit>
+  </div>
+</template>
+
+
+
+<script>
+import setMaintenanceItem from "./setMaintenanceItem.vue";
+import selectElevator from "@/components/selectElevator.vue";
+import selectMaintenanceUnit from "@/components/selectmaintenanceunit.vue";
+import { isMobile } from "@/utils/validate";
+export default {
+  components: {
+    setMaintenanceItem,
+    selectElevator,
+    selectMaintenanceUnit
+  },
+  methods: {
+    handleEdit() {
+      console.log("设置维保计划");
+      this.showszjlTable = true;
+      this.$nextTick(() => {
+        this.$refs.setItem.init(this.formData.maintenanceContentId);
+      });
+    },
+    handleSave(formName) {
+      console.log("生成维保计划", this.formData);
+      this.$refs[formName].validate(valid => {
+        if (valid) {
+          // alert("submit!");
+          this.showFormconfirmDialog = true;
+          console.log(this.formData);
+        } else {
+          return false;
+        }
+      });
+    },
+    formSubmit() {
+      console.log("提交表单");
+      this.showFormconfirmDialog = false;
+      this.loading = true;
+      this.$http({
+        url: this.$http.adornUrl("/maintenanceplan/maintenanceplan/save"),
+        method: "post",
+        data: this.$http.adornData(this.formData)
+      }).then(({ data }) => {
+        if (data && data.code == 0) {
+          this.loading = false;
+          this.$message.success("操作完成");
+        }
+      });
+    },
+    handleCancel() {
+      this.showFormconfirmDialog = false;
+    },
+    formReset(formName) {
+      this.$refs[formName].resetFields();
+    },
+    // 从维保记录表返回
+    goBack(ids) {
+      console.log("内容id", ids);
+      this.showszjlTable = false;
+      this.formData.maintenanceContentId = ids;
+    },
+    // 选择电梯
+    selectElevator() {
+      this.showElevatorselectDialog = true;
+      this.$nextTick(() => {
+        this.$refs.elevatorSelector.init();
+      });
+    },
+    selectElevatorConfirm(val) {
+      console.log("确认选择", val);
+      let regcodes = val.map(item => item.regcode).join(",");
+      console.log(regcodes);
+      this.formData.regCode = regcodes;
+    },
+    // 选择维保单位
+    selectMaintenanceUnit() {
+      this.showMaintenanceunitselctDialog = true;
+      this.$nextTick(() => {
+        this.$refs.maintenanceunitSelector.init(this.formData.maintenanceid);
+      });
+    },
+    selectMaintenanceuniConfirm(val) {
+      console.log("确认选择", val);
+      this.formData.maintenanceId = val.id;
+      this.formData.maintenanceUnit = val.unitName;
+    }
+  },
+  data() {
+    const checkmobile = (rule, value, callback) => {
+      if (!isMobile(value)) {
+        callback(new Error("手机号格式错误"));
+      } else {
+        callback();
+      }
+    };
+    return {
+      loading: false,
+      formData: {
+        maintenanceContentId: "", //维保内容id
+        maintenanceCount: "", //维保次数
+        maintenanceDate: "", //维保期限
+        maintenancePeople: "",
+        // allowEmptyValue: false
+        // 维保联系人
+        maintenancePhone: "",
+        // allowEmptyValue: false
+        // 联系人手机
+        maintenanceSize: "",
+        // allowEmptyValue: false
+        // 维保间隔
+        maintenanceStartTime: "",
+        // allowEmptyValue: false
+        // 维保开始时间
+        maintenanceUnit: "",
+        // allowEmptyValue: false
+        // 维保单位
+        regCode: ""
+        // allowEmptyValue: false
+        // 维保电梯
+      },
+      showszjlTable: false, //显示维保记录表
+      showElevatorselectDialog: false, //是否显示电梯选择dialog
+      showMaintenanceunitselctDialog: false, //维保单位选择
+      showFormconfirmDialog: false, //是否显示表单确认dialog
+      rules: {
+        maintenanceContentId: [
+          {
+            required: true,
+            message: "维保内容不能为空"
+          }
+        ], //维保内容id
+        maintenanceCount: [
+          {
+            required: true,
+            message: "维保次数不能为空"
+          }
+        ], //维保次数
+        // maintenanceDate: [
+        //   {
+        //     required: true,
+        //     message: "维保期限不能为空"
+        //   }
+        // ], //维保期限
+        processUser: [
+          {
+            required: true,
+            message: "维保联系人不能为空"
+          }
+        ],
+        // allowEmptyValue: false
+        // 维保联系人
+        phone: [
+          {
+            required: true,
+            message: "联系人手机不能为空"
+          },
+          {
+            validator: checkmobile,
+            trigger: "blur"
+          }
+        ],
+        // allowEmptyValue: false
+        // 联系人手机
+        maintenanceSize: [
+          {
+            required: true,
+            message: "维保间隔不能为空"
+          }
+        ],
+        // allowEmptyValue: false
+        // 维保间隔
+        maintenanceStartTime: [
+          {
+            required: true,
+            message: "维保开始时间不能为空"
+          }
+        ],
+        // allowEmptyValue: false
+        // 维保开始时间
+        maintenanceUnit: [
+          {
+            required: true,
+            message: "维保单位不能为空"
+          }
+        ],
+        // allowEmptyValue: false
+        // 维保单位
+        regCode: [
+          {
+            required: true,
+            message: "维保电梯不能为空"
+          }
+        ]
+        // allowEmptyValue: false
+        // 维保电梯
+      }
+    };
+  }
+};
+</script>
+<style>
+.wbjh_content {
+  text-indent: 2em;
+  line-height: 25px;
+}
+</style>

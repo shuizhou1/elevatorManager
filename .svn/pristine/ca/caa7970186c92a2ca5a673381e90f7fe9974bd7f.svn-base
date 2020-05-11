@@ -1,0 +1,185 @@
+<template>
+    <el-dialog
+            :title="'查询选项'"
+            :append-to-body="true"
+            :close-on-click-modal="false"
+            :fullscreen="false"
+            :modal="true"
+            width="80%"
+            custom-class="smallDialog table"
+            :visible.sync="visible">
+        <div class="button-container">
+            <div class="input-container">
+                <div class="item has-input widthx2">
+                    <div class="flex-container">
+                        <span class="selectTitle">投诉处置人：</span>
+                        <el-input v-model="dataForm.nickname" placeholder="请输入投诉处置人" class="select-item"></el-input>
+                    </div>
+                </div><div class="item has-input">
+                <el-button
+                        type="primary"
+                        @click="getDataList('init')">查询</el-button><el-button type="save" @click="choosePeople()">确定</el-button>
+            </div>
+            </div>
+        </div>
+        <el-table
+                  :data="dataList"
+                  border
+                  @header-dragend="handleDragend"
+                  v-loading="dataListLoading"
+                  @current-change="selectionChangeHandle"
+                  highlight-current-row
+                  style="width: 100%;">
+            <el-table-column
+                    header-align="center"
+                    align="center"
+                    width="50">
+                <template slot-scope="scope">
+                    <el-checkbox v-model="scope.row.checked"></el-checkbox>
+                </template>
+            </el-table-column>
+            <el-table-column
+                    prop="districtName"
+                    header-align="center"
+                    align="center"
+                    width="80"
+                    label="所属区域">
+            </el-table-column>
+            <el-table-column
+                    prop="streetName"
+                    header-align="center"
+                    align="center"
+                    label="所属街道">
+            </el-table-column>
+            <el-table-column
+                    prop="communityName"
+                    header-align="center"
+                    align="center"
+                    label="所属社区">
+            </el-table-column>
+            <el-table-column
+                    prop="nickname"
+                    header-align="center"
+                    align="center"
+                    label="接收人">
+            </el-table-column>
+            <el-table-column
+                    prop="mobile"
+                    header-align="center"
+                    align="center"
+                    label="接收人电话">
+            </el-table-column>
+        </el-table>
+        <el-pagination
+                class="m-t-sm"
+                @size-change="sizeChangeHandle"
+                @current-change="currentChangeHandle"
+                :current-page="pageIndex"
+                :page-sizes="[5, 10, 20, 30]"
+                :page-size="pageSize"
+                :total="totalPage"
+                layout="total, sizes, prev, pager, next, jumper">
+        </el-pagination>
+    </el-dialog>
+</template>
+
+<script>
+    import config from '@/utils/config.js'
+    export default {
+        name: 'affairinfo-transfer',
+        data () {
+            return {
+                formResultData: {},
+                dataForm: {
+                    nickname: ''
+                },
+                visible: false,
+                addOrUpdateVisible: false,
+                dataListLoading: false,
+                dataList: [],
+                pageIndex: 1,
+                pageSize: 5,
+                totalPage: 0,
+                selectItem: {}
+            }
+        },
+        methods: {
+            handleDragend (n, o, a, b) {
+                config.tableDragendHandle(n, o, a)
+            },
+            choosePeople () {
+                this.$emit('selectItem', this.selectItem)
+                this.visible = false
+            },
+            // 每页数
+            sizeChangeHandle (val) {
+                this.pageSize = val
+                this.pageIndex = 1
+                this.getDataList()
+            },
+            // 当前页
+            currentChangeHandle (val) {
+                this.pageIndex = val
+                this.getDataList()
+            },
+            // 单选
+            selectionChangeHandle (row) {
+                if (!row) {
+                    return
+                }
+                this.dataList.forEach(item => {
+                    // 排他,每次选择时把其他选项都清除
+                    if (item.userId !== row.userId) {
+                        item.checked = false
+                    }
+                    this.selectItem = row
+                })
+            },
+            getDataList (type) {
+                if (type === 'init') {
+                    this.pageIndex = 1
+                }
+                this.dataListLoading = true
+                this.visible = true
+                this.$http({
+                    url: this.$http.adornUrl('/sys/user/findTransferUser'),
+                    method: 'get',
+                    params: this.$http.adornParams({
+                        'page': this.pageIndex,
+                        'limit': this.pageSize,
+                        'nickname': this.dataForm.nickname
+                    })
+                }).then(({data}) => {
+                    if (data && data.code === 0) {
+                        this.totalPage = data.data.totalCount
+                        data.data.list.forEach(item => {
+                            item.checked = false
+                        })
+                        this.dataList = data.data.list
+                        this.selectItem = {}
+                    } else {
+                        this.dataList = []
+                        this.selectItem = {}
+                        this.totalPage = 0
+                    }
+                    this.dataListLoading = false
+                })
+            }
+        }
+    }
+</script>
+
+<style scoped>
+    .el-dialog__header {
+        padding: 0;
+    }
+</style>
+<style lang="scss">
+    .smallDialog {
+        &.table {
+            .el-dialog__body {
+                padding: 10px;
+            }
+        }
+    }
+</style>

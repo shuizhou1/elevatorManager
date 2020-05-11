@@ -1,0 +1,47 @@
+// 宽度
+// -----------------------------
+$min-width:                     1004px !default;
+// 高度
+// -----------------------------
+$header-height:                65px !default;
+// 字体
+// -----------------------------
+$font-family:                   Helvetica Neue, Helvetica, PingFang SC,
+Hiragino Sans GB, Microsoft YaHei, 微软雅黑, Arial, sans-serif;
+$font-size: (
+    small:                      12px,
+    default:                    14px,
+    large:                      16px,
+    larger:                     18px,
+    largest:                    20px
+);
+
+$font-size-small:               map_get($font-size, small);
+$font-size-default:             map_get($font-size, default);
+$font-size-large:               map_get($font-size, large);
+$font-size-larger:              map_get($font-size, larger);
+$font-size-largest:             map_get($font-size, largest);
+
+$text-dark:                     map_get($text-colors, dark);
+$text-light:                    map_get($text-colors, light);
+$text-gray:                     map_get($text-colors, gray);
+
+// 透明度
+// -----------------------------
+$opacity:                       rgba($block, 1) !default;
+$translucent:                   rgba($block, .5) !default;
+$transparent:                   rgba($block, 0) !default;
+
+// 描边
+// -----------------------------
+$border-base:                   1px solid map_get($border-colors, base);
+$border-white:                  1px solid map_get($border-colors, white);
+$border-primary:                1px solid map_get($border-colors, primary);
+
+// 前后缀变量名缩写定义                 xxs(极小 1px)、xs(很小 5px)、sm(小 10px)、''(正常 15px)、
+//-------------------------------    md(中等 20px)、lg(大 30px)、xl(很大 30px)、xxl(极大 50px)
+$directions:                     ( t: top, r: right, b: bottom, l: left, v: vertical, h: horizontal); // 方向缩写
+$border-direction:               ( top: top, right: right, bottom: bottom, left: left, "": ""); // 方向
+$size-list:                      ( xs: 5px, sm: 10px, '': 15px, md: 20px ); // n-xs: -5px, n-sm: -10px, n: -15px, n-md: 20px
+$name-list:                      ( m: margin, p: padding );
+

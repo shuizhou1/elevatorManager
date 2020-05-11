@@ -1,0 +1,260 @@
+<!--  -->
+<template>
+  <el-dialog
+    :close-on-click-modal="false"
+    :show-close="false"
+    :fullscreen="true"
+    :modal="false"
+    :visible.sync="visible"
+  >
+    <!-- 维保各项情况表 -->
+    <div class="clearfix" slot="title">
+      <span>选择维保内容</span>
+      <el-button class="fr" @click="handleBack" type="back">完成</el-button>
+    </div>
+    <el-table 
+     :data="dataList"
+     ref="multipleTable" 
+     border style="width: 100%"
+     @selection-change="handleSelectionChange"
+     :row-key="getRowKey"
+      v-loading="loading">
+      <el-table-column type="selection" :selectable="rowSelectable" :reserve-selection="true"  width="50" :disabled="true"></el-table-column>
+      <el-table-column type="index" label="序号" width="180"></el-table-column>
+      <el-table-column prop="content" label="维护保养项目"></el-table-column>
+      <el-table-column prop="demand" label="维护保养基本要求"></el-table-column>
+      <!-- <el-table-column prop="wbqk" label="维保情况">
+        <template slot-scope="scope">
+          <el-radio-group v-model="formData[scope.row]">
+            <el-radio :label="1">确认正常</el-radio>
+            <el-radio :label="0">调整、更换</el-radio>
+            <el-radio :label="-1">需维修</el-radio>
+          </el-radio-group>
+        </template>
+      </el-table-column> -->
+    </el-table>
+    <!-- <div class="button_wraper">
+      <el-button @click="handleAddItem" style="margin-right:20px" type="warning">添加项目</el-button>
+      <el-button :disabled="!selectDataList.length" @click="handleDeleteItem" style="margin-left:20px" type="danger">移除项目</el-button>
+    </div> -->
+    <el-pagination
+      @size-change="sizeChangeHandle"
+      @current-change="currentChangeHandle"
+      :current-page="pageIndex"
+      :page-sizes="[5, 10, 20, 50]"
+      :page-size="pageSize"
+      :total="totalCount"
+      layout="total, sizes, prev, pager, next, jumper"
+    ></el-pagination>
+    <el-dialog
+      :close-on-click-modal="false"
+      :show-close="false"
+      :modal="false"
+      width="80%"
+      :visible.sync="dialogVisible"
+    >
+      <div slot="title">增加维保内容</div>
+      <el-form
+        ref="form"
+        :model="itemFormData"
+        class="form"
+        style="margin-left:10px"
+        label-width="auto"
+        :rules="rules"
+      >
+        <el-row :gutter="50">
+          <el-col :span="12">
+            <el-form-item label="维保内容" prop="unitName">
+              <el-input v-model="itemFormData.content"></el-input>
+            </el-form-item>
+          </el-col>
+          <el-col :span="12">
+            <el-form-item label="维保基本要求" prop="maintenanceStatus">
+              <el-input v-model="itemFormData.demand"></el-input>
+            </el-form-item>
+          </el-col>
+        </el-row>
+      </el-form>
+      <div class="dialog_footer">
+        <el-button type="primary" @click="dataFormSubmit" style="margin-right:20px">确认</el-button>
+        <el-button @click="dialogVisible =false" style="margin-left:20px">取消</el-button>
+      </div>
+    </el-dialog>
+  </el-dialog>
+</template>
+
+<script>
+export default {
+  data() {
+    return {
+      ids:'',//旧id
+      visible: false,
+      dialogVisible: false,
+      loading: false,
+      pageSize: 10,
+      pageIndex: 1,
+      totalCount: 0,
+      formData: {},
+      itemFormData: {
+        content: "", //维保内容
+        demand: "" //要求
+      },
+      dataList: [],
+      selectDataList:[],
+      rules: {
+        content: [
+          {
+            required: true,
+            message: "维保内容不能为空"
+          }
+        ],
+        demand: [
+          {
+            required: true,
+            message: "保养要求不能为空"
+          }
+        ]
+      }
+    };
+  },
+  components: {},
+  created() {},
+  methods: {
+    init(ids) {
+      console.log("init获取数据",ids);
+      this.visible = true;
+       if (ids) {
+        if(ids.indexOf(',')>-1){
+          this.ids = ids.split(',')
+        }else {
+          let arr = []
+          arr.push(ids)
+          this.ids = arr;
+        }
+      }
+      this.getDataList();
+    },
+    scrollbackSelect(data) {
+      // 回显选择
+      console.log("回显选择",data);
+      data.forEach(item => {
+        if (this.ids.indexOf(item.id) > -1) {
+          this.$nextTick(()=>{
+           this.$refs.multipleTable.toggleRowSelection(item, true);
+          })
+        }
+      });
+    },
+    getDataList() {
+      this.loading = true;
+      this.$http({
+        url: this.$http.adornUrl("/maintenancecontent/maintenancecontent/list"),
+        method: "get",
+        data: this.$http.adornParams({
+          limit: this.pageSize,
+          page: this.pageIndex
+        })
+      }).then(({ data }) => {
+        if (data && data.code == 0) {
+          console.log(data.page);
+          this.loading = false;
+          this.totalCount = data.page.totalCount;
+          this.dataList = data.page.list;
+           if(this.ids){
+            this.scrollbackSelect(data.page.list);
+          }
+        }
+      });
+    },
+    rowSelectable(row,index){
+      // console.log(row);
+      return row.isedit == 1;
+    },
+    getRowKey(row){
+      // console.log(row.id);
+      return row.id;
+    },
+    // handleAddItem() {
+    //   console.log("添加项目");
+    //   this.dialogVisible = true;
+    // },
+    // // 删除
+    //  handleDeleteItem() {
+    //   var ids =  this.selectDataList.map(item => {
+    //         return item.id;
+    //       });
+    //   this.$confirm(`确定删除?`, "提示", {
+    //     confirmButtonText: "确定",
+    //     cancelButtonText: "取消",
+    //     type: "warning"
+    //   }).then(() => {
+    //     this.$http({
+    //       url: this.$http.adornUrl("/maintenancecontent/maintenancecontent/delete"),
+    //       method: "post",
+    //       data: this.$http.adornData(ids, false)
+    //     }).then(({ data }) => {
+    //       if (data && data.code == 0) {
+    //         console.log('删除成功')
+    //         this.getDataList();
+    //       } else {
+    //       }
+    //     });
+    //   });
+    // },
+    handleBack() {
+      this.visible = false;
+      let ids = this.selectDataList.map(item=>item.id);
+      this.$emit("back",ids.join(','));
+    },
+    // 每页数
+    sizeChangeHandle(val) {
+      this.pageSize = val;
+      this.pageIndex = 1;
+      this.getDataList();
+    },
+    // 当前页
+    currentChangeHandle(val) {
+      this.pageIndex = val;
+      this.getDataList();
+    },
+    handleSelectionChange(val){
+      console.log('选择改变',val);
+      this.selectDataList = val;
+    },
+    // 表单提交
+    dataFormSubmit() {
+      this.$refs["form"].validate(valid => {
+        if (valid) {
+          this.$http({
+            url: this.$http.adornUrl(
+              "/maintenancecontent/maintenancecontent/save"
+            ),
+            method: "post",
+            data: this.$http.adornData(this.itemFormData)
+          }).then(({ data }) => {
+            if (data && data.code === 0) {
+              this.$message({
+                message: "操作成功",
+                type: "success",
+                duration: 1500,
+                onClose: () => {
+                  this.dialogVisible = false;
+                 this.getDataList();
+                }
+              });
+            } else {
+              this.$message.error(data.error);
+            }
+          });
+        }
+      });
+    }
+  }
+};
+</script>
+<style lang='scss' scoped>
+.button_wraper {
+  margin: 20px 0;
+  text-align: center;
+}
+</style>

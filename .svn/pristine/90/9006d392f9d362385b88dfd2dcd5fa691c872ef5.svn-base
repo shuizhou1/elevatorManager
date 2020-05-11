@@ -1,0 +1,611 @@
+<!--  -->
+<template>
+  <div v-loading="loading">
+    <!-- <div  :style="{'height': height, 'width': '100%'}">
+      <div id="chartBox" :style="{'width':width,'height':height}"></div>
+    </div>-->
+    <!-- <div class="chart_title">报警类型统计</div> -->
+    <el-form class="dialog_head_form" @keyup.enter.native="handleQuery">
+      <el-row :gutter="40">
+        <el-col :span="8">
+          <el-form-item label="注册代码" prop="regCode">
+            <el-input v-model="formData.regCode" clearable>
+              <template slot="append">
+                <el-button @click="selectElevator">选择</el-button>
+              </template>
+            </el-input>
+          </el-form-item>
+        </el-col>
+        <el-col :span="6">
+          <!-- <select-month></select-month> -->
+          <el-form-item label="日期">
+            <el-date-picker
+              v-model="dateValue"
+              @change="dateChange"
+              start-placeholder="开始月份"
+              end-placeholder="结束月份"
+              value-format="yyyy-M"
+              type="monthrange"
+            ></el-date-picker>
+          </el-form-item>
+        </el-col>
+        <el-col :span="6">
+          <el-form-item label="区域">
+            <el-cascader
+              v-model="areaValue"
+              :options="areaData"
+              @change="handleAreaChange"
+               :props="{ checkStrictly: true }"
+              clearable
+            ></el-cascader>
+          </el-form-item>
+        </el-col>
+        <el-col :span="2">
+          <el-button @click="handleQuery" type="query">查询</el-button>
+        </el-col>
+      </el-row>
+    </el-form>
+    <!-- <div class="chart_title">报警事件统计</div> -->
+    <el-tabs type="card" value="first" @tab-click="handleChange">
+      <el-tab-pane label="图表" name="first">
+        <div class="chartContainer" :style="{'height':containerHeight-21+'px'}">
+          <div class="left">
+            <div v-if="totalOption.series.length">
+              <div  id="totalChartBox" :style="{'height':containerHeight-41+'px','width':'100%'}"></div>
+            </div>
+            <div v-else class="echart_none_data">暂无数据</div>
+          </div>
+          <div class="right">
+            <div v-if="chartDataList&&chartDataList.length">
+              <div
+                class="right_item"
+                :class="{border_bottom:index!=2}"
+                v-for="(item,index) in chartDataList"
+                :key="index"
+              >
+                <div class="chart_subtitle_box">
+                  <span class="chart_circle">{{index+1}}</span>
+                  <span class="chart_subtitle">{{item.local}}</span>
+                  <popover>
+                    <div class="popover_content">
+                      <div>品牌：{{item.elevatorBrand}}</div>
+                      <div>投产时间：{{formatDate(item.commissioningTime)}}</div>
+                      <div>注册代码：{{item.regCode}}</div>
+                      <div>电梯地址：{{item.local}}</div>
+                      <div>维保单位：{{item.maintenanceName}}</div>
+                    </div>
+                    <i class="el-icon-info" slot="reference"></i>
+                  </popover>
+                </div>
+                <div :id="`chartBox${index}`" :style="{'height':'100%'}"></div>
+              </div>
+            </div>
+            <div v-else class="echart_none_data">暂无数据</div>
+          </div>
+        </div>
+      </el-tab-pane>
+      <el-tab-pane label="列表" name="second">
+        <el-table border :data="dataList" v-loading="loading">
+          <el-table-column type="expand">
+            <template slot-scope="props">
+              <div class="eventItems eventItems_header">
+                <!-- <span class="itemName">报警事件</span>
+                <span class="itemCount">次数</span> -->
+              </div>
+              <div class="eventItems" v-for="(value,key,index) in props.row.items" :key="index">
+                <span class="itemName">{{formatCode(key)}}</span>
+                <span class="itemCount">{{value}}</span>
+              </div>
+            </template>
+          </el-table-column>
+          <el-table-column label="注册代码" prop="regCode" align="center"></el-table-column>
+          <el-table-column label="电梯地址" show-overflow-tooltip prop="local" align="center"></el-table-column>
+          <el-table-column label="维保单位" show-overflow-tooltip prop="maintenanceName" align="center"></el-table-column>
+          <el-table-column label="报警次数" width="100" prop="counts" align="center"></el-table-column>
+        </el-table>
+        <el-pagination
+          @size-change="sizeChangeHandle"
+          @current-change="currentChangeHandle"
+          :current-page="pageIndex"
+          :page-sizes="[5, 10, 20, 50]"
+          :page-size="pageSize"
+          :total="totalCount"
+          layout="total, sizes, prev, pager, next, jumper"
+        ></el-pagination>
+      </el-tab-pane>
+    </el-tabs>
+
+    <select-elevator
+      v-if="showElevatorselectDialog"
+      ref="elevatorSelector"
+      @confirm="selectElevatorConfirm"
+    ></select-elevator>
+  </div>
+</template>
+
+<script>
+import echart from "echarts";
+import statical from "@/utils/mixins/staticalAnalysis";
+import pagination from "@/utils/mixins/pagination";
+export default {
+  mixins: [statical, pagination],
+  activated() {
+    console.log("actie");
+    // 由于给echart添加了resize事件, 在组件激活时需要重新resize绘画一次, 否则出现空白bug
+
+    //  if (this.totalChart) {
+    //   this.totalChart.resize();
+    // }
+    // if (this.firChart) {
+    //   this.firChart.resize();
+    // }
+    // if (this.secChart) {
+    //   this.secChart.resize();
+    // }
+    // if (this.thiChart) {
+    //   this.thiChart.resize();
+    // }
+  },
+  data() {
+    return {
+      showElevatorselectDialog: false,
+      showElevatorInfo: false,
+      currentIndex: 0,
+      loading: false,
+      value: "",
+      area: [],
+      pageIndex: 1,
+      pageSize: 10,
+      totalCount: 0,
+      dataList: [],
+      chartDataList: [],
+      dateValue: "",
+      formData: {
+        dateValue: "",
+        regCode: "",
+        years: "",
+        months: "",
+        startTime:null,
+        province: "",
+        city: "",
+        district: ""
+      },
+      height: "",
+      containerHeight: "",
+      width: "",
+      totalChart: null,
+      chart0: null,
+      chart1: null,
+      chart3: null,
+      areaData: [],
+      totalOption: {
+        title: {
+          // text: "报警事件统计",
+          x: "center",
+          y: "10",
+          textStyle: {
+            fontWeight: "normal" //标题颜色
+          }
+        },
+        tooltip: {
+          trigger: "item",
+          formatter: "报警事件：{a}</br> 数量：{c}"
+        },
+        grid: {
+          left: "5%",
+          right: "5%",
+          bottom: "12%",
+          top:'10%',
+          containLabel: true
+        },
+        legend: {
+          bottom: "0"
+        },
+        xAxis: {
+          type: "category",
+          // name:'事件类型',
+          splitLine: { show: false },
+          data: [],
+          axisLine: {
+            lineStyle: {
+              type: "solid",
+              color: "eee", //坐标线的颜色
+              width: "2" //坐标线的宽度
+            }
+          },
+          axisLabel: {
+            textStyle: {}
+          }
+        },
+        yAxis: {
+          type: "value",
+          axisLine: {
+            lineStyle: {
+              type: "solid",
+              color: "eee", //左边线的颜色
+              width: "2" //坐标线的宽度
+            }
+          },
+          axisLabel: {
+            formatter: () => {
+              return "";
+            },
+            textStyle: {}
+          }
+        },
+        series: []
+      },
+      option0: {
+        title: {
+          text: "",
+          x: "center",
+          textStyle: {
+            fontWeight: "normal", //标题颜色
+            fontSize: 10
+          }
+        },
+        tooltip: {
+          trigger: "item",
+          formatter: `{b}<br/>数量:{c}（{d}%）`
+        },
+        grid: {
+          top: "1%",
+          left: "3%",
+          right: "5%",
+          bottom: "5%",
+          containLabel: true
+        },
+
+        series: [
+          {
+            type: "pie",
+            radius: "65%",
+            center: ["55%", "45%"],
+            data: []
+          }
+        ]
+      },
+      option1: {
+        title: {
+          text: "",
+          x: "center",
+          textStyle: {
+            fontWeight: "normal", //标题颜色
+            fontSize: 10
+          }
+        },
+        tooltip: {
+          trigger: "item",
+          formatter: `{b}<br/>数量:{c}（{d}%）`
+        },
+        grid: {
+          left: "3%",
+          right: "5%",
+          bottom: "8%",
+          containLabel: true
+        },
+
+        series: [
+          {
+            type: "pie",
+            radius: "65%",
+            center: ["55%", "45%"],
+            data: []
+          }
+        ]
+      },
+      option2: {
+        title: {
+          text: "",
+          x: "center",
+          textStyle: {
+            fontWeight: "normal", //标题颜色
+            fontSize: 10
+          }
+        },
+        tooltip: {
+          trigger: "item",
+          formatter: "{b}<br/>数量:{c}（{d}%）"
+        },
+        grid: {
+          left: "3%",
+          right: "5%",
+          bottom: "10%",
+          top: "3%",
+          containLabel: true
+        },
+
+        series: [
+          {
+            type: "pie",
+            radius: "65%",
+            center: ["55%", "45%"],
+            data: []
+          }
+        ]
+      }
+    };
+  },
+
+  mounted() {
+    this.containerHeight = document.documentElement.clientHeight - 180;
+    this.width = document.documentElement.clientWidth - 250 + "px";
+    this.height = document.documentElement.clientHeight - 280 + "px";
+    console.log("documentheight", document.documentElement.clientHeight);
+    window.onresize = () => {
+      this.width = document.documentElement.clientWidth - 250 + "px";
+      this.height = document.documentElement.clientHeight - 280 + "px";
+    };
+    this.$nextTick(() => {
+      this.getchartData();
+      this.getTopthreeData();
+      this.getDataList();
+    });
+  },
+  methods: {
+    getchartData() {
+      this.$http({
+        url: this.$http.adornUrl(
+          "/elevatorwarning/elevatorwarning/countWithCode"
+        ),
+        method: "post",
+        params: this.$http.adornParams(this.formData)
+      })
+        .then(({ data }) => {
+          if (data && data.code == 0) {
+            console.log("总图表数据", data);
+            let arr = [];
+            let list = data.data;
+            if (list.length) {
+              data.data.forEach(item => {
+                arr.push({
+                  name: this.formatCode(item.code),
+                  type: "bar",
+                  label: {
+                    normal: {
+                      show: true,
+                      position: "top"
+                    }
+                  },
+                  data: [item.count]
+                });
+              });
+              this.totalOption.series = arr;
+              console.log("totaloption", this.totalOption);
+              this.$nextTick(() => {
+                this.totalChart = echart.init(
+                  document.getElementById("totalChartBox"),
+                 
+                );
+                this.totalChart.setOption(this.totalOption,true);
+              });
+            }else {
+              // this.close(this.totalChart)
+              this.totalOption.series = [];
+               console.log("totaloption", this.totalOption);
+              
+            }
+          }
+        })
+        .catch(e => {
+          console.log(e);
+        });
+
+      // window.addEventListener("resize", () => {
+      //   this.totalChart.resize();
+      // });
+    },
+    getTopthreeData() {
+      this.loading = true;
+      this.$http({
+        url: this.$http.adornUrl("/statistics/statistics/alarmAnalysisThree"),
+        method: "get",
+        params: this.$http.adornParams({
+          years: this.formData.years,
+          months: this.formData.months,
+          province: this.formData.province,
+          city: this.formData.city,
+          district: this.formData.district,
+          regCode: this.formData.regCode,
+          startTime:this.formData.startTime
+        })
+      })
+        .then(({ data }) => {
+          this.loading = false;
+          if (data && data.code == 0) {
+            console.log("前三图表数据", data);
+            let list = data.list;
+            this.chartDataList = list;
+            if (list) {
+              list.forEach((item, index) => {
+                let obj = list[index].items;
+                let arr = [];
+                for (let key in obj) {
+                  arr.push({
+                    name: this.formatCode(key),
+                    value: obj[key]
+                  });
+                }
+                this[`option${index}`].series[0].data = arr;
+                this.$nextTick(() => {
+                  this[`chart${index}`] = echart.init(
+                    document.getElementById(`chartBox${index}`),
+                    
+                  );
+                  this[`chart${index}`].setOption(this[`option${index}`]);
+                });
+              });
+            }
+          
+          }
+        })
+        .catch(e => {
+          this.loading = false;
+          console.log(e);
+        });
+    },
+    getDataList() {
+      this.$http({
+        url: this.$http.adornUrl("/statistics/statistics/alarmAnalysisAll"),
+        method: "get",
+        params: this.$http.adornParams({
+          page: this.pageIndex,
+          limit: this.pageSize,
+          years: this.formData.years,
+          months: this.formData.months,
+          regCode: this.formData.regCode,
+          province: this.formData.province,
+          city: this.formData.city,
+          district: this.formData.district,
+           startTime:this.formData.startTime
+        })
+      })
+        .then(({ data }) => {
+          if (data && data.code == 0) {
+            console.log("表格数据", data);
+            this.dataList = data.list.list;
+            this.totalCount = data.list.totalCount;
+          }
+        })
+        .catch(e => {
+          console.log(e);
+        });
+    },
+    close(dom) {
+      console.log('close');
+      dom.close();
+    },
+
+    formatCode(key) {
+      let value;
+      if (key === "LOB") {
+        value = "LMD由电池供电";
+      } else if (key === "LRF") {
+        value = "电梯主回路供电中断";
+      } else if (key === "MOF") {
+        value = "控制器（柜）供电中断";
+      } else if (key === "PTRAP") {
+        value = "困人";
+      } else if (key === "MRI") {
+        value = "人员进入机房";
+      } else if (key === "LDO") {
+        value = "门异常打开";
+      } else if (key === "CDO") {
+        value = "警报";
+      } else if (key === "LM") {
+        value = "检修";
+      } else if (key === "LBH") {
+        value = "LMD电池电压高";
+      } else if (key === "LBL") {
+        value = "LMD电池电压低";
+      } else if (key === "SPA14") {
+        value = "485通信故障";
+      } else if (key === "RESTR") {
+        value = "LMD冷重启";
+      } else if (key === "TOI") {
+        value = "运行1000次";
+      } else if (key === "LIOF") {
+        value = "通讯中断";
+      } else if (key === "EBF") {
+        value = "电梯状态预警";
+      } else if (key === "LF1") {
+        value = "采集板供电异常";
+      } else if (key === "LF4") {
+        value = "电梯供电故障";
+      } else if (key === "LF5") {
+        value = "安全回路断开";
+      } else if (key === "LF6") {
+        value = "辅助板故障";
+      } else if (key === "LF8") {
+        value = "外部按钮响应异常";
+      } else if (key === "LF11") {
+        value = "开门故障";
+      } else if (key === "LF12") {
+        value = "关门故障";
+      } else if (key === "LF15") {
+        value = "内部按钮响应异常";
+      } else if (key === "LF16") {
+        value = "电梯长时间无运行";
+      } else if (key === "LF18") {
+        value = "消防开关接通";
+      } else if (key === "LF19") {
+        value = "门锁短接";
+      } else if (key === "LF21") {
+        value = "光幕报警触发";
+      } else {
+        value = "";
+      }
+      return value;
+    },
+    handleChange(e) {
+      console.log("change", e);
+      console.log(this.formData);
+      this.currentIndex = e.index;
+      if (e.index == 0) {
+        this.getchartData();
+        this.getTopthreeData();
+      } else {
+        this.getDataList();
+      }
+    },
+    handleQuery() {
+      console.log("formData", this.formData);
+      if (this.currentIndex == 0) {
+        this.getchartData();
+        this.getTopthreeData();
+      } else {
+        this.getDataList("init");
+      }
+    },
+    pickStimeEtime(t) {
+      console.log("282", t);
+      if (t) {
+        this.formData.stime = t[0];
+        this.formData.etime = t[1];
+      } else {
+        this.formData.stime = "";
+        this.formData.etime = "";
+      }
+    }, // 选择电梯
+    selectElevator() {
+      this.showElevatorselectDialog = true;
+      this.$nextTick(() => {
+        this.$refs.elevatorSelector.init();
+      });
+    },
+    selectElevatorConfirm(val) {
+      console.log("确认选择", val);
+      this.formData.regCode = val.regcode;
+      console.log(this.formData);
+    }
+  }
+};
+</script>
+<style  lang="scss">
+@import "../../../assets/css/statistical.scss";
+.eventItems {
+  display: flex;  
+  justify-content: flex-end;
+  // width: 20%;
+  // max-width: 30%;
+  padding: 6px 0;
+  .itemName {
+    color: #99a9bf;
+    // margin-right: 50px;
+    // flex: 0 1 400px;
+    width: 400px;
+    text-align: center;
+  }
+  .itemCount{
+    width: 100px;
+    text-align: center;
+  }
+}
+.eventItems_header{
+  font-size: 16px;
+  .itemName{
+    color: #606266;
+  }
+}
+
+</style>

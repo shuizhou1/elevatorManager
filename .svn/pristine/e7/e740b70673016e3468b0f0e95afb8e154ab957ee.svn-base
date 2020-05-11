@@ -1,0 +1,260 @@
+<!--  -->
+<template>
+  <div>
+    <!-- form_wraper -->
+    <div class="form_wraper">
+      <!-- <div class="header">维保预约</div> -->
+      <el-form
+        ref="form"
+        :model="formData"
+        class="form"
+        label-width="auto"
+        :rules="rules"
+        @keyup.enter.native="getDataList('init')"
+      >
+        <el-row :gutter="20">
+          <el-col :span="8">
+            <el-form-item class="none_margin_bottom" label="联系人" clearable prop="contactName">
+              <el-input v-model="formData.contactName" clearable></el-input>
+            </el-form-item>
+          </el-col>
+          <el-col :span="8">
+            <el-form-item class="none_margin_bottom" label="状态" clearable prop="reservationStatus">
+              <el-select v-model="formData.reservationStatus" placeholder="请选择" clearable>
+                <el-option
+                  v-for="item in options"
+                  :key="item.value"
+                  :label="item.label"
+                  :value="item.value"
+                ></el-option>
+              </el-select>
+            </el-form-item>
+          </el-col>
+          <el-col :span="8">
+            <el-button
+              type="query"
+              v-if="isAuth('repairplan:repairplan:list')"
+              @click="getDataList('init')"
+            >查询</el-button>
+            <el-button
+              type="add"
+              v-if="isAuth('repairplan:repairplan:save')"
+              @click="handleAddorUpdate('')"
+            >新增</el-button>
+            <el-button
+              type="delete"
+              v-if="isAuth('repairplan:repairplan:delete')"
+              @click="handleDelete"
+              :disabled="!selectDataList||!selectDataList.length"
+            >删除</el-button>
+          </el-col>
+        </el-row>
+      </el-form>
+    </div>
+    <!-- 维保计划表 -->
+    <!-- <div></div> -->
+    <el-table
+      :data="wbjlTableData"
+      border
+      v-loading="loading"
+      @header-dragend="handleDragend"
+      max-height="400"
+      :show-close="false"
+      @selection-change="selectChange"
+    >
+      <el-table-column header-align="center" align="center" type="selection" width="50"></el-table-column>
+      <el-table-column prop="maintenanceTime" :formatter="formatDate" label="计划时间" align="center" width="200"></el-table-column>
+      <el-table-column prop="maintenanceName" show-overflow-tooltip label="维保单位" align="center"></el-table-column>
+      <el-table-column
+        prop="reservationStatus"
+        :formatter="formatStatus"
+        label="状态"
+        width="100"
+        align="center"
+      ></el-table-column>
+      <el-table-column prop="contactName" label="联系人" width="200" align="center"></el-table-column>
+      <el-table-column prop="contactPhone" label="联系电话" width="200" align="center"></el-table-column>
+      <el-table-column prop="reservationReason" show-overflow-tooltip label="不通过原因" width="200" align="center"></el-table-column>
+      <el-table-column label="操作" header-align="center" align="center" width="80px">
+        <template slot-scope="scope">
+          <el-button
+            size="mini"
+            style="padding:8px 10px;font-size:12px;height:36px"
+            type="primary"
+            @click="handleAddorUpdate(scope.row.id)"
+          >详情</el-button>
+        </template>
+      </el-table-column>
+    </el-table>
+    <div class="pagination_wraper">
+      <el-pagination
+        @size-change="sizeChangeHandle"
+        @current-change="currentChangeHandle"
+        :current-page="pageIndex"
+        :page-sizes="[5, 10, 20, 50]"
+        :page-size="pageSize"
+        :total="totalCount"
+        layout="total, sizes, prev, pager, next, jumper"
+      ></el-pagination>
+    </div>
+    <add-or-update v-if="addOrUpdateVisible" ref="addOrUpdate" @refreshDataList="getDataList"></add-or-update>
+  </div>
+</template>
+
+<script>
+import addOrUpdate from "./maintenanceappointment-add-or-update";
+import config from '@/utils/config.js'
+export default {
+  data() {
+    return {
+      loading: false,
+      addOrUpdateVisible: false,
+      pageSize: 10,
+      pageIndex: 1,
+      totalCount: 0,
+      formData: {
+        reservationStatus: "",
+        unitName: ""
+      },
+      selectDataList: [], //选择结果
+      options: [
+        {
+          value: "0",
+          label: "不通过"
+        },
+        {
+          value: "1",
+          label: "通过"
+        },
+        {
+          value: "2",
+          label: "待处理"
+        }
+      ],
+      rules: {
+        wbdw: [
+          {
+            required: true,
+            message: "维保单位不能为空"
+          }
+        ],
+        czzt: [
+          {
+            required: true,
+            message: "状态不能为空"
+          }
+        ]
+      },
+      // 维保计划数据
+      wbjlTableData: [],
+      totalNum: 50 //数据总数
+    };
+  },
+  components: {
+    addOrUpdate
+  },
+  activated() {
+    this.getDataList();
+  },
+  methods: {
+     handleDragend(n, o, a, b) {
+                config.tableDragendHandle(n, o, a)
+     },
+    getDataList(type) {
+      console.log("获取数据");
+      if(type="init"){
+        this.pageIndex = 1;
+      }
+      this.loading = true;
+      this.$http({
+        url: this.$http.adornUrl(
+          "/maintenancereservation/maintenancereservation/list"
+        ),
+        method: "get",
+        params: this.$http.adornParams({
+          contactName: this.formData.contactName,
+          reservationStatus: this.formData.reservationStatus,
+          limit:this.pageSize,
+          page:this.pageIndex
+        })
+      })
+        .then(({ data }) => {
+          console.log("res", data);
+          if (data && data.code == 0) {
+            this.loading = false;
+            this.totalCount = data.page.total;
+            this.wbjlTableData = data.page.records;
+          }
+        })
+        .catch(e => {
+          console.log(e);
+        });
+    },
+    // 每页数
+    sizeChangeHandle(val) {
+      this.pageSize = val;
+      this.pageIndex = 1;
+      this.getDataList();
+    },
+     formatDate(row, column, cellValue) {
+      if (cellValue && cellValue.length) return cellValue.substr(0, 10);
+    },
+    // 当前页
+    currentChangeHandle(val) {
+      this.pageIndex = val;
+      this.getDataList();
+    },
+    formatStatus(row) {
+      console.log(row);
+      if (row.reservationStatus == 0) {
+        return "不通过";
+      }
+      if (row.reservationStatus == 1) {
+        return "通过";
+      }
+      if (row.reservationStatus == 2) {
+        return "待处理";
+      }
+    },
+    handleAddorUpdate(id) {
+      console.log("addupdate");
+      this.addOrUpdateVisible = true;
+      this.$nextTick(() => {
+        this.$refs.addOrUpdate.init(id);
+      });
+    },
+    // 删除
+    handleDelete() {
+      var ids = this.selectDataList.map(item => {
+        return item.id;
+      });
+      this.$confirm(`确定删除?`, "提示", {
+        confirmButtonText: "确定",
+        cancelButtonText: "取消",
+        type: "warning"
+      }).then(() => {
+        this.$http({
+          url: this.$http.adornUrl("/maintenancereservation/maintenancereservation/delete"),
+          method: "post",
+          data: this.$http.adornData(ids, false)
+        }).then(({ data }) => {
+          if (data && data.code == 0) {
+            this.getDataList();
+          } else {
+          }
+        });
+      });
+    },
+    selectChange(e) {
+      console.log("选择改变", e);
+      this.selectDataList = e;
+    }
+  }
+};
+</script>
+<style  scoped>
+.pagination_wraper {
+  margin: 20px 0;
+  text-align: center;
+}
+</style>

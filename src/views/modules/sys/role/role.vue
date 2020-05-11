@@ -1,0 +1,596 @@
+<template>
+  <div
+    class="wholeDivLayout rolo-pagination"
+    :style="{ 'max-height': documentClientHeight - 180 + 'px'}"
+  >
+    <div id="left" class="divLayout" :style="{ 'min-height': documentClientHeight - 180 + 'px'}">
+      <div
+        id="leftTop"
+        :style="{ 'min-height': documentClientHeight - 180 + 'px'}"
+        style="position:relative;"
+      >
+        <el-form
+          :inline="true"
+          :model="dataForm"
+          @keyup.enter.native="getDataList()"
+          class="form"
+        >
+          <el-form-item class="none_margin_bottom" label="角色名称">
+            <el-input v-model.trim="dataForm.roleName"  clearable></el-input>
+          </el-form-item>
+          <el-form-item class="none_margin_bottom" >
+            <el-button v-if="isAuth('sys:role:list')" type="primary" @click="getDataList()">查询</el-button>
+            <el-button
+              v-if="isAuth('sys:role:saves')"
+              type="add"
+              @click="addOrUpdateHandle()"
+            >新增</el-button>
+          </el-form-item>
+        </el-form>
+        <div
+          :style="{ 'max-height': (documentClientHeight - 334) + 'px'}"
+          style="overflow-y: auto;"
+        >
+          <el-table
+            :data="dataList"
+            border
+            v-loading="dataListLoading"
+            @header-dragend="handleDragend"
+            @selection-change="selectionChangeHandle"
+            style="width: 100%;"
+            @row-click="roleRowClick"
+            ref="table"
+            highlight-current-row
+          >
+            <!--<el-table-column type="selection" header-align="center" align="center" width="50">
+            </el-table-column>-->
+            <el-table-column label width="65">
+              <template slot-scope="scope">
+                <el-radio
+                  :label="scope.row.roleId"
+                  v-model.trim="templateRadio"
+                  @change.native="getTemplateRow(scope.$index,scope.row)"
+                >&nbsp;</el-radio>
+              </template>
+            </el-table-column>
+            <!--<el-table-column prop="roleId" header-align="center" align="center" width="80" label="ID">
+            </el-table-column>-->
+            <el-table-column prop="roleName" header-align="center" align="center" label="角色名称"></el-table-column>
+            <el-table-column prop="remark" header-align="center" align="center" label="备注"></el-table-column>
+            <el-table-column
+              prop="createTime"
+              header-align="center"
+              align="center"
+              width="180"
+              label="创建时间"
+            ></el-table-column>
+            <el-table-column
+              fixed="right"
+              header-align="center"
+              align="center"
+              width="100"
+              label="操作"
+            >
+              <template slot-scope="scope">
+                <!-- <e-button
+                  ref="eproButton1"
+                  @handleClick="handleClick"
+                  :parentId="'3'"
+                  :busType="'update'"
+                  :params="''+scope.row.roleId"
+                ></e-button> -->
+                <el-button type="text" @click.stop="addOrUpdateHandle(scope.row.roleId)">修改</el-button>
+                <el-button type="text" @click.stop="deleteHandle(scope.row.roleId)">删除</el-button>
+              </template>
+            </el-table-column>
+          </el-table>
+        </div>
+        <div style="position: absolute;bottom: 0;border-top: solid 1px #F1F4F5;width: 100%;">
+          <el-pagination
+            @size-change="sizeChangeHandle"
+            @current-change="currentChangeHandle"
+            :current-page="pageIndex"
+            :page-sizes="[5, 10, 20]"
+            :page-size="pageSize"
+            :total="totalPage"
+            layout="total, sizes, prev, pager, next, jumper"
+          ></el-pagination>
+        </div>
+      </div>
+    </div>
+    <div id="right" class="divLayout" :style="{ 'max-height': documentClientHeight - 180 + 'px'}">
+      <div
+        id="rightTop"
+        :style="{ 'min-height': (documentClientHeight - 180) * 0.8 + 'px'}"
+        style="position:relative;"
+      >
+        <el-form
+          :inline="true"
+          :model="userForm"
+          @keyup.enter.native="getUserList()"
+          class="form"
+        >
+          <el-form-item class="none_margin_bottom" label="用户名称">
+            <el-input v-model.trim="userForm.username"  clearable></el-input>
+          </el-form-item>
+          <!-- <el-form-item>
+                        <el-input v-model.trim="userForm.roleName" placeholder="登录名" clearable></el-input>
+          </el-form-item>-->
+          <el-form-item class="none_margin_bottom">
+            <el-button v-if="isAuth('sys:role:list')" @click="getUserList()" type="query">查询</el-button>
+            <el-button
+              v-if="isAuth('sys:role:save')"
+              type="add"
+              @click="userAddOrUpdateHandle()"
+            >新增</el-button>
+            <el-button
+              v-if="isAuth('sys:role:delete')"
+              type="delete"
+              @click="roleUserDeleteHandle()"
+              :disabled="userListSelections.length <= 0"
+            >删除</el-button>
+          </el-form-item>
+        </el-form>
+        <div
+          :style="{ 'max-height': (documentClientHeight - 385) + 'px'}"
+          style="overflow-y: auto;"
+        >
+          <el-table
+            :data="userList"
+            border
+            v-loading="userListLoading"
+            @header-dragend="handleDragend"
+            @selection-change="userSelectionChangeHandle"
+            style="width: 100%;"
+          >
+            <el-table-column type="selection" header-align="center" align="center" width="50"></el-table-column>
+            <!--<el-table-column prop="roleId" header-align="center" align="center" width="80" label="ID">
+            </el-table-column>-->
+            <el-table-column prop="nickname" header-align="center" align="center" label="昵称"></el-table-column>
+            <el-table-column prop="username" header-align="center" align="center" label="用户名"></el-table-column>
+            <el-table-column prop="status" header-align="center" align="center" label="状态">
+              <template slot-scope="scope">
+                <span v-if="scope.row.status === 0">失效</span>
+                <span v-else>有效</span>
+              </template>
+            </el-table-column>
+            <!--<el-table-column fixed="right" header-align="center" align="center" width="150" label="操作">
+                            <template slot-scope="scope">
+                                <el-button @click="getUserList()">查询</el-button>
+                                <el-button type="primary" @click="userAddOrUpdateHandle()">新增</el-button>
+                                <el-button type="danger" @click="deleteHandle()" :disabled="userListSelections.length <= 0">批量删除</el-button>
+                            </template>
+            </el-table-column>-->
+          </el-table>
+        </div>
+        <div style="position: absolute;bottom: 0;border-top: solid 1px #F1F4F5;width: 100%;">
+          <el-pagination
+            @size-change="userSizeChangeHandle"
+            @current-change="userCurrentChangeHandle"
+            :current-page="userPageIndex"
+            :page-sizes="[10, 20, 50, 100]"
+            :page-size="userPageSize"
+            :total="userTotalPage"
+            layout="total, sizes, prev, pager, next, jumper"
+          ></el-pagination>
+        </div>
+      </div>
+      <div id="rightBottom" :style="{ 'min-height': (documentClientHeight - 190) * 0.2 + 'px'}">
+        <el-button
+          v-if="isAuth('sys:role:savequan')"
+          type="primary"
+          @click="savePri()"
+          style="margin: 5px;"
+          :disabled="savePriState"
+        >保存权限</el-button>
+        <el-tree
+          :data="menuList"
+          :props="menuListTreeProps"
+          node-key="menuId"
+          ref="menuListTree"
+          :default-expand-all="true"
+          show-checkbox
+        ></el-tree>
+      </div>
+    </div>
+
+    <add-or-update v-if="addOrUpdateVisible" ref="addOrUpdate" @refreshDataList="getDataList"></add-or-update>
+    <user-list v-if="userListVisible" ref="userList" @refreshDataList="saveRoleUser"></user-list>
+  </div>
+</template>
+
+<script>
+import { treeDataTranslate } from "@/utils";
+import AddOrUpdate from "./role-add-or-update";
+import UserList from "./userList";
+import config from "@/utils/config.js";
+
+export default {
+  data() {
+    return {
+      addPeople: false,
+      dataForm: {
+        roleName: ""
+      },
+      userForm: {
+        roleId: "",
+        username: ""
+      },
+      savePriState: false,
+      templateRadio: "",
+      templateSelection: [],
+      dataList: [],
+      userList: [],
+      pageIndex: 1,
+      pageSize: 10,
+      totalPage: 0,
+      userPageIndex: 1,
+      userPageSize: 10,
+      userTotalPage: 0,
+      dataListLoading: false,
+      userListLoading: false,
+      dataListSelections: [],
+      userListSelections: [],
+      addOrUpdateVisible: false,
+      userListVisible: false,
+      menuList: [],
+      menuListTreeProps: {
+        label: "name",
+        children: "children"
+      },
+      tempKey: -666666 // 临时key, 用于解决tree半选中状态项不能传给后台接口问题. # 待优化
+    };
+  },
+  components: {
+    AddOrUpdate,
+    UserList
+  },
+  computed: {
+    documentClientHeight: {
+      get() {
+        return this.$store.state.common.documentClientHeight;
+      },
+      set(val) {
+        this.$store.commit("common/updateDocumentClientHeight", val);
+      }
+    }
+  },
+  activated() {
+    this.getDataList();
+  },
+  methods: {
+    handleDragend(n, o, a, b) {
+      config.tableDragendHandle(n, o, a);
+    },
+    handleClick(method, param) {
+      if (param === "undefined") {
+        this.$options.methods[method].bind(this)();
+      } else {
+        this.$options.methods[method].bind(this, param)();
+      }
+    },
+    getTemplateRow(index, row) {
+      this.templateSelection = row;
+    },
+    // 获取数据列表
+    getDataList() {
+      this.dataListLoading = true;
+      this.$http({
+        url: this.$http.adornUrl("/sys/role/list"),
+        method: "get",
+        params: this.$http.adornParams({
+          page: this.pageIndex,
+          limit: this.pageSize,
+          roleName: this.dataForm.roleName
+        })
+      }).then(({ data }) => {
+        if (data && data.code === 0) {
+          this.dataList = data.page.list;
+          this.totalPage = data.page.totalCount;
+           if(this.dataList&&this.dataList.length){
+              this.$nextTick(()=>{
+                this.$refs['table'].setCurrentRow(this.dataList[0]);
+                this.roleRowClick(this.dataList[0])
+              })
+            }
+        } else {
+          this.dataList = [];
+          this.totalPage = 0;
+        }
+        this.dataListLoading = false;
+      });
+    },
+    // 获取数据列表
+    getUserList() {
+      this.userListLoading = true;
+      this.$http({
+        url: this.$http.adornUrl("/sys/role/roleUsersList"),
+        method: "get",
+        params: this.$http.adornParams({
+          page: this.userPageIndex,
+          limit: this.userPageSize,
+          username: this.userForm.username,
+          roleId: this.userForm.roleId
+        })
+      }).then(({ data }) => {
+        if (data && data.code === 0) {
+          this.userList = data.page.records;
+          this.userTotalPage = data.page.total;
+        } else {
+          this.userList = [];
+          this.userTotalPage = 0;
+        }
+        this.userListLoading = false;
+      });
+    },
+    // 每页数
+    sizeChangeHandle(val) {
+      this.pageSize = val;
+      this.pageIndex = 1;
+      this.getDataList();
+    },
+    // 每页数
+    userSizeChangeHandle(val) {
+      this.userPageSize = val;
+      this.userPageIndex = 1;
+      this.getUserList();
+    },
+    // 当前页
+    currentChangeHandle(val) {
+      this.pageIndex = val;
+      this.getDataList();
+    },
+    // 当前页
+    userCurrentChangeHandle(val) {
+      this.userPageIndex = val;
+      this.getUserList();
+    },
+    // 多选
+    selectionChangeHandle(val) {
+      this.dataListSelections = val;
+    },
+    // 多选
+    userSelectionChangeHandle(val) {
+      this.userListSelections = val;
+    },
+    roleRowClick(row, event, column) {
+      this.templateRadio = row.roleId;
+      this.userForm.roleId = row.roleId;
+      this.getUserList();
+      this.initTree();
+    },
+    // 新增 / 修改
+    addOrUpdateHandle(id) {
+      this.addOrUpdateVisible = true;
+      this.$nextTick(() => {
+        this.$refs.addOrUpdate.init(id);
+      });
+    },
+    // 新增 / 修改
+    userAddOrUpdateHandle() {
+      if (!this.userForm.roleId) {
+        this.$message({
+          message: "请选择角色再进行添加角色用户操作",
+          type: "warning"
+        });
+        return;
+      }
+      this.userListVisible = true;
+      this.$nextTick(() => {
+        this.$refs.userList.init(this.userList);
+      });
+    },
+    // 删除
+    deleteHandle(id) {
+      var ids = id
+        ? [id]
+        : this.userListSelections.map(item => {
+            return item.roleId;
+          });
+      this.$confirm('确定删除？', "提示", {
+        confirmButtonText: "确定",
+        cancelButtonText: "取消",
+        type: "warning"
+      })
+        .then(() => {
+          this.$http({
+            url: this.$http.adornUrl("/sys/role/delete"),
+            method: "post",
+            data: this.$http.adornData(ids, false)
+          }).then(({ data }) => {
+            if (data && data.code === 0) {
+              this.$message({
+                message: "删除成功",
+                type: "success",
+                duration: 1500,
+                onClose: () => {
+                  this.getDataList();
+                }
+              });
+            } else {
+              this.$message.error(data.msg);
+            }
+          });
+        })
+        .catch(() => {});
+    },
+    roleUserDeleteHandle(id) {
+      var ids = id
+        ? [id]
+        : this.userListSelections.map(item => {
+            return item.id;
+          });
+      this.$confirm(
+        `确定删除?`,
+        "提示",
+        {
+          confirmButtonText: "确定",
+          cancelButtonText: "取消",
+          type: "warning"
+        }
+      )
+        .then(() => {
+          this.$http({
+            url: this.$http.adornUrl("/sys/role/roleUserDelete"),
+            method: "post",
+            data: this.$http.adornData(ids, false)
+          }).then(({ data }) => {
+            if (data && data.code === 0) {
+              this.$message({
+                message: "删除成功",
+                type: "success",
+                duration: 1500,
+                onClose: () => {
+                  this.getUserList();
+                }
+              });
+            } else {
+              this.$message.error(data.msg);
+            }
+          });
+        })
+        .catch(() => {});
+    },
+    // 重置窗口可视高度
+    resetDocumentClientHeight() {
+      this.documentClientHeight = document.documentElement["clientHeight"];
+      window.onresize = () => {
+        this.documentClientHeight = document.documentElement["clientHeight"];
+      };
+    },
+    initTree() {
+      this.$http({
+        url: this.$http.adornUrl("/sys/menu/list"),
+        method: "get",
+        params: this.$http.adornParams()
+      })
+        .then(({ data }) => {
+          console.log(data);
+          this.savePriState = false;
+          this.menuList = treeDataTranslate(data, "menuId");
+        })
+        .then(() => {
+          this.visible = true;
+          this.savePriState = false;
+          this.$nextTick(() => {
+            this.$refs.menuListTree.setCheckedKeys([]);
+          });
+        })
+        .then(() => {
+          this.savePriState = false;
+          if (this.userForm.roleId) {
+            this.$http({
+              url: this.$http.adornUrl(
+                `/sys/role/info2/${this.userForm.roleId}`
+              ),
+              method: "get",
+              params: this.$http.adornParams()
+            }).then(({ data }) => {
+              if (data && data.code === 0) {
+                var idx = data.role.menuIdList.indexOf(this.tempKey);
+                if (idx !== -1) {
+                  data.role.menuIdList.splice(
+                    idx,
+                    data.role.menuIdList.length - idx
+                  );
+                }
+                console.log(data);
+                this.$refs.menuListTree.setCheckedKeys(data.role.menuIdList);
+              }
+            });
+          }
+        });
+    },
+    saveRoleUser() {
+      //this.$refs.userList.dataListSelections
+      var userIds = this.$refs.userList.dataListSelections.map(item => {
+        return item.userId;
+      });
+      this.savePriAndRoleUsers(userIds);
+    },
+    savePriAndRoleUsers(userIds) {
+      this.$http({
+        url: this.$http.adornUrl("/sys/role/savePriAndRoleUsers"),
+        method: "post",
+        data: this.$http.adornData({
+          roleId: this.userForm.roleId,
+          userIdList: userIds
+        })
+      }).then(({ data }) => {
+        if (data && data.code === 0) {
+          this.getUserList();
+        } else {
+          this.$message.error(data.msg);
+        }
+      });
+    },
+    savePri() {
+      if (!this.userForm.roleId) {
+        this.$message({
+          message: "请选择角色再进行保存权限操作",
+          type: "warning"
+        });
+        return;
+      }
+      console.log(this.$refs.menuListTree.getCheckedKeys());
+      console.log([this.tempKey]);
+      console.log(this.$refs.menuListTree.getHalfCheckedKeys());
+      this.savePriState = true;
+      this.$http({
+        url: this.$http.adornUrl("/sys/role/savePri"),
+        method: "post",
+        data: this.$http.adornData({
+          roleId: this.userForm.roleId,
+          menuIdList: [].concat(
+            this.$refs.menuListTree.getCheckedKeys(),
+            [this.tempKey],
+            this.$refs.menuListTree.getHalfCheckedKeys()
+          )
+        })
+      }).then(({ data }) => {
+        if (data && data.code === 0) {
+          this.initTree();
+        } else {
+          this.savePriState = false;
+          this.$message.error(data.msg);
+        }
+      }),
+        () => {
+          this.savePriState = false;
+        };
+    }
+  }
+};
+</script>
+<style scoped>
+.wholeDivLayout {
+  overflow-y: hidden;
+}
+.divLayout {
+  display: inline;
+  float: left;
+  border: solid 1px #f1f4f5;
+}
+
+#left {
+  width: 49%;
+  border: solid 1px #f1f4f5;
+}
+
+#right {
+  overflow-y: scroll;
+  width: 50%;
+  border: solid 1px #f1f4f5;
+}
+
+#rightBottom {
+  /* border-top: solid 1px #f1f4f5; */
+}
+</style>
+<style lang="scss">
+.rolo-pagination {
+  .el-pagination__jump {
+    margin-left: 0px;
+  }
+}
+</style>

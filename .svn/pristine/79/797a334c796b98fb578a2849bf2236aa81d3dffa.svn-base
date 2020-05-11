@@ -1,0 +1,155 @@
+<template>
+    <div
+            class="site-wrapper"
+            :class="{ 'site-sidebar--fold': sidebarFold, 'hasTab': $route.meta.isTab }"
+            v-loading.fullscreen.lock="loading"
+            element-loading-text="拼命加载中">
+        <template v-if="!loading">
+            <main-navbar/>
+            <main-sidebar/>
+            <div class="site-content__wrapper" :style="{ 'min-height': documentClientHeight  + 'px' }">
+                <main-content/>
+            </div>
+        </template>
+    </div>
+</template>
+
+<script>
+    import MainNavbar from './main-navbar'
+    import MainSidebar from './main-sidebar'
+    import MainContent from './main-content'
+    import theme from '@/store/modules/theme.js'
+
+    // window.localStorage.setItem('VUE_THEME_STYLE', '#4080ff')
+    function getThemeStyle() {
+        if (window.localStorage.getItem(theme.state.themeKey) === null) {
+            window.localStorage.setItem(theme.state.themeKey, theme.state.themeStyle)
+        }
+        return window.localStorage.getItem(theme.state.themeKey)
+    }
+
+    // require('@/element-ui-theme/element-' + getThemeStyle() + '/index.css')
+    export default {
+        data() {
+            return {
+                loading: false,
+                documentClientWidth: ''
+            }
+        },
+        components: {
+            MainNavbar,
+            MainSidebar,
+            MainContent
+        },
+        computed: {
+            documentClientHeight: {
+                get() {
+                    return this.$store.state.common.documentClientHeight
+                },
+                set(val) {
+                    this.$store.commit('common/updateDocumentClientHeight', val)
+                }
+            },
+            sidebarFold: {
+                get() {
+                    return this.$store.state.common.sidebarFold
+                }
+            },
+            userId: {
+                get() {
+                    return this.$store.state.user.id
+                },
+                set(val) {
+                    this.$store.commit('user/updateId', val)
+                }
+            },
+            userCommunityId: {
+                get() {
+                    return this.$store.state.user.communityId
+                },
+                set(val) {
+                    this.$store.commit('user/updateCommunityId', val)
+                }
+            },
+            userName: {
+                get() {
+                    return this.$store.state.user.name
+                },
+                set(val) {
+                    this.$store.commit('user/updateName', val)
+                }
+            },
+            nickName: {
+                get() {
+                    return this.$store.state.user.nickName
+                },
+                set(val) {
+                    this.$store.commit('user/updateNickName', val)
+                }
+            },
+             areacode: {
+                get() {
+                    return this.$store.state.user.areacode
+                },
+                set(val) {
+                    this.$store.commit('user/updateAreacode', val)
+                }
+            },
+            userInfo:{
+                get(){
+                    return this.$store.state.userInfo
+                },
+                set(val){
+                    this.$store.commit('user/updateUserInfo',val)
+                }
+            }
+        },
+        created() {
+            this.getUserInfo()
+        },
+        mounted() {
+            this.resetDocumentClientHeight()
+        },
+        methods: {
+            // 重置窗口可视高度
+            resetDocumentClientHeight() {
+                this.documentClientHeight = document.documentElement['clientHeight']
+                window.onresize = () => {
+                    this.documentClientHeight = document.documentElement['clientHeight']
+                }
+            },
+            // 获取当前用户信息
+            getUserInfo() {
+                this.$http({
+                    url: this.$http.adornUrl('/sys/user/info'),
+                    method: 'get',
+                    params: this.$http.adornParams()
+                }).then(({ data }) => {
+                    if (data && data.code === 0) {
+                        console.log('userdata',data.user)
+                        this.loading = false
+                        this.userId = data.user.userId
+                        this.userName = data.user.username
+                        this.nickName = data.user.nickname
+                        this.userCommunityId = data.user.communityId
+                        this.areacode = data.user.areacode
+                        this.userInfo = data.user
+                    }else {
+
+                    }
+                })
+            }
+        }
+    }
+</script>
+
+<style lang="scss">
+    .hasTab {
+        .site-content__wrapper {
+            padding-top: 90px;
+        }
+    }
+    .site-content__wrapper {
+        padding-top: 50px;
+    }
+</style>

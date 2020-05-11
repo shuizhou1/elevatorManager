@@ -1,0 +1,610 @@
+<!--  -->
+<template>
+  <div>
+    <!-- <div  :style="{'height': height, 'width': '100%'}">
+      <div id="chartBox" :style="{'width':width,'height':height}"></div>
+    </div>-->
+    <!-- <div class="chart_title">报警类型统计</div> -->
+    <el-form class="dialog_head_form">
+      <el-row :gutter="40">
+        <el-col :span="7"></el-col>
+        <el-col :span="7">
+          <!-- <el-form-item prop="setime"> -->
+          <!-- <el-date-picker
+            v-model="value"
+            type="monthrange"
+            align="right"
+            range-separator="至"
+            start-placeholder="开始月份"
+            end-placeholder="结束月份"
+            :picker-options="pickerOptions"
+          ></el-date-picker>-->
+          <select-month></select-month>
+          <!-- </el-form-item> -->
+        </el-col>
+        <el-col :span="7">
+          <el-form-item label="注册代码" prop="regCode">
+            <el-input v-model="formData.regCode" clearable>
+              <template slot="append">
+                <el-button @click="selectElevator">选择</el-button>
+              </template>
+            </el-input>
+          </el-form-item>
+        </el-col>
+        <el-col :span="2">
+          <el-button @click="handleQuery" type="query">查询</el-button>
+        </el-col>
+      </el-row>
+    </el-form>
+    <el-tabs type="card" value="first" @tab-click="handleChange">
+      <el-tab-pane label="图表" name="first">
+        <div class="chartContainer" :style="{'height':containerHeight-61+'px'}">
+          <div class="left">
+            <div id="totalChartBox" :style="{'height':containerHeight-101+'px','width':'100%'}"></div>
+          </div>
+          <div class="right">
+            <div class="right_item border_bottom">
+              <div id="firChartBox" :style="{'height':'100%'}"></div>
+            </div>
+            <div class="right_item border_bottom">
+              <div id="secChartBox" :style="{'height':'100%'}"></div>
+            </div>
+            <!-- <div class="right_item border_bottom"></div> -->
+            <div class="right_item">
+              <div id="thiChartBox" :style="{'height':'100%'}"></div>
+            </div>
+          </div>
+        </div>
+      </el-tab-pane>
+      <el-tab-pane label="列表" name="second">
+        <el-table border :data="dataList" v-loading="loading">
+          <el-table-column type="expand">
+            <template slot-scope="props">
+              <div class="eventItems" v-for="(value,key,index) in props.row.items" :key="index">
+                <span class="itemName">{{formatCode(key)}}</span>
+                <span>{{value}}</span>
+              </div>
+            </template>
+          </el-table-column>
+          <el-table-column label="注册代码" prop="regCode" align="center"></el-table-column>
+          <el-table-column label="电梯地址" prop="local" align="center"></el-table-column>
+          <el-table-column label="维保单位" prop="maintenanceName" align="center"></el-table-column>
+          <el-table-column label="报警次数" prop="counts" align="center"></el-table-column>
+        </el-table>
+      </el-tab-pane>
+    </el-tabs>
+
+    <select-elevator
+      v-if="showElevatorselectDialog"
+      ref="elevatorSelector"
+      @confirm="selectElevatorConfirm"
+    ></select-elevator>
+  </div>
+</template>
+
+<script>
+import echart from "echarts";
+import selectElevator from "@/components/select-single-elevator.vue";
+import selectMonth from "@/components/selectMonth.vue";
+export default {
+  activated() {
+    console.log("actie");
+    // 由于给echart添加了resize事件, 在组件激活时需要重新resize绘画一次, 否则出现空白bug
+
+    if (this.totalChart) {
+      // this.totalChart.resize();
+    }
+  },
+  data() {
+    return {
+      showElevatorselectDialog: false,
+      currentIndex: 0,
+      loading: false,
+      value: "",
+      area: [],
+      dataList: [
+        {
+          regCode: "12345678901234567890",
+          local: "广州市海珠区天源路11号",
+          maintenanceUnit: "广州日立电梯有限公司",
+          items: {
+            LOB: 4,
+            LRF: 6,
+            LF12: 9
+          }
+        },
+        {
+          regCode: "12345678901234567890",
+          local: "广州市海珠区天源路11号",
+          maintenanceUnit: "广州日立电梯有限公司",
+          items: {
+            LOB: 4,
+            LRF: 6,
+            LF12: 9,
+            MRI: 11
+          }
+        }
+      ],
+      formData: {
+        regCode: "",
+        date: "",
+        stime: "",
+        etime: ""
+      },
+      height: "",
+      containerHeight: "",
+      width: "",
+      totalChart: null,
+      firChart: null,
+      secChart: null,
+      thiChart: null,
+      areaData: [],
+      totalOption: {
+        // title:{
+        //   text:'报警类统计',
+        //   x:'center',
+        //   textStyle: {
+        //     fontWeight: "normal" //标题颜色
+        //   }
+        // },
+        tooltip: {
+          trigger: "item",
+          formatter: "报警事件：{a}</br> 数量：{c}"
+        },
+        grid: {
+          left: "5%",
+          right: "5%",
+          bottom: "12%",
+          containLabel: true
+        },
+        legend: {
+          bottom: "0"
+        },
+        xAxis: {
+          type: "category",
+          // name:'事件类型',
+          splitLine: { show: false },
+          data: [],
+          axisLine: {
+            lineStyle: {
+              type: "solid",
+              color: "eee", //坐标线的颜色
+              width: "2" //坐标线的宽度
+            }
+          },
+          axisLabel: {
+            textStyle: {}
+          }
+        },
+        yAxis: {
+          type: "value",
+          axisLine: {
+            lineStyle: {
+              type: "solid",
+              color: "eee", //左边线的颜色
+              width: "2" //坐标线的宽度
+            }
+          },
+          axisLabel: {
+            formatter: () => {
+              return "";
+            },
+            textStyle: {}
+          }
+        },
+        series: [
+          {
+            name: "LOB",
+            type: "bar",
+            label: {
+              normal: {
+                show: true,
+                position: "top"
+              }
+            },
+            data: [6]
+          },
+          {
+            name: "LBH",
+            type: "bar",
+            label: {
+              normal: {
+                show: true,
+                position: "top"
+              }
+            },
+            data: [8]
+          },
+          {
+            name: "LF12",
+            type: "bar",
+            label: {
+              normal: {
+                show: true,
+                position: "top"
+              }
+            },
+            data: [3]
+          },
+          {
+            name: "LF18",
+            type: "bar",
+            label: {
+              normal: {
+                show: true,
+                position: "top"
+              }
+            },
+            data: [6]
+          }
+        ]
+      },
+      firOption: {
+        title: {
+          text: "",
+          x: "center",
+          textStyle: {
+            fontWeight: "normal", //标题颜色
+            fontSize:10
+          }
+        },
+        tooltip: {
+          trigger: "item",
+          formatter:`{b}<br/>数量:{c}（{d}%）`
+        },
+        grid: {
+          left: "3%",
+          right: "5%",
+          bottom: "5%",
+          containLabel: true
+        },
+
+        series: [
+          {
+            type: "pie",
+            center:['55%','60%'],
+            data: []
+          }
+        ]
+      },
+      secOption: {
+        title: {
+          text: "",
+          x: "center",
+          textStyle: {
+            fontWeight: "normal", //标题颜色
+            fontSize:10
+          }
+        },
+        tooltip: {
+          trigger: "item",
+          formatter:`{b}<br/>数量:{c}（{d}%）`
+        },
+        grid: {
+          left: "3%",
+          right: "5%",
+          bottom: "5%",
+          containLabel: true
+        },
+
+        series: [
+          {
+            type: "pie",
+            center:['55%','60%'],
+            data: []
+          }
+        ]
+      },
+      thiOption: {
+        title: {
+          text: "",
+          x: "center",
+          textStyle: {
+            fontWeight: "normal", //标题颜色
+            fontSize:10
+          }
+        },
+        tooltip: {
+          trigger: "item",
+          formatter:'{b}<br/>数量:{c}（{d}%）'
+        },
+        grid: {
+          left: "3%",
+          right: "5%",
+          bottom: "5%",
+          containLabel: true
+        },
+
+        series: [
+          {
+            type: "pie",
+            // radius:'65%',
+            center:['55%','60%'],
+            data: []
+          }
+        ]
+      }
+    };
+  },
+  components: {
+    selectElevator,
+    selectMonth
+  },
+  created() {
+    // this.getAreaData();
+  },
+  mounted() {
+    this.containerHeight = document.documentElement.clientHeight - 180;
+    this.width = document.documentElement.clientWidth - 250 + "px";
+    this.height = document.documentElement.clientHeight - 280 + "px";
+    console.log("documentheight", document.documentElement.clientHeight);
+    window.onresize = () => {
+      this.width = document.documentElement.clientWidth - 250 + "px";
+      this.height = document.documentElement.clientHeight - 280 + "px";
+    };
+    this.$nextTick(() => {
+      this.getchartData();
+      this.getTopthreeData();
+      this.getDataList();
+    });
+  },
+  methods: {
+    getchartData() {
+      this.$http({
+        url: this.$http.adornUrl(
+          "/elevatorwarning/elevatorwarning/countWithCode"
+        ),
+        method: "post",
+        data: this.$http.adornData(this.formData)
+      })
+        .then(({ data }) => {
+          if (data && data.code == 0) {
+            console.log("总图表数据", data);
+            let arr = [];
+            data.data.forEach(item => {
+              arr.push({
+                name: this.formatCode(item.code),
+                type: "bar",
+                label: {
+                  normal: {
+                    show: true,
+                    position: "top"
+                  }
+                },
+                data: [item.count]
+              });
+            });
+            this.totalOption.series = arr;
+            console.log("totaloption", this.totalOption);
+            this.totalChart = echart.init(
+              document.getElementById("totalChartBox"),
+              "light"
+            );
+            this.totalChart.setOption(this.totalOption);
+          }
+        })
+        .catch(e => {
+          console.log(e);
+        });
+
+      // window.addEventListener("resize", () => {
+      //   this.totalChart.resize();
+      // });
+    },
+    getTopthreeData() {
+      this.$http({
+        url: this.$http.adornUrl("/statistics/statistics/alarmAnalysisThree"),
+        method: "get",
+        params: this.$http.adornParams(this.formData)
+      })
+        .then(({ data }) => {
+          if (data && data.code == 0) {
+            console.log("前三图表数据", data);
+            let items1 = data.list[0].items;
+            let items2 = data.list[1].items;
+            let items3 = data.list[2].items;
+            this.firOption.title.text = data.list[0].local;
+            this.secOption.title.text = data.list[1].local;
+            this.thiOption.title.text = data.list[2].local;
+            let [arr1, arr2, arr3] = [[], [], []];
+            for (let key in items1) {
+              arr1.push({
+                name: this.formatCode(key),
+                value: items1[key]
+              });
+            }
+            for (let key in items2) {
+              arr2.push({
+                name: this.formatCode(key),
+                value: items2[key]
+              });
+            }
+            for (let key in items3) {
+              arr3.push({
+                name: this.formatCode(key),
+                value: items3[key]
+              });
+            }
+            this.firOption.series[0].data = arr1;
+            this.secOption.series[0].data = arr2;
+            this.thiOption.series[0].data = arr3;
+            this.firChart = echart.init(
+              document.getElementById("firChartBox"),
+              "light"
+            );
+            this.secChart = echart.init(
+              document.getElementById("secChartBox"),
+              "light"
+            );
+            this.thiChart = echart.init(
+              document.getElementById("thiChartBox"),
+              "light"
+            );
+            this.firChart.setOption(this.firOption);
+            this.secChart.setOption(this.secOption);
+            this.thiChart.setOption(this.thiOption);
+          }
+        })
+        .catch(e => {
+          console.log(e);
+        });
+    },
+    getDataList() {
+      this.$http({
+        url: this.$http.adornUrl("/statistics/statistics/alarmAnalysisAll"),
+        method: "get",
+        params: this.$http.adornParams(this.formData)
+      })
+        .then(({ data }) => {
+          if (data && data.code == 0) {
+            console.log("表格数据", data);
+            this.dataList = data.list;
+          }
+        })
+        .catch(e => {
+          console.log(e);
+        });
+    },
+    formatCode(key) {
+      let value;
+      if (key === "LOB") {
+        value = "LMD由电池供电";
+      } else if (key === "LRF") {
+        value = "电梯主回路供电中断";
+      } else if (key === "MOF") {
+        value = "控制器（柜）供电中断";
+      } else if (key === "PTRAP") {
+        value = "困人";
+      } else if (key === "MRI") {
+        value = "人员进入机房";
+      } else if (key === "LDO") {
+        value = "门异常打开";
+      } else if (key === "CDO") {
+        value = "警报";
+      } else if (key === "LM") {
+        value = "检修";
+      } else if (key === "LBH") {
+        value = "LMD电池电压高";
+      } else if (key === "LBL") {
+        value = "LMD电池电压低";
+      } else if (key === "SPA14") {
+        value = "485通信故障";
+      } else if (key === "RESTR") {
+        value = "LMD冷重启";
+      } else if (key === "TOI") {
+        value = "运行1000次";
+      } else if (key === "LIOF") {
+        value = "通讯中断";
+      } else if (key === "EBF") {
+        value = "电梯状态预警";
+      } else if (key === "LF1") {
+        value = "采集板供电异常";
+      } else if (key === "LF4") {
+        value = "电梯供电故障";
+      } else if (key === "LF5") {
+        value = "安全回路断开";
+      } else if (key === "LF6") {
+        value = "辅助板故障";
+      } else if (key === "LF8") {
+        value = "外部按钮响应异常";
+      } else if (key === "LF11") {
+        value = "开门故障";
+      } else if (key === "LF12") {
+        value = "关门故障";
+      } else if (key === "LF15") {
+        value = "内部按钮响应异常";
+      } else if (key === "LF16") {
+        value = "电梯长时间无运行";
+      } else if (key === "LF18") {
+        value = "消防开关接通";
+      } else if (key === "LF19") {
+        value = "门锁短接";
+      } else if (key === "LF21") {
+        value = "光幕报警触发";
+      } else {
+        value = "";
+      }
+      return value;
+    },
+    handleChange(e) {
+      console.log("change", e);
+      this.currentIndex = e.index;
+    },
+    handleQuery() {
+      if (this.currentIndex == 1) {
+        this.pageIndex = 1;
+        this.getDataList();
+      } else {
+        this.getchartData();
+      }
+    },
+    pickStimeEtime(t) {
+      console.log("282", t);
+      if (t) {
+        this.formData.stime = t[0];
+        this.formData.etime = t[1];
+      } else {
+        this.formData.stime = "";
+        this.formData.etime = "";
+      }
+    }, // 选择电梯
+    selectElevator() {
+      this.showElevatorselectDialog = true;
+      this.$nextTick(() => {
+        this.$refs.elevatorSelector.init();
+      });
+    },
+    selectElevatorConfirm(val) {
+      console.log("确认选择", val);
+      this.formData.regCode = val.regcode;
+      console.log(this.formData);
+    }
+  }
+};
+</script>
+<style scoped lang="scss">
+.chart_title {
+  font-size: 18px;
+  height: 60px;
+  line-height: 60px;
+  color: #666;
+  text-align: center;
+  /* margin-bottom:30px; */
+}
+.chartContainer {
+  // background: rgba(0,0,0,.2);
+  width: 100%;
+  display: flex;
+  border: 1px solid #ddd;
+  & > .left {
+    // width:50%;
+    flex: 0 0 65%;
+  }
+  & > .right {
+    // width: 50%;
+    flex: 0 0 35%;
+    border-left: 1px solid #ddd;
+    box-sizing: border-box;
+    display: flex;
+    flex-direction: column;
+    & > .right_item {
+      flex: 1;
+    }
+    & > .right_item.border_bottom {
+      border-bottom: 1px solid #ddd;
+    }
+  }
+}
+.eventItems {
+  display: flex;
+  justify-content: space-between;
+  width: 20%;
+  max-width: 30%;
+  padding: 6px;
+}
+.itemName {
+  color: #99a9bf;
+  margin-right: 50px;
+  flex: 1 1 200px;
+}
+</style>

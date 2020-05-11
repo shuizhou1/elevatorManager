@@ -1,0 +1,367 @@
+// 去掉手机端选中高亮样式
+* {
+    box-sizing: border-box;
+    -webkit-tap-highlight-color: transparent;
+    -webkit-touch-callout: none;
+}
+
+html {
+    width: 100%;
+    height: 100%;
+    font-size: 625%;
+    -webkit-text-size-adjust: 100%;
+    -ms-text-size-adjust: 100%;
+    text-size-adjust: 100%;
+}
+
+body {
+    margin: 0;
+    padding: 0;
+    width: 100%;
+    height: 100%;
+    color: $text-dark;
+    font-size: $font-size-default;
+    font-family: $font-family;
+};
+
+header, footer, section, aside, article, nav, hgroup, figure, figcaption, body, h1, h2, h3, h4, h5, h6, ul, ol, li, form, p, dl, dt, dd, blockquote, legend, table, th, td, fieldset, menu, pre {
+    margin: 0;
+    padding: 0;
+    outline: 0;
+}
+
+body, html {
+    min-width: $min-width;
+}
+
+ul, li {
+    margin: 0;
+    padding: 0;
+}
+
+li {
+    list-style-type: none;
+}
+
+a {
+    color: $text-light;
+    background-color: transparent;
+    cursor: pointer;
+    text-decoration:none;
+}
+
+img {
+    vertical-align: middle;
+}
+
+h1, h2, h3, h4, h5, h6 {
+    font-family: 微软雅黑;
+}
+.relative {
+    position: relative;
+}
+
+.absolute {
+    position: absolute;
+}
+
+[pull-left] {
+    float: left !important;
+}
+
+[pull-right] {
+    float: right !important;
+}
+
+.clearfix {
+    @include clearfix();
+}
+
+[text-left] {
+    text-align: left;
+}
+
+[text-center] {
+    text-align: center;
+}
+
+[text-right] {
+    text-align: right;
+}
+
+.full-width {
+    width: 100%;
+}
+
+.full-height {
+    height: 100%;
+}
+.module-title {
+    font-size: 18px;
+    color: $text-dark;
+    line-height: 18px;
+    border-left: 2px solid $danger;
+    text-indent: 8px;
+}
+.head-padding {
+    padding-top: 65px;
+    padding-bottom: 120px;
+}
+
+.min-width-container {
+    min-width: 1004px;
+    width: 1004px;
+    margin: 0 auto;
+}
+
+.underline {
+    text-decoration: underline;
+}
+.flex {
+    display: flex;
+}
+
+.normal {
+    white-space: normal;
+}
+.nowrap {
+    white-space: nowrap;
+}
+.order-main-detail,
+.scroll-bar-edu,
+#app,
+.head-padding {
+    &::-webkit-scrollbar
+    {
+        width: 8px;
+        height: 8px;
+    }
+    &::-webkit-scrollbar-track {
+        border: 2px solid $white;
+        background-color: map_get($bg-colors, scroll);
+    }
+    &::-webkit-scrollbar-thumb {
+        width: 4px;
+        height: 4px;
+        border-radius: 4px;
+        border: 2px solid $white;
+        background-color: $primary;
+    }
+}
+
+// 遍历常量中的颜色和背景色
+@each $name, $color in $text-colors {
+    .#{$name} {
+        color: #{$color};
+    }
+}
+@each $name, $color in $bg-colors {
+    .bg-#{$name} {
+        background-color: #{$color};
+    }
+}
+
+// margin padding
+// -------------------------------
+@each $nKey, $nValue in $name-list {
+    @each $attr, $direction in $directions { // 2种边距 6个方向 尺寸自定义
+        // 尺寸根据项目实际情况，不是每个尺寸需要采用 默认使用 $size-list
+        @each $size-attr, $size in $size-list {
+            $line: line($size-attr);
+            .#{$nKey}-#{$attr}#{$line}#{$size-attr} {
+                @if $attr == 'v' { // 垂直方向
+                    #{$nValue}-top: #{$size};
+                    #{$nValue}-bottom: #{$size};
+                } @else if $attr == 'h' { // 水平方向
+                    #{$nValue}-left: #{$size};
+                    #{$nValue}-right: #{$size};
+                } @else {
+                    #{$nValue}-#{$direction}: #{$size}
+                }
+            }
+        }
+    }
+}
+
+// border
+// -------------------------------
+@each $attr, $direction in $border-direction {
+    $line: line($attr);
+        .border#{$line}#{$attr} {
+            border#{$line}#{$direction}: $border-base
+        }
+}
+.border-none {
+    border: none;
+}
+
+// 背景幕
+.backdrop {
+    z-index: 100;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    position: fixed;
+    background-color: $translucent;
+}
+
+// 划过鼠标变点击状态
+.click {
+    &:hover {
+        cursor: pointer;
+    }
+}
+
+.round {
+    border-radius: 50%;
+}
+.el-select {
+    width: 100%;
+}
+.el-form-item {
+    margin-bottom: 15px;
+}
+.el-table td {
+    padding: 5px 0;
+}
+
+.inline-block {
+    display: inline-block;
+}
+
+
+
+@-webkit-keyframes rotation{
+    from {-webkit-transform: rotate(0deg);}
+    to {-webkit-transform: rotate(360deg);}
+}
+
+/*
+
+    eb
+
+*/
+
+.no-title {
+    .el-dialog__header {
+        display: none;
+    }
+}
+
+// 分页
+.el-pagination {
+    .el-pagination__sizes {
+        .el-input__inner {
+            height: 28px !important;
+        }
+    }
+}
+
+//
+
+.smallDialog {
+    .el-dialog__header {
+        background: #3f62a0;
+        padding: 10px 25px;
+        .el-dialog__title {
+            color: white;
+            font-size: 16px;
+        }
+        .el-dialog__headerbtn {
+            top: 15px;
+        }
+        .el-dialog__close {
+            color: white;
+            border: 1px solid white;
+            border-radius: 50%;
+        }
+    }
+    .el-dialog__body {
+        padding: 40px 80px 20px 80px;
+    }
+}
+
+body .el-table th.gutter {
+    display: table-cell !important;
+}
+
+
+.input-container {
+    margin-bottom: 10px;
+    .item {
+        vertical-align: middle;
+        &.require {
+            position: relative;
+            &:after {
+                content: '*';
+                color: red;
+                position: absolute;
+                top: 13px;
+                left: -6px;
+            }
+        }
+        width: 33.3%;
+        padding-right: 10px;
+        display: inline-block;
+        &.widthx2 {
+            width: 66.6%;
+        }
+        &.widthx3 {
+            width: 99.9%;
+        }
+        &.width50 {
+            width: 50%;
+        }
+        .span-content {
+            height: 40px;
+            line-height: 40px;
+        }
+    }
+    .has-input {
+        .flex-container {
+            .selectTitle {
+                height: 40px;
+                line-height: 40px;
+            }
+        }
+    }
+    .flex-container {
+        display: flex;
+        flex-direction: row;
+        .selectTitle {
+            white-space: nowrap;
+            width: 1rem;
+            text-align: right;
+            display: inline-block;
+            height: 25px;
+            line-height: 25px;
+        }
+        .select-item {
+            flex: 1;
+            margin-left: 15px;
+            &.radio {
+                line-height: 40px;
+            }
+            &.no-input {
+                line-height: 25px;
+                white-space: nowrap;
+                overflow: auto;
+            }
+        }
+    }
+}
+.button-container {
+    margin-bottom: 10px;
+    .input-container {
+        .el-button {
+            margin-left: 10px;
+        }
+    }
+    .el-button {
+        margin-left: .4rem;
+        &:first-child {
+            margin-left: 0;
+        }
+    }
+}

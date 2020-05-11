@@ -1,0 +1,22 @@
+import Vue from 'vue'
+import Vuex from 'vuex'
+
+Vue.use(Vuex)
+
+export default new Vuex.Store({
+  state: {
+    historyRoutes:[]
+  },
+  getters:{
+    historyRoutesChange(state){
+      console.log('历史路由改变',state.historyRoutes);
+      return state.historyRoutes
+    }
+  },
+  mutations: {
+
+  },
+  actions: {
+
+  }
+})

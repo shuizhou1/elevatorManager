@@ -1,0 +1,599 @@
+<template>
+  <div class="mod-home">
+    <!--        <el-button v-if="!leftTop" class="openButton leftTop15" @click="open(0)"><i class="el-icon-arrow-down"></i></el-button>
+        <el-button v-if="!rightTop" class="openButton rightTop15" @click="open(1)"><i class="el-icon-arrow-down"></i></el-button>
+        <el-button v-if="!leftBottom" class="openButton leftBottom15" @click="open(2)"><i class="el-icon-arrow-up"></i></el-button>
+    <el-button v-if="!rightBottom" class="openButton rightBottom15" @click="open(3)"><i class="el-icon-arrow-up"></i></el-button>-->
+    <div
+      class="chartContainer rightBottom15"
+      :style="{'height': height, 'width': charWidth }"
+      v-show="leftTop"
+    >
+      <div id="J_chartLineBox" :style="{'height': height}"></div>
+      <!--<el-button class="openButton rightBottom" @click="close(0)"><i class="el-icon-arrow-up"></i></el-button>-->
+    </div>
+    <div
+      class="chartContainer leftTop15"
+      :style="{'height': height, 'width': charWidth}"
+      v-show="rightTop"
+    >
+      <div id="J_chartBarBox" :style="{'height': height}"></div>
+      <!--<el-button class="openButton leftBottom" @click="close(1)"><i class="el-icon-arrow-up"></i></el-button>-->
+    </div>
+    <div
+      class="chartContainer rightTop15"
+      :style="{'height': height, 'width': charWidth}"
+      v-show="leftBottom"
+    >
+      <div id="J_chartPieBox" :style="{'height': height}"></div>
+      <!--<el-button class="openButton rightTop" @click="close(2)"><i class="el-icon-arrow-down"></i></el-button>-->
+    </div>
+    <div
+      class="chartContainer leftBottom15"
+      :style="{'height': height, 'width': charWidth}"
+      v-show="rightBottom"
+    >
+      <div id="J_chartRadarBox" :style="{'height': height}"></div>
+      <!--<el-button class="openButton leftTop" @click="close(3)"><i class="el-icon-arrow-down"></i></el-button>-->
+    </div>
+    <div text-center :style="{'height': mainClientHeight - 42 + 'px'}">
+      <img src="~@/assets/img/gzMap.jpg" :style="{'width':charWidth} " class="vertical-middle" />
+      <em class="vertical-middle em-style"></em>
+    </div>
+    <!--<div class="chartContainer rightTop15" id="J_chartLineBox"></div>-->
+    <!--<div class="chartContainer rightBottom15" id="J_chartLineBox"></div>-->
+
+    <!--   <h3>公司介绍</h3>
+           <ul>
+             <li>易宝集团成立于1984年，是一家国际性具有综合研发能力的高科技公司。</li>
+             <li>广州易宝信息技术有限公司(原名:易宝电脑系统(广州)有限公司)脱胎于该集团,成立于1990年。是一家以信息技术为核心业务的IT服务公司。为各行业提供信息系统规划、咨询服务、行业应用系统、电子信息产品、计算机系统集成、运维保修等服务。公司基于领先的计算机信息处理、数据库与软件开发技术、网络及通信技术、内容管理技术，开发了一系列行业应用解决方案。是政府、文教、公众服务、国有大中型企业等行业解决方案和IT专业服务的领先者。</li>
+             <li>凭借数十年经验和技术的积累，公司得到了国家各级主管部门的认可和扶持。获得了中国软件百强企业、广州市100家最具成长性企业、最具潜力高新技术企业荣誉；通过中国软件企业信用等级A级认证、守合同重信用企业认认证；具有软件企业认证、国家信息产业部系统集成二级资质认证、ISO9001质量体系认证、计算机信息安全资质认证等。</li>
+             <li>易宝公司一直以来非常注重在大数据领域的投入，在研发上投入了大量的资金和资源，建立产品研发基地，研发出大数据LAVALAMP，THINKTREE等产品，深入大数据产品的应用模式研究，采用大数据技术建立了运营平台，在一些国家和地区得到应用推广。随着易宝在大数据解决方案逐渐成熟，公司加大对大数据应用渗透各行业的力度；在当今数据改变我们生活、驱动决策及信息社会智能化需求提高的背景下，我们正大力着手在智慧城市、环保大数据、食品药品安全大数据、公众安全应急监控以及互联网基准营销大数据应用、技术和方法在各个行业的实践。创建未来的智慧生活。</li>
+             <li>近年来，易宝公司凭借自身的实力，不断实现技术上与管理上的创新与飞跃，成为一家以行业解决方案为核心、以专业服务为基础、以软件开发为支撑、以产业研究为后盾的新型全方位高科技公司</li>
+           </ul>
+           <h3>有关我们</h3>
+           <ul>
+             <li>官方网站：<a href="http://www.gzepro.com.cn/" target="_blank">易宝官网</a></li>
+    </ul>-->
+  </div>
+</template>
+
+<script>
+import echarts from "echarts";
+import config from "@/utils/config";
+import { randomColor } from "@/utils/index";
+import { pieData, lineData, barData, radData } from "../../utils/homeData";
+// const {pieData} = require('@utils/home')
+export default {
+  activated() {
+    console.log("actie");
+    //  this.getLine()
+    // this.getChartPie()
+    // this.getChartBar()
+    // this.getChartBar()
+    // console.log(rand);
+    // 由于给echart添加了resize事件, 在组件激活时需要重新resize绘画一次, 否则出现空白bug
+    if (this.chartLine) {
+      console.log("58");
+      this.chartLine.resize();
+    }
+    if (this.chartBar) {
+      this.chartBar.resize();
+    }
+    if (this.chartPie) {
+      this.chartPie.resize();
+    }
+    if (this.chartRadar) {
+      this.chartRadar.resize();
+    }
+  },
+  data() {
+    return {
+      mainClientHeight: null,
+      clientWidth: this.$store.state.common.mainClientWidth,
+      charWidth: this.$store.state.common.mainClientWidth * 0.33 + "px",
+      leftTop: true,
+      leftBottom: true,
+      rightTop: true,
+      rightBottom: true,
+      chartLine: null,
+      chartBar: null,
+      chartPie: null,
+      chartRadar: null,
+      ceshiHeight: this.documentClientHeight - 50 - 30 - 2 - 20,
+      height: "",
+      barValue: [],
+      barName: [],
+      chartBarOption: {
+        color: config.color,
+        title: {
+          show: true,
+          text: "预警信息"
+        },
+        legend: {
+          data: []
+        },
+        xAxis: [
+          {
+            type: "category",
+            data: []
+          }
+        ],
+        yAxis: [
+          {
+            type: "value"
+          }
+        ],
+        grid: {
+          left: "3%",
+          right: "4%",
+          bottom: "3%",
+          containLabel: true
+        },
+        tooltip: {
+          trigger: "axis",
+          axisPointer: {
+            type: "shadow"
+          }
+        },
+        series: [
+          {
+            type: "bar",
+            barWidth:'50%',
+            data: []
+            // itemStyle: {
+            //     normal: {
+            //         color: null
+            //     }
+            // }
+          }
+        ]
+      },
+      barColor: [],
+      pieDataName: [],
+      pieData: [],
+      chartPieOption: {
+        title: {
+          text: "计划分析",
+          x: "left"
+        },
+        tooltip: {
+          trigger: "item"
+        },
+        legend: {
+          orient: "vertical",
+          left: "2px",
+          right:'2px',
+
+          data: []
+        },
+        series: [
+          {
+            name: "电梯数",
+            type: "pie",
+            radius: '60%',
+            center: ["50%", "50%"],
+            label: {
+              normal: {
+                show: false
+              },
+              emphasis: {
+                show: true
+              }
+            },
+            lableLine: {
+              normal: {
+                show: false
+              },
+              emphasis: {
+                show: true
+              }
+            },
+            data: [
+            ]
+          }
+        ]
+      },
+      option: {
+        color: config.color,
+        title: {
+          text: "维修统计"
+        },
+        tooltip: {
+          trigger: "axis"
+        },
+        grid: {
+          left: "3%",
+          right: "4%",
+          bottom: "3%",
+          containLabel: true
+        },
+        // dataZoom:[
+        //     {
+        //     show:true,
+        //     realtime: true,
+        //     start: 0,
+        //     bottom:0,
+        //     end: 30,
+        //     xAxisIndex: [0]
+        //   }
+        // ],
+        legend: {
+          top: 30,
+          data: [
+            {
+              name: "故障"
+            },
+            {
+              name: "正常"
+            }
+          ]
+        },
+        xAxis: {
+          type: "category",
+          boundaryGap: false,
+          data: []
+        },
+        yAxis: {
+          type: "value"
+        },
+        series: []
+      },
+      date: [],
+      data: [],
+      chartRadarOption: {
+        color: config.color,
+        title: {
+          text: "维保统计",
+          x: ""
+        },
+        tooltip: {},
+        radar: {
+          // shape: 'circle',
+          name: {
+            textStyle: {
+              color: "#fff",
+              backgroundColor: "#999",
+              borderRadius: 3,
+              padding: [3, 5]
+            }
+          },
+          radius: 110,
+          center: ["50%", "55%"],
+          indicator: []
+        },
+        series: [
+          {
+            name: "状态",
+            type: "radar",
+            // areaStyle: {normal: {}},
+            data: [
+              {
+                value: []
+              }
+            ]
+          }
+        ]
+      }
+    };
+  },
+  methods: {
+    open(type) {
+      if (type === 0) {
+        this.leftTop = true;
+        this.chartLine = echarts.init(
+          document.getElementById("J_chartLineBox")
+        );
+        this.chartLine.setOption(this.option);
+      }
+      if (type === 1) {
+        this.rightTop = true;
+        this.chartBar = echarts.init(document.getElementById("J_chartBarBox"));
+        this.chartBar.setOption(this.chartBarOption);
+      }
+      if (type === 2) {
+        this.leftBottom = true;
+        this.chartPie = echarts.init(document.getElementById("J_chartPieBox"));
+        this.chartPie.setOption(this.chartPieOption);
+      }
+      if (type === 3) {
+        this.rightBottom = true;
+        this.chartRadar = echarts.init(
+          document.getElementById("J_chartRadarBox")
+        );
+        this.chartRadar.setOption(this.chartRadarOption);
+      }
+    },
+    close(type) {
+      if (type === 0) {
+        this.leftTop = false;
+      }
+      if (type === 1) {
+        this.rightTop = false;
+      }
+      if (type === 2) {
+        this.leftBottom = false;
+      }
+      if (type === 3) {
+        this.rightBottom = false;
+      }
+    },
+    getLine() {
+      // this.$http({
+      //     url: this.$http.adornUrl('/affairInfo/affairinfo/statOfTypeInYear'),
+      //     method: 'get',
+      //     params: this.$http.adornParams()
+      // }).then(({ data }) => {
+      //     console.log('折线图',data);
+      //     this.date = data.data.months
+      //     this.data = data.data.series
+      //     this.option.xAxis.data = this.date
+      //     this.option.series = this.data
+      //     this.chartLine = echarts.init(document.getElementById('J_chartLineBox'))
+      //     this.chartLine.setOption(this.option)
+      //     window.addEventListener('resize', () => {
+      //         this.chartLine.resize()
+      //     })
+      // })
+      console.log("折线数据", lineData);
+      this.date = lineData.months;
+      this.data = lineData.series;
+      this.option.xAxis.data = this.date;
+      this.option.series = this.data;
+      this.chartLine = echarts.init(document.getElementById("J_chartLineBox"));
+      this.chartLine.setOption(this.option);
+      window.addEventListener("resize", () => {
+        this.chartLine.resize();
+      });
+    },
+    getChartPie() {
+      // this.$http({
+      //     url: this.$http.adornUrl('/affairInfo/affairinfo/statOfAutoTotalNum'),
+      //     method: 'get',
+      //     params: this.$http.adornParams()
+      // }).then(({ data }) => {
+      //     if (data.data && data.code === 0) {
+      //         console.log('饼状图数据',data.data);
+      console.log("图数据", pieData);
+      this.pieDataName = [];
+      this.barValue = [];
+      this.pieData = [];
+      let arrColor = [];
+      pieData.forEach(item => {
+        // this.pieDataName.push(item.unitName)
+        // this.barValue.push(item.count)
+        arrColor.push(randomColor());
+        this.pieData.push({
+          value: item.count,
+          name: item.unitName
+        });
+      });
+      // 饼状图配置
+      // this.chartPieOption.legend.data = this.pieDataName
+      // let len = this.$store.state.user.areacode.length;
+      // console.log('长度',len);
+      // if(!len||len==4){
+      //     title = '各区工单处置情况'
+      // }else if(len==6){
+      //     title = '各街道工单处置情况'
+      // }else if(len==9){
+      //     title = '各小区工单处置情况'
+      // }
+      console.log("user", this.$store.state.user);
+      this.chartPieOption.series[0].data = this.pieData;
+      // this.chartPieOption.color = arrColor
+      this.chartPie = echarts.init(
+        document.getElementById("J_chartPieBox"),
+        "light"
+      );
+      this.chartPie.setOption(this.chartPieOption);
+      console.log(this.chartPieOption);
+      window.addEventListener("resize", () => {
+        this.chartPie.resize();
+      });
+      // }
+      // })
+    },
+    getChartBar() {
+      // this.$http({
+      //     url: this.$http.adornUrl('/affairInfo/affairinfo/statOfAutoTotalNum?limit=5'),
+      //     method: 'get',
+      //     params: this.$http.adornParams()
+      // }).then(({ data }) => {
+      //     console.log('条形图数据',data.data);
+      //     if (data.data && data.code === 0) {
+      this.pieDataName = [];
+      this.barValue = [];
+      this.pieData = [];
+      this.barColor = [];
+      barData.forEach(item => {
+        this.pieDataName.push(item.statusName);
+        this.barValue.push(item.count);
+        // this.barColor.push(randomColor())
+        this.pieData.push({
+          value: item.count,
+          name: item.statusName
+        });
+      });
+      // 柱状图配置
+      // let len = this.$store.state.user.areacode.length;
+      // console.log('长度',len);
+      // if(!len||len==4){
+      //     title = '各区工单处置情况'
+      // }else if(len==6){
+      //     title = '各街道工单处置情况'
+      // }else if(len==9){
+      //     title = '各小区工单处置情况'
+      // }
+      console.log("user", this.$store.state.user);
+      this.chartBarOption.legend.data = this.pieDataName;
+      this.chartBarOption.xAxis[0].data = this.pieDataName;
+      this.chartBarOption.series[0].data = this.barValue;
+      // this.chartBarOption.series[0].itemStyle.normal.color = (params) => {
+      //     console.log(params)
+      //     return this.barColor[params.dataIndex]
+      // }
+      this.chartBar = echarts.init(
+        document.getElementById("J_chartBarBox"),
+        "light"
+      );
+      this.chartBar.setOption(this.chartBarOption);
+      window.addEventListener("resize", () => {
+        this.chartBar.resize();
+      });
+      // }
+      // })
+    },
+    getChartRadar() {
+      // this.$http({
+      //     url: this.$http.adornUrl('/affairInfo/affairinfo/statOfType'),
+      //     method: 'get',
+      //     params: this.$http.adornParams()
+      // }).then(({data}) => {
+      //     if (data && data.code === 0) {
+      this.chartRadar = echarts.init(
+        document.getElementById("J_chartRadarBox")
+      );
+      let arr = [];
+      let num = [];
+      let max = 0;
+      radData.forEach(item => {
+        max += item.count;
+      });
+      radData.forEach(item => {
+        arr.push({
+          name: item.statusName,
+          max: max
+        });
+        num.push(item.count);
+      });
+      this.chartRadarOption.radar.indicator = arr;
+      this.chartRadarOption.series[0].data[0].value = num;
+      this.chartRadar.setOption(this.chartRadarOption);
+      window.addEventListener("resize", () => {
+        this.chartRadar.resize();
+      });
+      // }
+
+      // })
+    }
+  },
+  created() {},
+  computed: {},
+  mounted() {
+    console.log("mounted");
+    this.$nextTick(() => {
+      this.getLine();
+      this.getChartPie();
+      this.getChartBar();
+      this.getChartRadar();
+    });
+
+    this.mainClientHeight = document.documentElement.clientHeight - 80;
+    this.mainClientWidth = document.documentElement.clientWidth - 210;
+    this.height = this.mainClientHeight * 0.47 + "px";
+    this.charWidth = this.mainClientWidth * 0.33 + "px";
+    window.onresize = () => {
+      this.mainClientWidth = document.documentElement.clientWidth - 210;
+      console.log(this.mainClientWidth);
+      this.charWidth = this.mainClientWidth * 0.33 + "px";
+      this.mainClientHeight = document.documentElement.clientHeight - 80;
+      this.height = this.mainClientHeight * 0.47 + "px";
+      if (this.chartLine) {
+        this.chartLine.resize();
+      }
+      if (this.chartBar) {
+        this.chartBar.resize();
+      }
+      if (this.chartPie) {
+        this.chartPie.resize();
+      }
+      if (this.chartRadar) {
+        this.chartRadar.resize();
+      }
+    };
+  }
+};
+</script>
+
+<style scoped lang="scss">
+.em-style {
+  height: 100%;
+  display: inline-block;
+}
+.vertical-middle {
+  vertical-align: middle;
+}
+.char-container {
+  position: relative;
+  margin: -20px;
+}
+.echarts {
+  width: 100%;
+  height: 100%;
+}
+.mod-home {
+}
+.leftTopChart {
+  width: 50%;
+  height: 274px;
+  border: $border-base;
+}
+.chartContainer {
+  position: absolute !important;
+  border: $border-base;
+  background: white;
+}
+.openButton {
+  width: 16px;
+  height: 16px;
+  padding: 0;
+}
+.openButton,
+.chartContainer {
+  &.el-button {
+    margin: 0;
+    &:hover,
+    &:active,
+    &:focus {
+      color: $primary;
+      border-color: rgba(63, 98, 160, 0.3);
+      background-color: rgba(63, 98, 160, 0.2);
+    }
+  }
+  position: absolute;
+  &.leftTop {
+    left: 0;
+    top: 0;
+    &15 {
+      left: 15px;
+      top: 15px;
+    }
+  }
+  &.rightTop {
+    right: 0;
+    top: 0;
+    &15 {
+      right: 15px;
+      top: 15px;
+    }
+  }
+  &.rightBottom {
+    right: 0;
+    bottom: 0;
+    &15 {
+      right: 15px;
+      bottom: 15px;
+    }
+  }
+  &.leftBottom {
+    left: 0;
+    bottom: 0;
+    &15 {
+      left: 15px;
+      bottom: 15px;
+    }
+  }
+}
+</style>
+
